@@ -10,6 +10,7 @@ pub struct Args {
     command: Commands,
 }
 
+///
 #[derive(Subcommand, Debug)]
 enum Commands {
     /// Authenticates with the Todoist API.
@@ -19,8 +20,15 @@ enum Commands {
         /// Settings -> Integrations -> API token
         token: String,
     },
-    /// Lists current tasks.
+    #[clap(flatten)]
+    Authenticated(AuthCommands),
+}
+
+#[derive(Subcommand, Debug)]
+enum AuthCommands {
+    /// Lists tasks.
     List(list::Params),
+    /// Closes a task.
     Close(close::Params),
 }
 
@@ -33,15 +41,14 @@ impl Args {
                 cfg.token = Some(token);
                 cfg.save()?;
             }
-            command => {
+            Commands::Authenticated(command) => {
                 let token = cfg.token.context(
                     "No token in config specified. Use `todoist auth` to register your token.",
                 )?;
                 let gw = Gateway::new(&token, cfg.url);
                 match command {
-                    Commands::List(p) => list::list(p, &gw).await?,
-                    Commands::Close(p) => close::close(p, &gw).await?,
-                    _ => unreachable!(),
+                    AuthCommands::List(p) => list::list(p, &gw).await?,
+                    AuthCommands::Close(p) => close::close(p, &gw).await?,
                 }
             }
         }

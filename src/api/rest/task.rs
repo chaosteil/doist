@@ -110,7 +110,7 @@ pub struct ExactTime {
 /// Mostly contains human-readable content for easier display.
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct DueDate {
-    #[serde(alias = "string")]
+    #[serde(rename = "string")]
     pub human_readable: String,
     pub date: String,
     pub recurring: bool,
@@ -118,12 +118,40 @@ pub struct DueDate {
     pub exact: Option<ExactTime>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub enum CreateTaskDue {
+    #[serde(rename = "due_string")]
+    String(String),
+    #[serde(rename = "due_date")]
+    Date(String), // TODO: chrono day
+    #[serde(rename = "due_datetime")]
+    DateTime(chrono::DateTime<chrono::Utc>),
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct CreateTask {
+    pub content: String,
+    pub description: Option<String>,
+    pub project_id: Option<ProjectID>,
+    pub section_id: Option<SectionID>,
+    pub parent_id: Option<TaskID>,
+    pub order: Option<isize>,
+    pub label_ids: Option<Vec<LabelID>>,
+    pub priority: Option<Priority>,
+    #[serde(flatten)]
+    pub due: Option<CreateTaskDue>,
+    pub due_lang: Option<String>,
+    pub assignee: Option<UserID>,
+}
+
+/// TaskTree is a representation of Tasks as a tree.
 #[derive(Debug)]
 pub struct TaskTree {
     pub task: Task,
     pub subtasks: Vec<TaskTree>,
 }
 
+/// TaskTreeBuilder is a helper struct helping to create a TaskTree.
 #[derive(Debug)]
 struct TaskTreeBuilder {
     task: Task,

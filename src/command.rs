@@ -1,4 +1,4 @@
-use crate::{api::rest::Gateway, close, config::Config, list};
+use crate::{add, api::rest::Gateway, close, config::Config, list};
 use clap::{Parser, Subcommand};
 use color_eyre::{eyre::ContextCompat, Result};
 use owo_colors::OwoColorize;
@@ -20,12 +20,16 @@ enum Commands {
         /// Settings -> Integrations -> API token
         token: String,
     },
+    /// Authenticated commands are commands that require a token to be set up via the Auth command
+    /// before executing.
     #[clap(flatten)]
     Authenticated(AuthCommands),
 }
 
 #[derive(Subcommand, Debug)]
 enum AuthCommands {
+    /// Adds a task.
+    Add(add::Params),
     /// Lists tasks.
     List(list::Params),
     /// Closes a task.
@@ -47,6 +51,7 @@ impl Args {
                 )?;
                 let gw = Gateway::new(&token, cfg.url);
                 match command {
+                    AuthCommands::Add(p) => add::add(p, &gw).await?,
                     AuthCommands::List(p) => list::list(p, &gw).await?,
                     AuthCommands::Close(p) => close::close(p, &gw).await?,
                 }

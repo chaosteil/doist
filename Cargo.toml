@@ -1,6 +1,6 @@
 [package]
 name = "todoist"
-author = "Dominykas Djacenko"
+authors = ["Dominykas Djacenko <chaosteil@gmail.com>"]
 version = "0.1.0"
 edition = "2021"
 about = "todoist is a command line app for interacting with the Todoist API"

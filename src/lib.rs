@@ -8,6 +8,7 @@
 //! $ todoist list
 //! $ todoist add "buy some flowers tomorrow"
 //! ```
+mod add;
 mod api;
 mod close;
 mod command;

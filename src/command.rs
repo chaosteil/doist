@@ -1,6 +1,6 @@
 use crate::{add, api::rest::Gateway, close, config::Config, list};
 use clap::{Parser, Subcommand};
-use color_eyre::{eyre::ContextCompat, Result};
+use color_eyre::{eyre::eyre, Result};
 use owo_colors::OwoColorize;
 
 #[derive(Parser, Debug)]
@@ -46,9 +46,11 @@ impl Args {
                 cfg.save()?;
             }
             Commands::Authenticated(command) => {
-                let token = cfg.token.context(
-                    "No token in config specified. Use `todoist auth` to register your token.",
-                )?;
+                let token = cfg.token.ok_or_else(|| {
+                    eyre!(
+                        "No token in config specified. Use `todoist auth` to register your token."
+                    )
+                })?;
                 let gw = Gateway::new(&token, cfg.url);
                 match command {
                     AuthCommands::Add(p) => add::add(p, &gw).await?,

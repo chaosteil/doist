@@ -1,4 +1,4 @@
-use color_eyre::{eyre::Context, Result};
+use color_eyre::{eyre::WrapErr, Result};
 use owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize};
 
@@ -11,7 +11,7 @@ pub struct Params {
 }
 
 pub async fn close(params: Params, gw: &Gateway) -> Result<()> {
-    gw.close(params.id).await.context("unable to close task")?;
+    gw.close(params.id).await.wrap_err("unable to close task")?;
     println!("closed task {}", params.id.bright_red());
     Ok(())
 }

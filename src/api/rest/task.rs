@@ -9,7 +9,7 @@ use std::{
     rc::Rc,
 };
 
-use color_eyre::eyre::bail;
+use color_eyre::{eyre::eyre, Result};
 use owo_colors::OwoColorize;
 use serde::{de::Deserializer, Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -179,7 +179,7 @@ impl TaskTreeBuilder {
 }
 
 impl TaskTree {
-    pub fn from_tasks(tasks: Vec<Task>) -> color_eyre::Result<Vec<TaskTree>> {
+    pub fn from_tasks(tasks: Vec<Task>) -> Result<Vec<TaskTree>> {
         let (top_level_tasks, mut subtasks): (VecDeque<_>, VecDeque<_>) = tasks
             .into_iter()
             .map(|task| {
@@ -199,7 +199,13 @@ impl TaskTree {
         let mut fails = 0; // Tracks for infinite loop on subtasks
         while !subtasks.is_empty() && fails <= subtasks.len() {
             let subtask = subtasks.pop_front().unwrap();
-            let parent = tasks.entry(subtask.borrow().task.parent_id.unwrap());
+            let parent = tasks.entry(
+                subtask
+                    .borrow()
+                    .task
+                    .parent_id
+                    .ok_or_else(|| eyre!("Subtask has bad parent assigned"))?,
+            );
             if let Entry::Vacant(_) = parent {
                 fails += 1;
                 subtasks.push_back(subtask);
@@ -214,20 +220,21 @@ impl TaskTree {
         }
 
         if !subtasks.is_empty() {
-            bail!("missing parent nodes in {} subtasks", subtasks.len(),);
+            return Err(eyre!("missing parent nodes in {} subtasks", subtasks.len()));
         }
-        Ok(tasks
+        let tasks: Result<_> = tasks
             .into_iter()
             .filter(|(_, c)| c.borrow().parent.is_none())
             .collect::<Vec<_>>()
             .into_iter()
             .map(|(_, c)| {
-                Rc::try_unwrap(c)
-                    .expect("only single reference")
+                Ok(Rc::try_unwrap(c)
+                    .map_err(|_| eyre!("Expected single task reference"))?
                     .into_inner()
-                    .finalize()
+                    .finalize())
             })
-            .collect())
+            .collect();
+        tasks
     }
 }
 

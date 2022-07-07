@@ -85,6 +85,22 @@ pub struct Task {
     pub created: chrono::DateTime<chrono::Utc>,
 }
 
+impl Display for Task {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "ID: {}\nContent: {}\nDescription: {}\n",
+            self.id.bright_yellow(),
+            self.content.default_color(),
+            self.description.default_color()
+        )?;
+        if let Some(due) = &self.due {
+            writeln!(f, "Due: {}", due)?;
+        }
+        Ok(())
+    }
+}
+
 pub struct TableTask<'a>(pub &'a Task);
 
 impl Display for TableTask<'_> {
@@ -92,9 +108,13 @@ impl Display for TableTask<'_> {
         write!(
             f,
             "{} {}",
-            self.0.id.bright_red(),
-            self.0.content.default_color()
-        )
+            self.0.id.bright_yellow(),
+            self.0.content.default_color(),
+        )?;
+        if let Some(due) = &self.0.due {
+            write!(f, " {}", due)?;
+        }
+        Ok(())
     }
 }
 
@@ -108,14 +128,32 @@ pub struct ExactTime {
 /// DueDate is the Due object from the todoist API.
 ///
 /// Mostly contains human-readable content for easier display.
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct DueDate {
     #[serde(rename = "string")]
     pub human_readable: String,
-    pub date: String,
+    pub date: chrono::NaiveDate,
     pub recurring: bool,
     #[serde(flatten)]
     pub exact: Option<ExactTime>,
+}
+
+impl Display for DueDate {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(exact) = &self.exact {
+            if exact.datetime >= chrono::Utc::now() {
+                write!(f, "{}", exact.datetime.bright_green())
+            } else {
+                write!(f, "{}", exact.datetime.bright_red())
+            }
+        } else {
+            if self.date >= chrono::Utc::now().date().naive_utc() {
+                write!(f, "{}", self.human_readable.bright_green())
+            } else {
+                write!(f, "{}", self.human_readable.bright_red())
+            }
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

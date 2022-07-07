@@ -1,6 +1,9 @@
 use color_eyre::{eyre::WrapErr, Result};
 
-use crate::api::rest::{Gateway, TableTask, TaskTree};
+use crate::{
+    api::rest::{Gateway, TableTask, TaskTree},
+    close,
+};
 use strum::{Display, EnumVariantNames, FromRepr, VariantNames};
 
 #[derive(clap::Parser, Debug)]
@@ -8,6 +11,7 @@ pub struct Params {
     /// Specify a filter query to run against the Todoist API.
     #[clap(short='f', long="filter", default_value_t=String::from("(today | overdue)"))]
     filter: String,
+    /// Run the list display in interactive mode to perform various actions on the items.
     #[clap(short = 'i')]
     interactive: bool,
 }
@@ -49,8 +53,8 @@ enum TaskOptions {
     Quit,
 }
 
-// TODO: make a dedicated controller for all operations
 async fn select_task_option(task: &TaskTree, gw: &Gateway) -> Result<()> {
+    println!("{}", task.task);
     let result = dialoguer::FuzzySelect::with_theme(&dialoguer::theme::ColorfulTheme::default())
         .items(TaskOptions::VARIANTS)
         .default(0)
@@ -64,10 +68,7 @@ async fn select_task_option(task: &TaskTree, gw: &Gateway) -> Result<()> {
         }
     };
     match option {
-        TaskOptions::Close => gw
-            .close(task.task.id)
-            .await
-            .wrap_err("unable to close task")?,
+        TaskOptions::Close => close::close(close::Params { id: task.task.id }, gw).await?,
         TaskOptions::Quit => {}
     };
     Ok(())

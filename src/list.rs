@@ -1,6 +1,7 @@
 use color_eyre::{eyre::WrapErr, Result};
 
 use crate::api::rest::{Gateway, TableTask, TaskTree};
+use strum::{Display, EnumVariantNames, FromRepr, VariantNames};
 
 #[derive(clap::Parser, Debug)]
 pub struct Params {
@@ -16,17 +17,58 @@ pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
     let tasks = gw.tasks(Some(&params.filter)).await?;
     let tree = TaskTree::from_tasks(tasks).wrap_err("tasks do not form clean tree")?;
     if params.interactive {
-        list_interactive_tasks(&tree);
+        list_interactive_tasks(&tree, gw).await?;
     } else {
         list_tasks(&tree);
     }
     Ok(())
 }
 
-fn list_tasks(tree: &Vec<TaskTree>) {
+fn list_tasks(tree: &[TaskTree]) {
     for task in tree.iter() {
         println!("{}", TableTask(&task.task));
     }
 }
 
-fn list_interactive_tasks(_tree: &Vec<TaskTree>) {}
+async fn list_interactive_tasks(tree: &[TaskTree], gw: &Gateway) -> Result<()> {
+    let result = dialoguer::FuzzySelect::with_theme(&dialoguer::theme::ColorfulTheme::default())
+        .items(&tree.iter().map(|t| TableTask(&t.task)).collect::<Vec<_>>())
+        .default(0)
+        .interact_opt()
+        .wrap_err("Unable to make a selection")?;
+    match result {
+        Some(index) => select_task_option(&tree[index], gw).await?,
+        None => println!("No selection made"),
+    };
+    Ok(())
+}
+
+#[derive(Display, FromRepr, EnumVariantNames)]
+enum TaskOptions {
+    Close,
+    Quit,
+}
+
+// TODO: make a dedicated controller for all operations
+async fn select_task_option(task: &TaskTree, gw: &Gateway) -> Result<()> {
+    let result = dialoguer::FuzzySelect::with_theme(&dialoguer::theme::ColorfulTheme::default())
+        .items(TaskOptions::VARIANTS)
+        .default(0)
+        .interact_opt()
+        .wrap_err("Unable to make a selection")?;
+    let option = match result {
+        Some(index) => TaskOptions::from_repr(index).unwrap(),
+        None => {
+            println!("No selection made");
+            return Ok(());
+        }
+    };
+    match option {
+        TaskOptions::Close => gw
+            .close(task.task.id)
+            .await
+            .wrap_err("unable to close task")?,
+        TaskOptions::Quit => {}
+    };
+    Ok(())
+}

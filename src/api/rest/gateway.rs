@@ -33,7 +33,7 @@ impl Gateway {
             .text()
             .await
             .wrap_err("Unable to read response")?;
-        Ok(serde_json::from_str(&data).wrap_err("Unable to parse API response")?)
+        serde_json::from_str(&data).wrap_err("Unable to parse API response")
     }
 
     pub async fn close(&self, id: TaskID) -> Result<()> {
@@ -64,7 +64,7 @@ impl Gateway {
         if status != StatusCode::OK {
             return Err(eyre!("Bad response from API: {} - {}", status, text));
         }
-        Ok(serde_json::from_str(&text).wrap_err("Unable to parse API response")?)
+        serde_json::from_str(&text).wrap_err("Unable to parse API response")
     }
 
     fn prepare_get(&self, path: &str) -> Result<RequestBuilder> {

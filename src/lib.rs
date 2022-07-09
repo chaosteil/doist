@@ -13,6 +13,7 @@ mod api;
 mod close;
 mod command;
 mod config;
+mod edit;
 mod list;
 
 #[doc(hidden)]

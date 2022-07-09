@@ -1,4 +1,4 @@
-use crate::{add, api::rest::Gateway, close, config::Config, list};
+use crate::{add, api::rest::Gateway, close, config::Config, edit, list};
 use clap::{Parser, Subcommand};
 use color_eyre::{eyre::eyre, Result};
 use owo_colors::OwoColorize;
@@ -32,6 +32,8 @@ enum AuthCommands {
     Add(add::Params),
     /// Lists tasks.
     List(list::Params),
+    /// Edits a task.
+    Edit(edit::Params),
     /// Closes a task.
     Close(close::Params),
 }
@@ -55,6 +57,7 @@ impl Args {
                 match command {
                     AuthCommands::Add(p) => add::add(p, &gw).await?,
                     AuthCommands::List(p) => list::list(p, &gw).await?,
+                    AuthCommands::Edit(p) => edit::edit(p, &gw).await?,
                     AuthCommands::Close(p) => close::close(p, &gw).await?,
                 }
             }

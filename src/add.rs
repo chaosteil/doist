@@ -1,7 +1,7 @@
 use color_eyre::Result;
 use serde::{Deserialize, Serialize};
 
-use crate::api::rest::{CreateTask, CreateTaskDue, Gateway, TableTask};
+use crate::api::rest::{CreateTask, Gateway, TableTask, TaskDue};
 
 #[derive(clap::Parser, Debug, Deserialize, Serialize)]
 pub struct Params {
@@ -20,7 +20,7 @@ pub async fn add(params: Params, gw: &Gateway) -> Result<()> {
         ..Default::default()
     };
     if let Some(due) = params.due {
-        create.due = Some(CreateTaskDue::String(due));
+        create.due = Some(TaskDue::String(due));
     }
     let task = gw.create(&create).await?;
     println!("created task: {}", TableTask(&task));

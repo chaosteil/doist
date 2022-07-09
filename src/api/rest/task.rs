@@ -146,18 +146,16 @@ impl Display for DueDate {
             } else {
                 write!(f, "{}", exact.datetime.bright_red())
             }
+        } else if self.date >= chrono::Utc::now().date().naive_utc() {
+            write!(f, "{}", self.human_readable.bright_green())
         } else {
-            if self.date >= chrono::Utc::now().date().naive_utc() {
-                write!(f, "{}", self.human_readable.bright_green())
-            } else {
-                write!(f, "{}", self.human_readable.bright_red())
-            }
+            write!(f, "{}", self.human_readable.bright_red())
         }
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum CreateTaskDue {
+pub enum TaskDue {
     #[serde(rename = "due_string")]
     String(String),
     #[serde(rename = "due_date")]
@@ -177,7 +175,19 @@ pub struct CreateTask {
     pub label_ids: Option<Vec<LabelID>>,
     pub priority: Option<Priority>,
     #[serde(flatten)]
-    pub due: Option<CreateTaskDue>,
+    pub due: Option<TaskDue>,
+    pub due_lang: Option<String>,
+    pub assignee: Option<UserID>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct UpdateTask {
+    pub content: Option<String>,
+    pub description: Option<String>,
+    pub label_ids: Option<Vec<LabelID>>,
+    pub priority: Option<Priority>,
+    #[serde(flatten)]
+    pub due: Option<TaskDue>,
     pub due_lang: Option<String>,
     pub assignee: Option<UserID>,
 }

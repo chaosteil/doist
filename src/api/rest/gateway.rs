@@ -3,8 +3,9 @@ use color_eyre::{
     Result,
 };
 use reqwest::{Client, RequestBuilder, StatusCode};
+use serde::{de::DeserializeOwned, Serialize};
 
-use super::{CreateTask, Task, TaskID};
+use super::{CreateTask, Task, TaskID, UpdateTask};
 
 pub struct Gateway {
     client: Client,
@@ -22,62 +23,86 @@ impl Gateway {
     }
 
     pub async fn tasks(&self, filter: Option<&str>) -> Result<Vec<Task>> {
-        let mut req = self.prepare_get("rest/v1/tasks")?;
-        if let Some(filter) = filter {
-            req = req.query(&[("filter", filter)]);
-        }
-        let data = req
-            .send()
-            .await
-            .wrap_err("Unable to send request to show task list")?
-            .text()
-            .await
-            .wrap_err("Unable to read response")?;
-        serde_json::from_str(&data).wrap_err("Unable to parse API response")
+        self.get(
+            "rest/v1/tasks",
+            filter.map(|filter| vec![("filter", filter)]),
+        )
+        .await
     }
 
     pub async fn close(&self, id: TaskID) -> Result<()> {
-        let req = self.prepare_post(&format!("rest/v1/tasks/{}/close", id))?;
-        let status = req
-            .send()
-            .await
-            .wrap_err("Unable to send request to close task")?
-            .status();
-        if status != StatusCode::NO_CONTENT {
-            return Err(eyre!("Bad response from API: {}", status));
-        }
+        self.post_empty(
+            &format!("rest/v1/tasks/{}/close", id),
+            &serde_json::Map::new(),
+        )
+        .await?;
         Ok(())
     }
 
     /// Creates a task by calling the Todoist API.
     pub async fn create(&self, task: &CreateTask) -> Result<Task> {
-        // TODO: implement retries/backoffs
-        let req = self.prepare_post("rest/v1/tasks")?;
-        let resp = req
-            .body(serde_json::to_string(&task)?)
-            .header(reqwest::header::CONTENT_TYPE, "application/json")
-            .send()
-            .await
-            .wrap_err("Unable to send request to create task")?;
-        let status = resp.status();
-        let text = resp.text().await.wrap_err("Unable to read response")?;
-        if status != StatusCode::OK {
-            return Err(eyre!("Bad response from API: {} - {}", status, text));
-        }
-        serde_json::from_str(&text).wrap_err("Unable to parse API response")
+        self.post("rest/v1/tasks", task)
+            .await?
+            .ok_or_else(|| eyre!("Unable to create task"))
     }
 
-    fn prepare_get(&self, path: &str) -> Result<RequestBuilder> {
-        Ok(self
+    pub async fn update(&self, id: TaskID, task: &UpdateTask) -> Result<()> {
+        self.post_empty(&format!("rest/v1/tasks/{}", id), &task)
+            .await?;
+        Ok(())
+    }
+
+    async fn get<'a, T: 'a + Serialize, R: DeserializeOwned>(
+        &self,
+        path: &str,
+        query: Option<T>,
+    ) -> Result<R> {
+        let req = self
             .client
             .get(self.url.join(path)?)
-            .bearer_auth(&self.token))
+            .bearer_auth(&self.token);
+        let req = if let Some(q) = query {
+            req.query(&q)
+        } else {
+            req
+        };
+        handle_req(req)
+            .await?
+            .ok_or_else(|| eyre!("Invalid response from API"))
     }
 
-    fn prepare_post(&self, path: &str) -> Result<RequestBuilder> {
-        Ok(self
-            .client
-            .post(self.url.join(path)?)
-            .bearer_auth(&self.token))
+    async fn post_empty<T: Serialize>(&self, path: &str, content: &T) -> Result<()> {
+        self.post::<_, String>(path, content).await?;
+        Ok(())
     }
+
+    async fn post<T: Serialize, R: DeserializeOwned>(
+        &self,
+        path: &str,
+        content: &T,
+    ) -> Result<Option<R>> {
+        handle_req(
+            self.client
+                .post(self.url.join(path)?)
+                .bearer_auth(&self.token)
+                .body(serde_json::to_string(&content)?)
+                .header(reqwest::header::CONTENT_TYPE, "application/json"),
+        )
+        .await
+    }
+}
+
+async fn handle_req<R: DeserializeOwned>(req: RequestBuilder) -> Result<Option<R>> {
+    // TODO: implement retries/backoffs
+    let resp = req.send().await.wrap_err("Unable to send request")?;
+    let status = resp.status();
+    if status == StatusCode::NO_CONTENT {
+        return Ok(None);
+    }
+    let text = resp.text().await.wrap_err("Unable to read response")?;
+    if !status.is_success() {
+        return Err(eyre!("Bad response from API: {} - {}", status, text));
+    }
+    let result = serde_json::from_str(&text).wrap_err("Unable to parse API response")?;
+    Ok(Some(result))
 }

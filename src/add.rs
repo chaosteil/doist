@@ -12,11 +12,14 @@ pub struct Params {
     /// Examples: "in two days" "tomorrow", "every 2 days from Monday"
     #[clap(short = 'd')]
     due: Option<String>,
+    /// Description that has more details about the task.
+    desc: Option<String>,
 }
 
 pub async fn add(params: Params, gw: &Gateway) -> Result<()> {
     let mut create = CreateTask {
         content: params.name,
+        description: params.desc,
         ..Default::default()
     };
     if let Some(due) = params.due {

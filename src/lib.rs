@@ -15,6 +15,7 @@ mod command;
 mod config;
 mod edit;
 mod list;
+mod priority;
 
 #[doc(hidden)]
 pub use command::Args;

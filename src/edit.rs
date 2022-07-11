@@ -1,9 +1,12 @@
 use color_eyre::Result;
 use serde::{Deserialize, Serialize};
 
-use crate::api::{
-    self,
-    rest::{Gateway, TaskDue, UpdateTask},
+use crate::{
+    api::{
+        self,
+        rest::{Gateway, TaskDue, UpdateTask},
+    },
+    priority::Priority,
 };
 
 #[derive(clap::Parser, Debug, Deserialize, Serialize)]
@@ -14,6 +17,9 @@ pub struct Params {
     #[clap(short = 'd')]
     pub due: Option<String>,
     pub desc: Option<String>,
+    /// Sets the priority on the task. The higher the priority the more urgent the task.
+    #[clap(value_enum)]
+    pub priority: Option<Priority>,
 }
 
 impl Params {
@@ -23,6 +29,7 @@ impl Params {
             name: None,
             due: None,
             desc: None,
+            priority: None,
         }
     }
 }
@@ -31,6 +38,7 @@ pub async fn edit(params: Params, gw: &Gateway) -> Result<()> {
     let mut update = UpdateTask {
         content: params.name,
         description: params.desc,
+        priority: params.priority.map(|p| p.into()),
         ..Default::default()
     };
     if let Some(due) = params.due {

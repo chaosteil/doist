@@ -21,30 +21,30 @@ pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
     let tasks = gw.tasks(Some(&params.filter)).await?;
     let tree = TaskTree::from_tasks(tasks).wrap_err("tasks do not form clean tree")?;
     if params.interactive {
-        list_interactive_tasks(&tree, gw).await?;
+        match get_interactive_tasks(&tree)? {
+            Some(task) => select_task_option(task, gw).await?,
+            None => println!("No selection was made"),
+        }
     } else {
         list_tasks(&tree);
     }
     Ok(())
 }
 
+pub fn get_interactive_tasks(tree: &[TaskTree]) -> Result<Option<&TaskTree>> {
+    let result = dialoguer::FuzzySelect::with_theme(&dialoguer::theme::ColorfulTheme::default())
+        .items(&tree.iter().map(|t| TableTask(&t.task)).collect::<Vec<_>>())
+        .with_prompt("New value?")
+        .default(0)
+        .interact_opt()
+        .wrap_err("Unable to make a selection")?;
+    Ok(result.map(|index| &tree[index]))
+}
+
 fn list_tasks(tree: &[TaskTree]) {
     for task in tree.iter() {
         println!("{}", TableTask(&task.task));
     }
-}
-
-async fn list_interactive_tasks(tree: &[TaskTree], gw: &Gateway) -> Result<()> {
-    let result = dialoguer::FuzzySelect::with_theme(&dialoguer::theme::ColorfulTheme::default())
-        .items(&tree.iter().map(|t| TableTask(&t.task)).collect::<Vec<_>>())
-        .default(0)
-        .interact_opt()
-        .wrap_err("Unable to make a selection")?;
-    match result {
-        Some(index) => select_task_option(&tree[index], gw).await?,
-        None => println!("No selection made"),
-    };
-    Ok(())
 }
 
 #[derive(Display, FromRepr, EnumVariantNames)]
@@ -65,7 +65,7 @@ async fn select_task_option(task: &TaskTree, gw: &Gateway) -> Result<()> {
     };
     match result {
         TaskOptions::Close => close::close(close::Params { id: task.task.id }, gw).await?,
-        TaskOptions::Edit => edit_task(&task, gw).await?,
+        TaskOptions::Edit => edit_task(task, gw).await?,
         TaskOptions::Quit => {}
     };
     Ok(())
@@ -91,6 +91,7 @@ async fn edit_task(task: &TaskTree, gw: &Gateway) -> Result<()> {
     match result {
         EditOptions::Quit => {}
         _ => {
+            // TODO: priority here
             let text = dialoguer::Input::new()
                 .with_prompt("New value?")
                 .interact_text()

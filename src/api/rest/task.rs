@@ -23,8 +23,8 @@ pub type UserID = u64;
 /// Priority as is given from the todoist API.
 ///
 /// 1 for Normal up to 4 for Urgent.
-#[derive(Debug, Serialize_repr, Deserialize_repr)]
-#[repr(i8)]
+#[derive(Debug, Copy, Clone, Serialize_repr, Deserialize_repr)]
+#[repr(u8)]
 pub enum Priority {
     Normal = 1,
     High = 2,

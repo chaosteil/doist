@@ -20,6 +20,7 @@ pub struct Params {
 pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
     let tasks = gw.tasks(Some(&params.filter)).await?;
     let tree = TaskTree::from_tasks(tasks).wrap_err("tasks do not form clean tree")?;
+    // TODO: make from_tasks sort, too
     if params.interactive {
         match get_interactive_tasks(&tree)? {
             Some(task) => select_task_option(task, gw).await?,
@@ -34,7 +35,7 @@ pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
 pub fn get_interactive_tasks(tree: &[TaskTree]) -> Result<Option<&TaskTree>> {
     let result = dialoguer::FuzzySelect::with_theme(&dialoguer::theme::ColorfulTheme::default())
         .items(&tree.iter().map(|t| TableTask(&t.task)).collect::<Vec<_>>())
-        .with_prompt("New value?")
+        .with_prompt("Select task")
         .default(0)
         .interact_opt()
         .wrap_err("Unable to make a selection")?;
@@ -76,6 +77,7 @@ enum EditOptions {
     Name,
     Description,
     Due,
+    Priority,
     Quit,
 }
 
@@ -90,10 +92,21 @@ async fn edit_task(task: &TaskTree, gw: &Gateway) -> Result<()> {
     };
     match result {
         EditOptions::Quit => {}
+        EditOptions::Priority => {
+            let selection = dialoguer::Select::new()
+                .with_prompt("Set priority")
+                .items(&["1 - Normal", "2 - High", "3 - Very High", "4 - Urgent"])
+                .default((task.task.priority as u8 - 1) as usize)
+                .interact()
+                .wrap_err("Bad user input")?
+                + 1;
+            let mut params = edit::Params::new(task.task.id);
+            params.priority = Some(selection.try_into()?);
+            edit::edit(params, gw).await?;
+        }
         _ => {
-            // TODO: priority here
             let text = dialoguer::Input::new()
-                .with_prompt("New value?")
+                .with_prompt("New value")
                 .interact_text()
                 .wrap_err("Bad user input")?;
             let mut params = edit::Params::new(task.task.id);
@@ -107,6 +120,7 @@ async fn edit_task(task: &TaskTree, gw: &Gateway) -> Result<()> {
                 EditOptions::Due => {
                     params.due = Some(text);
                 }
+                EditOptions::Priority => unreachable!(),
                 EditOptions::Quit => unreachable!(),
             };
             edit::edit(params, gw).await?;

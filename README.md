@@ -1,12 +1,12 @@
 # todoist CLI Client
 
-A todoist API CLI client written in Rust.
+An unofficial [todoist](https://todoist.com/) API CLI client written in Rust.
 
 ## About
 
-This is a todoist CLI that focuses on being easy to use. It is currently not
-feature complete, but covers some basic common use-cases and I add more as we go
-along.
+This is an unofficial todoist CLI that focuses on being easy to use. It is
+currently not feature complete, but covers some basic common use-cases and adds
+more as we go along.
 
 ## Installation
 

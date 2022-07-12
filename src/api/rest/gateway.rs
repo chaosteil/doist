@@ -22,6 +22,11 @@ impl Gateway {
         }
     }
 
+    pub async fn task(&self, id: TaskID) -> Result<Task> {
+        self.get::<(), _>(&format!("rest/v1/tasks/{}", id), None)
+            .await
+    }
+
     pub async fn tasks(&self, filter: Option<&str>) -> Result<Vec<Task>> {
         self.get(
             "rest/v1/tasks",

@@ -14,11 +14,13 @@ pub async fn close(params: Params, gw: &Gateway) -> Result<()> {
     gw.close(params.id).await.wrap_err("unable to close task")?;
     println!("closed task {}", params.id.bright_red());
     let task = gw.task(params.id).await?;
-    if let Some(due) = task.due {
-        if let Some(exact) = due.exact {
-            println!("next due date: {}", exact.datetime);
-        } else {
-            println!("next due date: {}", due.date);
+    if !task.completed {
+        if let Some(due) = task.due {
+            if let Some(exact) = due.exact {
+                println!("next due date: {}", exact.datetime);
+            } else {
+                println!("next due date: {}", due.date);
+            }
         }
     }
     Ok(())

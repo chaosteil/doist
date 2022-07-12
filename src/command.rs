@@ -29,12 +29,16 @@ enum Commands {
 #[derive(Subcommand, Debug)]
 enum AuthCommands {
     /// Adds a task.
+    #[clap(alias = "a")]
     Add(add::Params),
     /// Lists tasks.
+    #[clap(alias = "l")]
     List(list::Params),
     /// Edits a task.
+    #[clap(alias = "e")]
     Edit(edit::Params),
     /// Closes a task.
+    #[clap(alias = "c")]
     Close(close::Params),
 }
 

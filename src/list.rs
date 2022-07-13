@@ -95,8 +95,8 @@ async fn edit_task(task: &TaskTree, gw: &Gateway) -> Result<()> {
         EditOptions::Priority => {
             let selection = dialoguer::Select::new()
                 .with_prompt("Set priority")
-                .items(&["1 - Normal", "2 - High", "3 - Very High", "4 - Urgent"])
-                .default((task.task.priority as u8 - 1) as usize)
+                .items(&["1 - Urgent", "2 - Very High", "3 - High", "4 - Normal"])
+                .default((4 - task.task.priority as u8) as usize)
                 .interact()
                 .wrap_err("Bad user input")?
                 + 1;

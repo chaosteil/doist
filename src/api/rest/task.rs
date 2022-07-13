@@ -23,13 +23,25 @@ pub type UserID = u64;
 /// Priority as is given from the todoist API.
 ///
 /// 1 for Normal up to 4 for Urgent.
-#[derive(Debug, Copy, Clone, Serialize_repr, Deserialize_repr)]
+#[derive(Debug, Copy, Clone, Serialize_repr, Deserialize_repr, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u8)]
 pub enum Priority {
     Normal = 1,
     High = 2,
     VeryHigh = 3,
     Urgent = 4,
+}
+
+impl Display for Priority {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // The priority display is reversed as in the actual desktop client compared to the API.
+        match self {
+            Priority::Normal => write!(f, "{}", "p4".default_color()),
+            Priority::High => write!(f, "{}", "p3".blue()),
+            Priority::VeryHigh => write!(f, "{}", "p2".yellow()),
+            Priority::Urgent => write!(f, "{}", "p1".red()),
+        }
+    }
 }
 
 impl Default for Priority {
@@ -63,7 +75,7 @@ where
 /// Task describes a Task from the todoist API.
 ///
 /// Taken from https://developer.todoist.com/rest/v1/#tasks.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Task {
     pub id: TaskID,
     pub project_id: ProjectID,
@@ -89,8 +101,9 @@ impl Display for Task {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "ID: {}\nContent: {}\nDescription: {}\n",
+            "ID: {}\nPriority: {}\nContent: {}\nDescription: {}\n",
             self.id.bright_yellow(),
+            self.priority,
             self.content.default_color(),
             self.description.default_color()
         )?;
@@ -101,14 +114,54 @@ impl Display for Task {
     }
 }
 
+impl Ord for Task {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        // Exact times ignore even priority in the UI
+        match (
+            self.due
+                .as_ref()
+                .map(|d| d.exact.as_ref().map(|e| e.datetime))
+                .unwrap_or_default(),
+            other
+                .due
+                .as_ref()
+                .map(|d| d.exact.as_ref().map(|e| e.datetime))
+                .unwrap_or_default(),
+        ) {
+            (Some(left), Some(right)) => return left.cmp(&right),
+            (Some(_left), None) => return std::cmp::Ordering::Less,
+            (None, Some(_right)) => return std::cmp::Ordering::Greater,
+            (None, None) => {}
+        }
+
+        // Lower priority in API is lower in list
+        match self.priority.cmp(&other.priority).reverse() {
+            core::cmp::Ordering::Equal => {}
+            ord => return ord,
+        }
+        match self.order.cmp(&other.order) {
+            core::cmp::Ordering::Equal => {}
+            ord => return ord,
+        }
+        self.id.cmp(&other.id)
+    }
+}
+
+impl PartialOrd for Task {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 pub struct TableTask<'a>(pub &'a Task);
 
 impl Display for TableTask<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{} {}",
+            "{} {} {}",
             self.0.id.bright_yellow(),
+            self.0.priority,
             self.0.content.default_color(),
         )?;
         if let Some(due) = &self.0.due {
@@ -119,7 +172,7 @@ impl Display for TableTask<'_> {
 }
 
 /// ExactTime exists in DueDate if this is an exact DueDate.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ExactTime {
     pub datetime: chrono::DateTime<chrono::FixedOffset>,
     pub timezone: String,
@@ -128,7 +181,7 @@ pub struct ExactTime {
 /// DueDate is the Due object from the todoist API.
 ///
 /// Mostly contains human-readable content for easier display.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DueDate {
     #[serde(rename = "string")]
     pub human_readable: String,
@@ -193,10 +246,22 @@ pub struct UpdateTask {
 }
 
 /// TaskTree is a representation of Tasks as a tree.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct TaskTree {
     pub task: Task,
     pub subtasks: Vec<TaskTree>,
+}
+
+impl Ord for TaskTree {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.task.cmp(&other.task)
+    }
+}
+
+impl PartialOrd for TaskTree {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.task.cmp(&other.task))
+    }
 }
 
 /// TaskTreeBuilder is a helper struct helping to create a TaskTree.
@@ -270,7 +335,7 @@ impl TaskTree {
         if !subtasks.is_empty() {
             return Err(eyre!("missing parent nodes in {} subtasks", subtasks.len()));
         }
-        let tasks: Result<_> = tasks
+        let tasks: Result<Vec<_>> = tasks
             .into_iter()
             .filter(|(_, c)| c.borrow().parent.is_none())
             .collect::<Vec<_>>()
@@ -282,7 +347,10 @@ impl TaskTree {
                     .finalize())
             })
             .collect();
-        tasks
+        tasks.map(|mut f| {
+            f.sort();
+            f
+        })
     }
 }
 

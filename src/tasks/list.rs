@@ -1,8 +1,11 @@
 use color_eyre::{eyre::WrapErr, Result};
 
 use crate::{
-    api::rest::{Gateway, TableTask, TaskTree},
-    close, edit,
+    api::{
+        rest::{Gateway, TableTask, Task},
+        tree::Tree,
+    },
+    tasks::{close, edit},
 };
 use strum::{Display, EnumVariantNames, FromRepr, VariantNames};
 
@@ -19,7 +22,7 @@ pub struct Params {
 /// List lists the tasks of the current user accessing the gateway with the given filter.
 pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
     let tasks = gw.tasks(Some(&params.filter)).await?;
-    let tree = TaskTree::from_tasks(tasks).wrap_err("tasks do not form clean tree")?;
+    let tree = Tree::from_items(tasks).wrap_err("tasks do not form clean tree")?;
     // TODO: make from_tasks sort, too
     if params.interactive {
         match get_interactive_tasks(&tree)? {
@@ -32,9 +35,9 @@ pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
     Ok(())
 }
 
-pub fn get_interactive_tasks(tree: &[TaskTree]) -> Result<Option<&TaskTree>> {
+pub fn get_interactive_tasks(tree: &[Tree<Task>]) -> Result<Option<&Tree<Task>>> {
     let result = dialoguer::FuzzySelect::with_theme(&dialoguer::theme::ColorfulTheme::default())
-        .items(&tree.iter().map(|t| TableTask(&t.task)).collect::<Vec<_>>())
+        .items(&tree.iter().map(|t| TableTask(t)).collect::<Vec<_>>())
         .with_prompt("Select task")
         .default(0)
         .interact_opt()
@@ -42,9 +45,9 @@ pub fn get_interactive_tasks(tree: &[TaskTree]) -> Result<Option<&TaskTree>> {
     Ok(result.map(|index| &tree[index]))
 }
 
-fn list_tasks(tree: &[TaskTree]) {
+fn list_tasks(tree: &[Tree<Task>]) {
     for task in tree.iter() {
-        println!("{}", TableTask(&task.task));
+        println!("{}", TableTask(task));
     }
 }
 
@@ -55,8 +58,8 @@ enum TaskOptions {
     Quit,
 }
 
-async fn select_task_option(task: &TaskTree, gw: &Gateway) -> Result<()> {
-    println!("{}", task.task);
+async fn select_task_option(task: &Tree<Task>, gw: &Gateway) -> Result<()> {
+    println!("{}", task.item);
     let result = match make_selection(TaskOptions::VARIANTS)? {
         Some(index) => TaskOptions::from_repr(index).unwrap(),
         None => {
@@ -65,7 +68,7 @@ async fn select_task_option(task: &TaskTree, gw: &Gateway) -> Result<()> {
         }
     };
     match result {
-        TaskOptions::Close => close::close(close::Params { id: task.task.id }, gw).await?,
+        TaskOptions::Close => close::close(close::Params { id: task.id }, gw).await?,
         TaskOptions::Edit => edit_task(task, gw).await?,
         TaskOptions::Quit => {}
     };
@@ -81,7 +84,7 @@ enum EditOptions {
     Quit,
 }
 
-async fn edit_task(task: &TaskTree, gw: &Gateway) -> Result<()> {
+async fn edit_task(task: &Tree<Task>, gw: &Gateway) -> Result<()> {
     // edit::edit(edit::Params { id: task.task.id }, gw).await?,
     let result = match make_selection(EditOptions::VARIANTS)? {
         Some(index) => EditOptions::from_repr(index).unwrap(),
@@ -96,11 +99,11 @@ async fn edit_task(task: &TaskTree, gw: &Gateway) -> Result<()> {
             let selection = dialoguer::Select::new()
                 .with_prompt("Set priority")
                 .items(&["1 - Urgent", "2 - Very High", "3 - High", "4 - Normal"])
-                .default((4 - task.task.priority as u8) as usize)
+                .default((4 - task.priority as u8) as usize)
                 .interact()
                 .wrap_err("Bad user input")?
                 + 1;
-            let mut params = edit::Params::new(task.task.id);
+            let mut params = edit::Params::new(task.id);
             params.priority = Some(selection.try_into()?);
             edit::edit(params, gw).await?;
         }
@@ -109,7 +112,7 @@ async fn edit_task(task: &TaskTree, gw: &Gateway) -> Result<()> {
                 .with_prompt("New value")
                 .interact_text()
                 .wrap_err("Bad user input")?;
-            let mut params = edit::Params::new(task.task.id);
+            let mut params = edit::Params::new(task.id);
             match result {
                 EditOptions::Name => {
                     params.name = Some(text);

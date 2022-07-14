@@ -1,7 +1,11 @@
-use crate::{add, api::rest::Gateway, close, config::Config, edit, list};
+use crate::{
+    api::rest::Gateway,
+    config::Config,
+    projects,
+    tasks::{add, close, edit, list},
+};
 use clap::{Parser, Subcommand};
 use color_eyre::{eyre::eyre, Result};
-use owo_colors::OwoColorize;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
@@ -40,6 +44,17 @@ enum AuthCommands {
     /// Closes a task.
     #[clap(alias = "c")]
     Close(close::Params),
+
+    /// Manages projects.
+    #[clap(subcommand, alias = "p")]
+    Projects(ProjectCommands),
+}
+
+#[derive(Subcommand, Debug)]
+enum ProjectCommands {
+    /// Lists all current projects
+    #[clap(alias = "l")]
+    List(projects::list::Params),
 }
 
 impl Args {
@@ -47,9 +62,9 @@ impl Args {
         let mut cfg = Config::load()?;
         match self.command {
             Commands::Auth { token } => {
-                println!("Given token was {}", token.green());
                 cfg.token = Some(token);
                 cfg.save()?;
+                println!("Token successfully saved")
             }
             Commands::Authenticated(command) => {
                 let token = cfg.token.ok_or_else(|| {
@@ -63,6 +78,9 @@ impl Args {
                     AuthCommands::List(p) => list::list(p, &gw).await?,
                     AuthCommands::Edit(p) => edit::edit(p, &gw).await?,
                     AuthCommands::Close(p) => close::close(p, &gw).await?,
+                    AuthCommands::Projects(p) => match p {
+                        ProjectCommands::List(p) => projects::list::list(p, &gw).await?,
+                    },
                 }
             }
         }

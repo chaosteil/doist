@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     api::rest::{CreateTask, Gateway, TableTask, TaskDue},
-    priority::Priority,
+    tasks::Priority,
 };
 
 #[derive(clap::Parser, Debug, Deserialize, Serialize)]

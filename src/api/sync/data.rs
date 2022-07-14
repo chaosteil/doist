@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use crate::api::Color;
 use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_aux::prelude::*;
@@ -166,38 +167,6 @@ pub struct User {
 }
 
 pub type ProjectID = u64;
-
-#[derive(Debug, serde_repr::Serialize_repr, serde_repr::Deserialize_repr)]
-#[repr(u16)]
-pub enum Color {
-    Unknown,
-    BerryRed = 30,
-    Red,
-    Orange,
-    Yellow,
-    OliveGreen,
-    LimeGreen,
-    Green,
-    MintGreen,
-    Teal,
-    SkyBlue,
-    LightBlue,
-    Blue,
-    Grape,
-    Violet,
-    Lavender,
-    Magenta,
-    Salmon,
-    Charcoal,
-    Grey,
-    Taupe,
-}
-
-impl Default for Color {
-    fn default() -> Self {
-        Color::Unknown
-    }
-}
 
 pub type SyncID = u64;
 

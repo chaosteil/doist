@@ -5,7 +5,7 @@ use color_eyre::{
 use reqwest::{Client, RequestBuilder, StatusCode};
 use serde::{de::DeserializeOwned, Serialize};
 
-use super::{CreateTask, Task, TaskID, UpdateTask};
+use super::{CreateTask, Project, ProjectID, Task, TaskID, UpdateTask};
 
 pub struct Gateway {
     client: Client,
@@ -55,6 +55,15 @@ impl Gateway {
         self.post_empty(&format!("rest/v1/tasks/{}", id), &task)
             .await?;
         Ok(())
+    }
+
+    pub async fn projects(&self) -> Result<Vec<Project>> {
+        self.get::<(), _>("rest/v1/projects", None).await
+    }
+
+    pub async fn project(&self, id: ProjectID) -> Result<Project> {
+        self.get::<(), _>(&format!("rest/v1/project/{}", id), None)
+            .await
     }
 
     async fn get<'a, T: 'a + Serialize, R: DeserializeOwned>(

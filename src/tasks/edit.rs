@@ -6,7 +6,7 @@ use crate::{
         self,
         rest::{Gateway, TaskDue, UpdateTask},
     },
-    priority::Priority,
+    tasks::Priority,
 };
 
 #[derive(clap::Parser, Debug, Deserialize, Serialize)]

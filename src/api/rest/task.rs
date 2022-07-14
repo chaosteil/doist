@@ -1,24 +1,18 @@
 use core::fmt;
-use std::{
-    cell::RefCell,
-    collections::{
-        hash_map::{Entry, HashMap},
-        VecDeque,
-    },
-    fmt::Display,
-    rc::Rc,
-};
+use std::fmt::Display;
 
-use color_eyre::{eyre::eyre, Result};
+use crate::api::deserialize::deserialize_zero_to_none;
+use crate::api::tree::Treeable;
 use owo_colors::OwoColorize;
-use serde::{de::Deserializer, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-pub type TaskID = u64;
-pub type ProjectID = u64;
-pub type SectionID = u64;
-pub type LabelID = u64;
-pub type UserID = u64;
+use super::ProjectID;
+
+pub type TaskID = usize;
+pub type SectionID = usize;
+pub type LabelID = usize;
+pub type UserID = usize;
 
 /// Priority as is given from the todoist API.
 ///
@@ -50,28 +44,6 @@ impl Default for Priority {
     }
 }
 
-fn deserialize_zero_to_none<'de, D, T: Deserialize<'de> + num_traits::Zero>(
-    deserializer: D,
-) -> Result<Option<T>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    #[derive(Deserialize)]
-    struct Value<U>(Option<U>);
-    let v: Value<T> = Deserialize::deserialize(deserializer)?;
-    let result = match v.0 {
-        Some(v) => {
-            if v.is_zero() {
-                None
-            } else {
-                Some(v)
-            }
-        }
-        None => None,
-    };
-    Ok(result)
-}
-
 /// Task describes a Task from the todoist API.
 ///
 /// Taken from https://developer.todoist.com/rest/v1/#tasks.
@@ -95,6 +67,16 @@ pub struct Task {
     #[serde(deserialize_with = "deserialize_zero_to_none")]
     pub assigner: Option<UserID>, // TODO: can be 0 -> map to None?
     pub created: chrono::DateTime<chrono::Utc>,
+}
+
+impl Treeable for Task {
+    fn id(&self) -> usize {
+        self.id
+    }
+
+    fn parent_id(&self) -> Option<usize> {
+        self.parent_id
+    }
 }
 
 impl Display for Task {
@@ -245,115 +227,6 @@ pub struct UpdateTask {
     pub assignee: Option<UserID>,
 }
 
-/// TaskTree is a representation of Tasks as a tree.
-#[derive(Debug, PartialEq, Eq)]
-pub struct TaskTree {
-    pub task: Task,
-    pub subtasks: Vec<TaskTree>,
-}
-
-impl Ord for TaskTree {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.task.cmp(&other.task)
-    }
-}
-
-impl PartialOrd for TaskTree {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.task.cmp(&other.task))
-    }
-}
-
-/// TaskTreeBuilder is a helper struct helping to create a TaskTree.
-#[derive(Debug)]
-struct TaskTreeBuilder {
-    task: Task,
-    parent: Option<()>,
-    subtasks: Vec<Rc<RefCell<TaskTreeBuilder>>>,
-}
-
-impl TaskTreeBuilder {
-    fn finalize(self) -> TaskTree {
-        let subtasks: Vec<TaskTree> = self
-            .subtasks
-            .into_iter()
-            .map(|c| {
-                Rc::try_unwrap(c)
-                    .expect("should consume single Rc")
-                    .into_inner()
-                    .finalize()
-            })
-            .collect();
-        TaskTree {
-            task: self.task,
-            subtasks,
-        }
-    }
-}
-
-impl TaskTree {
-    pub fn from_tasks(tasks: Vec<Task>) -> Result<Vec<TaskTree>> {
-        let (top_level_tasks, mut subtasks): (VecDeque<_>, VecDeque<_>) = tasks
-            .into_iter()
-            .map(|task| {
-                Rc::new(RefCell::new(TaskTreeBuilder {
-                    task,
-                    parent: None,
-                    subtasks: vec![],
-                }))
-            })
-            .partition(|task| task.borrow().task.parent_id.is_none());
-
-        let mut tasks: HashMap<_, Rc<RefCell<TaskTreeBuilder>>> = top_level_tasks
-            .into_iter()
-            .map(|task| (task.borrow().task.id, task.clone()))
-            .collect();
-
-        let mut fails = 0; // Tracks for infinite loop on subtasks
-        while !subtasks.is_empty() && fails <= subtasks.len() {
-            let subtask = subtasks.pop_front().unwrap();
-            let parent = tasks.entry(
-                subtask
-                    .borrow()
-                    .task
-                    .parent_id
-                    .ok_or_else(|| eyre!("Subtask has bad parent assigned"))?,
-            );
-            if let Entry::Vacant(_) = parent {
-                fails += 1;
-                subtasks.push_back(subtask);
-                continue;
-            }
-            fails = 0;
-            parent.and_modify(|entry| {
-                subtask.borrow_mut().parent = Some(());
-                entry.borrow_mut().subtasks.push(subtask.clone())
-            });
-            tasks.insert(subtask.borrow().task.id, subtask.clone());
-        }
-
-        if !subtasks.is_empty() {
-            return Err(eyre!("missing parent nodes in {} subtasks", subtasks.len()));
-        }
-        let tasks: Result<Vec<_>> = tasks
-            .into_iter()
-            .filter(|(_, c)| c.borrow().parent.is_none())
-            .collect::<Vec<_>>()
-            .into_iter()
-            .map(|(_, c)| {
-                Ok(Rc::try_unwrap(c)
-                    .map_err(|_| eyre!("Expected single task reference"))?
-                    .into_inner()
-                    .finalize())
-            })
-            .collect();
-        tasks.map(|mut f| {
-            f.sort();
-            f
-        })
-    }
-}
-
 #[cfg(test)]
 impl Task {
     /// This is initializer is used for tests, as in general the tool relies on the API and not
@@ -377,84 +250,5 @@ impl Task {
             assigner: None,
             created: chrono::Utc::now(),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_tree_no_subtasks() {
-        let tasks = vec![
-            Task::new(1, "one"),
-            Task::new(2, "two"),
-            Task::new(3, "three"),
-        ];
-        let trees = TaskTree::from_tasks(tasks).unwrap();
-        assert_eq!(trees.len(), 3);
-    }
-
-    #[test]
-    fn test_tree_some_subtasks() {
-        let tasks = vec![
-            Task::new(1, "one"),
-            Task::new(2, "two"),
-            Task::new(3, "three"),
-            Task {
-                parent_id: Some(1),
-                ..Task::new(4, "four")
-            },
-        ];
-        let trees = TaskTree::from_tasks(tasks).unwrap();
-        assert_eq!(trees.len(), 3);
-        let task = trees.iter().filter(|t| t.task.id == 1).collect::<Vec<_>>();
-        assert_eq!(task.len(), 1);
-        let task = task[0];
-        assert_eq!(task.subtasks.len(), 1);
-        assert_eq!(task.subtasks[0].task.id, 4);
-        for task in trees.into_iter().filter(|t| t.task.id != 1) {
-            assert_eq!(task.subtasks.len(), 0);
-        }
-    }
-
-    #[test]
-    fn task_tree_complex_subtasks() {
-        let tasks = vec![
-            Task::new(1, "one"),
-            Task {
-                parent_id: Some(1),
-                ..Task::new(2, "two")
-            },
-            Task {
-                parent_id: Some(2),
-                ..Task::new(3, "three")
-            },
-            Task {
-                parent_id: Some(3),
-                ..Task::new(4, "four")
-            },
-        ];
-        let trees = TaskTree::from_tasks(tasks).unwrap();
-        assert_eq!(trees.len(), 1);
-        assert_eq!(trees[0].task.id, 1);
-        assert_eq!(trees[0].subtasks[0].task.id, 2);
-        assert_eq!(trees[0].subtasks[0].subtasks[0].task.id, 3);
-        assert_eq!(trees[0].subtasks[0].subtasks[0].subtasks[0].task.id, 4);
-    }
-
-    #[test]
-    fn task_tree_bad_input() {
-        let tasks = vec![
-            Task {
-                parent_id: Some(1),
-                ..Task::new(2, "two")
-            },
-            Task {
-                parent_id: Some(2),
-                ..Task::new(3, "three")
-            },
-        ];
-        assert!(TaskTree::from_tasks(tasks).is_err());
     }
 }

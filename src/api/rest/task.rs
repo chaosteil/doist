@@ -110,7 +110,10 @@ impl Ord for Task {
                 .map(|d| d.exact.as_ref().map(|e| e.datetime))
                 .unwrap_or_default(),
         ) {
-            (Some(left), Some(right)) => return left.cmp(&right),
+            (Some(left), Some(right)) => match left.cmp(&right) {
+                std::cmp::Ordering::Equal => {}
+                ord => return ord,
+            },
             (Some(_left), None) => return std::cmp::Ordering::Less,
             (None, Some(_right)) => return std::cmp::Ordering::Greater,
             (None, None) => {}

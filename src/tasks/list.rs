@@ -90,7 +90,16 @@ async fn select_task_option(
         }
     };
     match result {
-        TaskOptions::Close => close::close(close::Params { id: task.id }, gw).await?,
+        TaskOptions::Close => {
+            close::close(
+                close::Params {
+                    id: task.id,
+                    complete: false,
+                },
+                gw,
+            )
+            .await?
+        }
         TaskOptions::Edit => edit_task(task, gw).await?,
         TaskOptions::Quit => {}
     };

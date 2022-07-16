@@ -1,4 +1,4 @@
-use color_eyre::{eyre::WrapErr, Result};
+use color_eyre::Result;
 use owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize};
 
@@ -8,10 +8,18 @@ use crate::api::{self, rest::Gateway};
 pub struct Params {
     /// The Task ID as provided from the todoist API. Use `list` to find out what ID your task has.
     pub id: api::rest::TaskID,
+    /// Complete will completely close a task, even if it's recurring.
+    /// Since the REST API does not support completely closing tasks, this will change the due date
+    /// of the task to "today" and then close it.
+    #[clap(short = 'c', long = "complete")]
+    pub complete: bool,
 }
 
 pub async fn close(params: Params, gw: &Gateway) -> Result<()> {
-    gw.close(params.id).await.wrap_err("unable to close task")?;
+    if params.complete {
+        return complete(params.id, gw).await;
+    }
+    gw.close(params.id).await?;
     println!("closed task {}", params.id.bright_red());
     let task = gw.task(params.id).await?;
     if !task.completed {
@@ -23,5 +31,11 @@ pub async fn close(params: Params, gw: &Gateway) -> Result<()> {
             }
         }
     }
+    Ok(())
+}
+
+pub async fn complete(id: api::rest::TaskID, gw: &Gateway) -> Result<()> {
+    gw.complete(id).await?;
+    println!("completed task {}", id.bright_red());
     Ok(())
 }

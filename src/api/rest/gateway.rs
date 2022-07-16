@@ -5,7 +5,7 @@ use color_eyre::{
 use reqwest::{Client, RequestBuilder, StatusCode};
 use serde::{de::DeserializeOwned, Serialize};
 
-use super::{CreateTask, Project, ProjectID, Task, TaskID, UpdateTask};
+use super::{CreateTask, Project, ProjectID, Task, TaskDue, TaskID, UpdateTask};
 
 pub struct Gateway {
     client: Client,
@@ -43,7 +43,25 @@ impl Gateway {
             &serde_json::Map::new(),
         )
         .await
-        .wrap_err("unable to close tasks")?;
+        .wrap_err("unable to close task")?;
+        Ok(())
+    }
+
+    /// Complete will complete a task by first updating the due date to today, so if it's
+    /// recurring, it will stop doing that.
+    /// This is a bit hacky, but the REST API does not support completely closing tasks without
+    /// deleting them.
+    pub async fn complete(&self, id: TaskID) -> Result<()> {
+        self.update(
+            id,
+            &UpdateTask {
+                due: Some(TaskDue::String("today".to_string())),
+                ..Default::default()
+            },
+        )
+        .await
+        .wrap_err("unable to complete task")?;
+        self.close(id).await.wrap_err("unable to complete task")?;
         Ok(())
     }
 

@@ -35,7 +35,7 @@ const CONFIG_FILE: &str = "config.toml";
 
 impl Config {
     fn config_dir() -> Result<xdg::BaseDirectories, xdg::BaseDirectoriesError> {
-        xdg::BaseDirectories::with_prefix("todoist")
+        xdg::BaseDirectories::with_prefix("doist")
     }
 
     pub fn load() -> Result<Config, ConfigError> {

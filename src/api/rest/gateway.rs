@@ -61,7 +61,7 @@ impl Gateway {
         self.get::<(), _>("rest/v1/projects", None).await
     }
 
-    pub async fn project(&self, id: ProjectID) -> Result<Project> {
+    pub async fn _project(&self, id: ProjectID) -> Result<Project> {
         self.get::<(), _>(&format!("rest/v1/project/{}", id), None)
             .await
     }

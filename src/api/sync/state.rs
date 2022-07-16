@@ -42,7 +42,7 @@ impl State {
             .token
             .as_ref()
             .ok_or_else(|| eyre!("no token provided"))?;
-        let state = xdg::BaseDirectories::with_prefix("todoist")?.get_state_file("state.json");
+        let state = xdg::BaseDirectories::with_prefix("doist")?.get_state_file("state.json");
         let s: serde_json::Value = if let Ok(file) = File::open(state) {
             let mut sync: serde_json::Value = serde_json::from_reader::<_, serde_json::Value>(file)
                 .unwrap_or_default()
@@ -64,7 +64,7 @@ impl State {
     }
 
     pub fn save(&self) -> color_eyre::Result<()> {
-        let state = xdg::BaseDirectories::with_prefix("todoist")?.place_state_file("state.json")?;
+        let state = xdg::BaseDirectories::with_prefix("doist")?.place_state_file("state.json")?;
         let data = serde_json::to_string(self)?;
         fs::write(&state, &data)?;
         Ok(())

@@ -16,9 +16,9 @@ pub struct Params {
     /// Specify a filter query to run against the Todoist API.
     #[clap(short='f', long="filter", default_value_t=String::from("(today | overdue)"))]
     filter: String,
-    /// Run the list display in interactive mode to perform various actions on the items.
-    #[clap(short = 'i')]
-    interactive: bool,
+    /// Disables interactive mode and simply displays the list.
+    #[clap(alias = "noi")]
+    nointeractive: bool,
 }
 
 /// List lists the tasks of the current user accessing the gateway with the given filter.
@@ -32,13 +32,13 @@ pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
         .collect();
     let tree = Tree::from_items(tasks).wrap_err("tasks do not form clean tree")?;
     // TODO: make from_tasks sort, too
-    if params.interactive {
+    if params.nointeractive {
+        list_tasks(&tree, &projects);
+    } else {
         match get_interactive_tasks(&tree, &projects)? {
             Some(task) => select_task_option(task, &projects, gw).await?,
             None => println!("No selection was made"),
         }
-    } else {
-        list_tasks(&tree, &projects);
     }
     Ok(())
 }

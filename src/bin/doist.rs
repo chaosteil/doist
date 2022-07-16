@@ -1,6 +1,6 @@
 use clap::Parser;
 use color_eyre::Result;
-use todoist::Args;
+use doist::Args;
 
 #[tokio::main]
 async fn main() -> Result<()> {

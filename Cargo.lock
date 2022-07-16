@@ -341,6 +341,34 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0688c2a7f92e427f44895cd63841bff7b29f8d7a1648b9e7e07a4a365b2e1257"
 
 [[package]]
+name = "doist"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "chrono-tz",
+ "clap",
+ "color-eyre",
+ "config",
+ "dialoguer",
+ "dirs",
+ "indicatif",
+ "json-patch",
+ "num-traits",
+ "owo-colors",
+ "reqwest",
+ "serde",
+ "serde-aux",
+ "serde_json",
+ "serde_repr",
+ "strum",
+ "thiserror",
+ "tokio",
+ "toml",
+ "url",
+ "xdg",
+]
+
+[[package]]
 name = "encode_unicode"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1511,34 +1539,6 @@ name = "tinyvec_macros"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
-
-[[package]]
-name = "todoist"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "chrono-tz",
- "clap",
- "color-eyre",
- "config",
- "dialoguer",
- "dirs",
- "indicatif",
- "json-patch",
- "num-traits",
- "owo-colors",
- "reqwest",
- "serde",
- "serde-aux",
- "serde_json",
- "serde_repr",
- "strum",
- "thiserror",
- "tokio",
- "toml",
- "url",
- "xdg",
-]
 
 [[package]]
 name = "tokio"

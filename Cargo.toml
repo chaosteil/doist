@@ -1,10 +1,15 @@
 [package]
 name = "doist"
+homepage = "https://github.com/chaosteil/doist"
+repository = "https://github.com/chaosteil/doist"
 authors = ["Dominykas Djacenko <chaosteil@gmail.com>"]
 version = "0.1.0"
 edition = "2021"
 description = "doist is an unofficial command line app for interacting with the Todoist API"
 license = "MIT"
+readme = "README.md"
+keywords = ["todoist", "todo", "cli"]
+categories = ["command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

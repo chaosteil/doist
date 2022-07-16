@@ -25,6 +25,7 @@ impl Gateway {
     pub async fn task(&self, id: TaskID) -> Result<Task> {
         self.get::<(), _>(&format!("rest/v1/tasks/{}", id), None)
             .await
+            .wrap_err("unable to get task")
     }
 
     pub async fn tasks(&self, filter: Option<&str>) -> Result<Vec<Task>> {
@@ -33,6 +34,7 @@ impl Gateway {
             filter.map(|filter| vec![("filter", filter)]),
         )
         .await
+        .wrap_err("unable to get tasks")
     }
 
     pub async fn close(&self, id: TaskID) -> Result<()> {
@@ -40,30 +42,36 @@ impl Gateway {
             &format!("rest/v1/tasks/{}/close", id),
             &serde_json::Map::new(),
         )
-        .await?;
+        .await
+        .wrap_err("unable to close tasks")?;
         Ok(())
     }
 
     /// Creates a task by calling the Todoist API.
     pub async fn create(&self, task: &CreateTask) -> Result<Task> {
         self.post("rest/v1/tasks", task)
-            .await?
+            .await
+            .wrap_err("unable to create task")?
             .ok_or_else(|| eyre!("Unable to create task"))
     }
 
     pub async fn update(&self, id: TaskID, task: &UpdateTask) -> Result<()> {
         self.post_empty(&format!("rest/v1/tasks/{}", id), &task)
-            .await?;
+            .await
+            .wrap_err("unable to update task")?;
         Ok(())
     }
 
     pub async fn projects(&self) -> Result<Vec<Project>> {
-        self.get::<(), _>("rest/v1/projects", None).await
+        self.get::<(), _>("rest/v1/projects", None)
+            .await
+            .wrap_err("unable to get projects")
     }
 
     pub async fn _project(&self, id: ProjectID) -> Result<Project> {
         self.get::<(), _>(&format!("rest/v1/project/{}", id), None)
             .await
+            .wrap_err("unable to get project")
     }
 
     async fn get<'a, T: 'a + Serialize, R: DeserializeOwned>(

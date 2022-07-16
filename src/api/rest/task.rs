@@ -221,7 +221,7 @@ pub struct CreateTask {
     pub section_id: Option<SectionID>,
     pub parent_id: Option<TaskID>,
     pub order: Option<isize>,
-    pub label_ids: Option<Vec<LabelID>>,
+    pub label_ids: Vec<LabelID>,
     pub priority: Option<Priority>,
     #[serde(flatten)]
     pub due: Option<TaskDue>,

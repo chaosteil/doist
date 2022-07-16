@@ -4,13 +4,21 @@ An unofficial [todoist](https://todoist.com/) API CLI client written in Rust.
 
 ## About
 
+[![asciicast](https://asciinema.org/a/509029.svg)](https://asciinema.org/a/509029)
+
 This is an unofficial todoist CLI that focuses on being easy to use. It is
 currently not feature complete, but covers some basic common use-cases and adds
 more as we go along.
 
 ## Installation
 
-TODO
+Currently it's installed only via cargo install from source:
+
+```bash
+cargo install doist
+```
+
+More options coming eventually.
 
 ## How to use
 

@@ -7,7 +7,7 @@ use owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use super::ProjectID;
+use super::{Project, ProjectID};
 
 pub type TaskID = usize;
 pub type SectionID = usize;
@@ -79,18 +79,23 @@ impl Treeable for Task {
     }
 }
 
-impl Display for Task {
+pub struct FullTask<'a, 'b>(pub &'a Task, pub Option<&'b Project>);
+
+impl Display for FullTask<'_, '_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "ID: {}\nPriority: {}\nContent: {}\nDescription: {}\n",
-            self.id.bright_yellow(),
-            self.priority,
-            self.content.default_color(),
-            self.description.default_color()
+            self.0.id.bright_yellow(),
+            self.0.priority,
+            self.0.content.default_color(),
+            self.0.description.default_color()
         )?;
-        if let Some(due) = &self.due {
+        if let Some(due) = &self.0.due {
             writeln!(f, "Due: {}", due)?;
+        }
+        if let Some(project) = &self.1 {
+            writeln!(f, "Project: {}", project.name)?;
         }
         Ok(())
     }
@@ -138,9 +143,9 @@ impl PartialOrd for Task {
     }
 }
 
-pub struct TableTask<'a>(pub &'a Task);
+pub struct TableTask<'a, 'b>(pub &'a Task, pub Option<&'b Project>);
 
-impl Display for TableTask<'_> {
+impl Display for TableTask<'_, '_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -151,6 +156,9 @@ impl Display for TableTask<'_> {
         )?;
         if let Some(due) = &self.0.due {
             write!(f, " {}", due)?;
+        }
+        if let Some(p) = &self.1 {
+            write!(f, " [{}]", p.name)?;
         }
         Ok(())
     }

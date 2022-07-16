@@ -1,8 +1,10 @@
+use std::collections::HashMap;
+
 use color_eyre::{eyre::WrapErr, Result};
 
 use crate::{
     api::{
-        rest::{Gateway, TableTask, Task},
+        rest::{FullTask, Gateway, Project, ProjectID, TableTask, Task},
         tree::Tree,
     },
     tasks::{close, edit},
@@ -22,22 +24,36 @@ pub struct Params {
 /// List lists the tasks of the current user accessing the gateway with the given filter.
 pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
     let tasks = gw.tasks(Some(&params.filter)).await?;
+    let projects = gw
+        .projects()
+        .await?
+        .into_iter()
+        .map(|p| (p.id, p))
+        .collect();
     let tree = Tree::from_items(tasks).wrap_err("tasks do not form clean tree")?;
     // TODO: make from_tasks sort, too
     if params.interactive {
-        match get_interactive_tasks(&tree)? {
-            Some(task) => select_task_option(task, gw).await?,
+        match get_interactive_tasks(&tree, &projects)? {
+            Some(task) => select_task_option(task, &projects, gw).await?,
             None => println!("No selection was made"),
         }
     } else {
-        list_tasks(&tree);
+        list_tasks(&tree, &projects);
     }
     Ok(())
 }
 
-pub fn get_interactive_tasks(tree: &[Tree<Task>]) -> Result<Option<&Tree<Task>>> {
+pub fn get_interactive_tasks<'a, 'b>(
+    tree: &'a [Tree<Task>],
+    projects: &'b HashMap<ProjectID, Project>,
+) -> Result<Option<&'a Tree<Task>>> {
     let result = dialoguer::FuzzySelect::with_theme(&dialoguer::theme::ColorfulTheme::default())
-        .items(&tree.iter().map(|t| TableTask(t)).collect::<Vec<_>>())
+        .items(
+            &tree
+                .iter()
+                .map(|t| TableTask(t, projects.get(&t.project_id)))
+                .collect::<Vec<_>>(),
+        )
         .with_prompt("Select task")
         .default(0)
         .interact_opt()
@@ -45,9 +61,9 @@ pub fn get_interactive_tasks(tree: &[Tree<Task>]) -> Result<Option<&Tree<Task>>>
     Ok(result.map(|index| &tree[index]))
 }
 
-fn list_tasks(tree: &[Tree<Task>]) {
+fn list_tasks(tree: &[Tree<Task>], projects: &HashMap<ProjectID, Project>) {
     for task in tree.iter() {
-        println!("{}", TableTask(task));
+        println!("{}", TableTask(task, projects.get(&task.project_id)));
     }
 }
 
@@ -58,8 +74,15 @@ enum TaskOptions {
     Quit,
 }
 
-async fn select_task_option(task: &Tree<Task>, gw: &Gateway) -> Result<()> {
-    println!("{}", task.item);
+async fn select_task_option(
+    task: &Tree<Task>,
+    projects: &HashMap<ProjectID, Project>,
+    gw: &Gateway,
+) -> Result<()> {
+    println!(
+        "{}",
+        FullTask(&task.item, projects.get(&task.item.project_id))
+    );
     let result = match make_selection(TaskOptions::VARIANTS)? {
         Some(index) => TaskOptions::from_repr(index).unwrap(),
         None => {

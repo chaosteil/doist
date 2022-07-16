@@ -33,6 +33,6 @@ pub async fn add(params: Params, gw: &Gateway) -> Result<()> {
         create.due = Some(TaskDue::String(due));
     }
     let task = gw.create(&create).await?;
-    println!("created task: {}", TableTask(&task));
+    println!("created task: {}", TableTask(&task, None));
     Ok(())
 }

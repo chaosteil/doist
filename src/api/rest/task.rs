@@ -186,6 +186,9 @@ pub struct DueDate {
 
 impl Display for DueDate {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.recurring {
+            write!(f, "🔁 ")?;
+        }
         if let Some(exact) = &self.exact {
             if exact.datetime >= chrono::Utc::now() {
                 write!(f, "{}", exact.datetime.bright_green())

@@ -104,6 +104,7 @@ enum EditOptions {
     Description,
     Due,
     Priority,
+    // Project, TODO: allow to edit project
     Quit,
 }
 

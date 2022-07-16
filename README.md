@@ -4,7 +4,9 @@ An unofficial [todoist](https://todoist.com/) API CLI client written in Rust.
 
 ## About
 
-[![asciicast](https://asciinema.org/a/509029.svg)](https://asciinema.org/a/509029)
+<p align="center">
+  <img width="600" src="https://raw.githubusercontent.com/chaosteil/doist/main/doist.svg">
+</p>
 
 This is an unofficial todoist CLI that focuses on being easy to use. It is
 currently not feature complete, but covers some basic common use-cases and adds

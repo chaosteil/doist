@@ -44,18 +44,18 @@ By default the list view shows todays tasks and lets you work with them:
 
 ```bash
 doist list
-# Altenatively: `doist l`
+# Alternatively: `doist l`
 ```
 
 This will allow you to type parts of the output until you select the task you
-want to work with. Selecting will allow you to select various other subcommands,
-like closing, changing due dates or even editing tasks.
+want to work with (fuzzy search). Selecting will allow you to select various
+other subcommands, like closing, changing due dates or even editing tasks.
 
 You can also disable interactive mode to pipe use the output somewhere else:
 
 ```bash
 doist list --nointeractive
-# Alternatively: `doist l --noi`
+# Alternatively: `doist l -n`
 ```
 
 ### Adding tasks

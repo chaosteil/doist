@@ -46,7 +46,7 @@ impl Default for Priority {
 
 /// Task describes a Task from the todoist API.
 ///
-/// Taken from https://developer.todoist.com/rest/v1/#tasks.
+/// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v1/#tasks).
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Task {
     pub id: TaskID,

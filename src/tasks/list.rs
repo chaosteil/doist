@@ -17,7 +17,7 @@ pub struct Params {
     #[clap(short='f', long="filter", default_value_t=String::from("(today | overdue)"))]
     filter: String,
     /// Disables interactive mode and simply displays the list.
-    #[clap(alias = "noi")]
+    #[clap(short = 'n', long = "nointeractive")]
     nointeractive: bool,
 }
 
@@ -31,7 +31,6 @@ pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
         .map(|p| (p.id, p))
         .collect();
     let tree = Tree::from_items(tasks).wrap_err("tasks do not form clean tree")?;
-    // TODO: make from_tasks sort, too
     if params.nointeractive {
         list_tasks(&tree, &projects);
     } else {

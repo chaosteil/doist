@@ -8,7 +8,7 @@
 //! $ doist list
 //! $ doist add "buy some flowers" -d tomorrow
 //! ```
-mod api;
+pub mod api;
 mod command;
 mod config;
 mod projects;

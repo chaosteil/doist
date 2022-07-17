@@ -168,7 +168,17 @@ impl Display for TableTask<'_, '_> {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ExactTime {
     pub datetime: chrono::DateTime<chrono::FixedOffset>,
-    pub timezone: String,
+    pub timezone: String, // TODO: fix for when it's a UTC offset
+}
+
+impl Display for ExactTime {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Ok(tz) = self.timezone.parse::<chrono_tz::Tz>() {
+            write!(f, "{}", self.datetime.with_timezone(&tz))
+        } else {
+            write!(f, "{}", self.datetime)
+        }
+    }
 }
 
 /// DueDate is the Due object from the todoist API.
@@ -191,9 +201,9 @@ impl Display for DueDate {
         }
         if let Some(exact) = &self.exact {
             if exact.datetime >= chrono::Utc::now() {
-                write!(f, "{}", exact.datetime.bright_green())
+                write!(f, "{}", exact.bright_green())
             } else {
-                write!(f, "{}", exact.datetime.bright_red())
+                write!(f, "{}", exact.bright_red())
             }
         } else if self.date >= chrono::Utc::now().date().naive_utc() {
             write!(f, "{}", self.human_readable.bright_green())

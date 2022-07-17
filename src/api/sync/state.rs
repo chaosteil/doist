@@ -36,7 +36,7 @@ impl State {
     // There's a couple of ways you could do this:
     // Mark each of the fields with a skip_serialising_if attribute to say when to skip them. This is much easier, but you'll have to remember to do it for every field.
     // Write your own Serde serialiser that does this custom JSON form. This is more work, but shouldn't be too bad, especially given you can still use the stock JSON deserialiser.
-    // Emptry structs aww
+    // Empty structs aww
     pub async fn load(cfg: &Config) -> color_eyre::Result<State> {
         let token = cfg
             .token

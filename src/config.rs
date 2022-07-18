@@ -2,8 +2,10 @@ use std::{fs, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use url::Url;
 
+use crate::api::rest::TODOIST_API_URL;
+
+/// Stores configuration used by the application.
 #[derive(Serialize, Deserialize)]
 pub struct Config {
     #[serde(default)]
@@ -12,10 +14,12 @@ pub struct Config {
     pub url: url::Url,
 }
 
-fn default_url() -> Url {
-    Url::parse("https://api.todoist.com/").unwrap()
+/// Returns the default URL to be used for calling the Todoist API.
+fn default_url() -> url::Url {
+    TODOIST_API_URL.clone()
 }
 
+///! Describes errors that occur when loading from configuration storage.
 #[derive(Error, Debug)]
 pub enum ConfigError {
     #[error("failed to place config into its directory")]
@@ -30,14 +34,22 @@ pub enum ConfigError {
     SaveFormat(#[from] toml::ser::Error),
 }
 
-// Defines the configuration filename inside the config directory.
+/// Defines the configuration filename inside the config directory.
 const CONFIG_FILE: &str = "config.toml";
 
+/// The name of the directories where configuration is stored.
+const XDG_PREFIX: &str = "doist";
+
 impl Config {
+    /// Returns the name of the directories that are used for the configuration.
     fn config_dir() -> Result<xdg::BaseDirectories, xdg::BaseDirectoriesError> {
-        xdg::BaseDirectories::with_prefix("doist")
+        xdg::BaseDirectories::with_prefix(XDG_PREFIX)
     }
 
+    /// Load configuration from storage, if it exists.
+    ///
+    /// Tries to load configuration from storage, but If configuration does not exist, it will
+    /// initialize a default configuration.
     pub fn load() -> Result<Config, ConfigError> {
         let file = Self::config_dir()?.get_config_file(CONFIG_FILE);
         let data = match fs::read_to_string(&file) {
@@ -51,6 +63,7 @@ impl Config {
         Ok(config)
     }
 
+    /// Saves the current configuration to storage.
     pub fn save(&self) -> Result<(), ConfigError> {
         let dir = Self::config_dir()?;
         let file = dir

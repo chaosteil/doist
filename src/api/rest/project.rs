@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 pub type ProjectID = usize;
 pub type ProjectSyncID = usize;
 
+/// Project as described by the Todoist API.
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Project {
     pub id: ProjectID,

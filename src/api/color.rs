@@ -1,3 +1,4 @@
+/// Maps the color number used by the Todoist API to a specific color name.
 #[derive(
     Debug, serde_repr::Serialize_repr, serde_repr::Deserialize_repr, PartialEq, Eq, Ord, PartialOrd,
 )]

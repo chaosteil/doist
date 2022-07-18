@@ -2,18 +2,31 @@ use color_eyre::{
     eyre::{eyre, WrapErr},
     Result,
 };
+use lazy_static::lazy_static;
 use reqwest::{Client, RequestBuilder, StatusCode};
 use serde::{de::DeserializeOwned, Serialize};
 
 use super::{CreateTask, Project, ProjectID, Task, TaskDue, TaskID, UpdateTask};
 
+/// Makes network calls to the Todoist API and returns structs that can then be worked with.
 pub struct Gateway {
     client: Client,
     token: String,
     url: url::Url,
 }
 
+lazy_static! {
+    /// The default URL that specifies the endpont to use for the Todoist API.
+    pub static ref TODOIST_API_URL: url::Url = {
+        url::Url::parse("https://api.todoist.com/").unwrap()
+    };
+}
+
 impl Gateway {
+    /// Create a new [`Gateway`].
+    ///
+    /// * `token` - the API token used for network calls.
+    /// * `url` - the base URL to call. See [`struct@TODOIST_API_URL`]
     pub fn new(token: &str, url: url::Url) -> Gateway {
         Gateway {
             client: Client::new(),
@@ -22,12 +35,18 @@ impl Gateway {
         }
     }
 
+    /// Retuns a [`Task`].
+    ///
+    /// * `id` - the ID as used by the Todoist API.
     pub async fn task(&self, id: TaskID) -> Result<Task> {
         self.get::<(), _>(&format!("rest/v1/tasks/{}", id), None)
             .await
             .wrap_err("unable to get task")
     }
 
+    /// Returns a list of tasks as given by the API.
+    ///
+    /// * `filter` - a filter query as described in the [documentation](https://todoist.com/help/articles/205248842).
     pub async fn tasks(&self, filter: Option<&str>) -> Result<Vec<Task>> {
         self.get(
             "rest/v1/tasks",
@@ -37,6 +56,9 @@ impl Gateway {
         .wrap_err("unable to get tasks")
     }
 
+    /// Closes a task.
+    ///
+    /// Equivalent to pushing the circle in the UI.
     pub async fn close(&self, id: TaskID) -> Result<()> {
         self.post_empty(
             &format!("rest/v1/tasks/{}/close", id),
@@ -73,6 +95,7 @@ impl Gateway {
             .ok_or_else(|| eyre!("Unable to create task"))
     }
 
+    /// Updates a task with the data as specified in UpdateTask.
     pub async fn update(&self, id: TaskID, task: &UpdateTask) -> Result<()> {
         self.post_empty(&format!("rest/v1/tasks/{}", id), &task)
             .await
@@ -80,18 +103,23 @@ impl Gateway {
         Ok(())
     }
 
+    /// Returns the list of Projects.
     pub async fn projects(&self) -> Result<Vec<Project>> {
         self.get::<(), _>("rest/v1/projects", None)
             .await
             .wrap_err("unable to get projects")
     }
 
+    /// Returns details about a single project.
+    ///
+    /// * `id` - the ID as used by the Todoist API.
     pub async fn _project(&self, id: ProjectID) -> Result<Project> {
         self.get::<(), _>(&format!("rest/v1/project/{}", id), None)
             .await
             .wrap_err("unable to get project")
     }
 
+    /// Makes a GET request to the Todoist API with an optional query.
     async fn get<'a, T: 'a + Serialize, R: DeserializeOwned>(
         &self,
         path: &str,
@@ -111,11 +139,7 @@ impl Gateway {
             .ok_or_else(|| eyre!("Invalid response from API"))
     }
 
-    async fn post_empty<T: Serialize>(&self, path: &str, content: &T) -> Result<()> {
-        self.post::<_, String>(path, content).await?;
-        Ok(())
-    }
-
+    /// Sends a POST request to the Todoist API with the given content.
     async fn post<T: Serialize, R: DeserializeOwned>(
         &self,
         path: &str,
@@ -130,8 +154,15 @@ impl Gateway {
         )
         .await
     }
+
+    /// Same as [`Gateway::post`], but doesn't require content to be set for the POST request.
+    async fn post_empty<T: Serialize>(&self, path: &str, content: &T) -> Result<()> {
+        self.post::<_, String>(path, content).await?;
+        Ok(())
+    }
 }
 
+/// Does the actual call to the Todoist API and handles error handling.
 async fn handle_req<R: DeserializeOwned>(req: RequestBuilder) -> Result<Option<R>> {
     // TODO: implement retries/backoffs
     let resp = req.send().await.wrap_err("Unable to send request")?;

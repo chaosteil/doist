@@ -6,7 +6,7 @@ use crate::api::{self, rest::Gateway};
 
 #[derive(clap::Parser, Debug, Deserialize, Serialize)]
 pub struct Params {
-    /// The Task ID as provided from the todoist API. Use `list` to find out what ID your task has.
+    /// The Task ID as provided from the Todoist API. Use `list` to find out what ID your task has.
     pub id: api::rest::TaskID,
     /// Complete will completely close a task, even if it's recurring.
     /// Since the REST API does not support completely closing tasks, this will change the due date

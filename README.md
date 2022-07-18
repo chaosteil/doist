@@ -1,6 +1,6 @@
-# doist - todoist CLI Client
+# doist - Todoist CLI Client
 
-An unofficial [todoist](https://todoist.com/) API CLI client written in Rust.
+An unofficial [Todoist](https://todoist.com/) API CLI client written in Rust.
 
 ## About
 
@@ -8,7 +8,7 @@ An unofficial [todoist](https://todoist.com/) API CLI client written in Rust.
   <img width="600" src="https://raw.githubusercontent.com/chaosteil/doist/main/doist.svg">
 </p>
 
-This is an unofficial todoist CLI that focuses on being easy to use. It is
+This is an unofficial Todoist CLI that focuses on being easy to use. It is
 currently not feature complete, but covers some basic common use-cases and adds
 more as we go along.
 
@@ -26,7 +26,7 @@ More options coming eventually.
 
 ### Auth
 
-First, set up your API token. Go into your todoist settings, go to
+First, set up your API token. Go into your Todoist settings, go to
 `Integrations` and copy out the `API token`. Plug it into the tool:
 
 ```bash

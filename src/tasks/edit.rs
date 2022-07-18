@@ -11,7 +11,7 @@ use crate::{
 
 #[derive(clap::Parser, Debug, Deserialize, Serialize)]
 pub struct Params {
-    /// The Task ID as provided from the todoist API. Use `list` to find out what ID your task has.
+    /// The Task ID as provided from the Todoist API. Use `list` to find out what ID your task has.
     pub id: api::rest::TaskID,
     pub name: Option<String>,
     #[clap(short = 'd')]

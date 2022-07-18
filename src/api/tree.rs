@@ -1,3 +1,8 @@
+//! Maps Todoist API elements to the Tree that they represent.
+//!
+//! Todoist API items have their own ID and sometimes a parent ID. Using this information we can
+//! construct a tree of items and their subitems. This is just a dirty implementation to get a tree
+//! data structure out of that.
 use color_eyre::{eyre::eyre, Result};
 use std::{
     cell::RefCell,

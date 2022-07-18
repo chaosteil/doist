@@ -2,6 +2,7 @@ use crate::api::rest::Priority as RESTPriority;
 use color_eyre::eyre::eyre;
 use serde::{Deserialize, Serialize};
 
+/// Maps priority from arguments to API priorities.
 #[derive(clap::ArgEnum, Debug, Copy, Clone, Deserialize, Serialize)]
 pub enum Priority {
     #[clap(name = "1")]

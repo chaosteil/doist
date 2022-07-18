@@ -1,5 +1,7 @@
 use serde::{Deserialize, Deserializer};
 
+/// When deserializing and the content is a zero, it returns [`Option::None`] otherwise
+/// [`Option::Some`] with the value that was deserialized.
 pub(crate) fn deserialize_zero_to_none<'de, D, T: Deserialize<'de> + num_traits::Zero>(
     deserializer: D,
 ) -> Result<Option<T>, D::Error>

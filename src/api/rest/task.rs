@@ -14,7 +14,7 @@ pub type SectionID = usize;
 pub type LabelID = usize;
 pub type UserID = usize;
 
-/// Priority as is given from the todoist API.
+/// Priority as is given from the Todoist API.
 ///
 /// 1 for Normal up to 4 for Urgent.
 #[derive(Debug, Copy, Clone, Serialize_repr, Deserialize_repr, PartialEq, Eq, PartialOrd, Ord)]
@@ -44,7 +44,7 @@ impl Default for Priority {
     }
 }
 
-/// Task describes a Task from the todoist API.
+/// Task describes a Task from the Todoist API.
 ///
 /// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v1/#tasks).
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
@@ -79,6 +79,7 @@ impl Treeable for Task {
     }
 }
 
+/// Used to display full information about a Task.
 pub struct FullTask<'a, 'b>(pub &'a Task, pub Option<&'b Project>);
 
 impl Display for FullTask<'_, '_> {
@@ -102,6 +103,7 @@ impl Display for FullTask<'_, '_> {
 }
 
 impl Ord for Task {
+    /// Sorts on a best-attempt to make it sort similar to the Todoist UI.
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         // Exact times ignore even priority in the UI
         match (
@@ -143,6 +145,7 @@ impl PartialOrd for Task {
     }
 }
 
+/// Used to display task as an item in a list.
 pub struct TableTask<'a, 'b>(pub &'a Task, pub Option<&'b Project>);
 
 impl Display for TableTask<'_, '_> {
@@ -181,7 +184,7 @@ impl Display for ExactTime {
     }
 }
 
-/// DueDate is the Due object from the todoist API.
+/// DueDate is the Due object from the Todoist API.
 ///
 /// Mostly contains human-readable content for easier display.
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -213,6 +216,7 @@ impl Display for DueDate {
     }
 }
 
+/// Human representation of the due date.
 #[derive(Debug, Serialize, Deserialize)]
 pub enum TaskDue {
     #[serde(rename = "due_string")]
@@ -223,6 +227,7 @@ pub enum TaskDue {
     DateTime(chrono::DateTime<chrono::Utc>),
 }
 
+/// Command used with [`super::Gateway::create`] to create a new Task.
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct CreateTask {
     pub content: String,
@@ -239,6 +244,7 @@ pub struct CreateTask {
     pub assignee: Option<UserID>,
 }
 
+/// Command used with [`super::Gateway::update`] to update a Task.
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct UpdateTask {
     pub content: Option<String>,

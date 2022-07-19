@@ -58,6 +58,17 @@ doist list --nointeractive
 # Alternatively: `doist l -n`
 ```
 
+By default all interactive commands have a filter applied to show the most
+relevant tasks. See the
+[documentation](https://todoist.com/help/articles/introduction-to-filters) to
+see what inputs are accepted. To then use the filter, add it to the command
+parameters:
+
+```bash
+doist list --filter "all"
+# Alternatively: `doist l -f all`
+```
+
 ### Adding tasks
 
 A quick way to add a task is:
@@ -65,6 +76,23 @@ A quick way to add a task is:
 ```bash
 doist add "Do the laundry" --due "tomorrow"
 # Alternatively: `doist a "Do the laundry" -d tomorrow`
+```
+
+### Closing tasks
+
+A quick way to close one of todays tasks is:
+
+```bash
+doist close
+# Alternatively: `doist c
+```
+
+And then fuzzy finding the task you want to close. Submitting the ID directly
+also works if you're more comfortable with that:
+
+```bash
+doist close "BIG_ID_FROM_API"
+# Alternatively: `doist c BIG_ID_FROM_API
 ```
 
 ### Help

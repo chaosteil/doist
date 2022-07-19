@@ -1,36 +1,74 @@
 use std::collections::HashMap;
 
-use color_eyre::{eyre::WrapErr, Result};
+use color_eyre::{eyre::eyre, eyre::WrapErr, Result};
 
 use crate::{
     api::{
-        rest::{FullTask, Gateway, Project, ProjectID, TableTask, Task},
+        rest::{FullTask, Gateway, Project, ProjectID, TableTask, Task, TaskID},
         tree::Tree,
     },
     tasks::{close, edit},
 };
 use strum::{Display, EnumVariantNames, FromRepr, VariantNames};
 
+const DEFAULT_FILTER: &str = "(today | overdue)";
+
 #[derive(clap::Parser, Debug)]
 pub struct Params {
-    /// Specify a filter query to run against the Todoist API.
-    #[clap(short='f', long="filter", default_value_t=String::from("(today | overdue)"))]
-    filter: String,
+    #[clap(flatten)]
+    filter: Filter,
     /// Disables interactive mode and simply displays the list.
     #[clap(short = 'n', long = "nointeractive")]
     nointeractive: bool,
 }
 
+#[derive(clap::Parser, Debug)]
+pub struct Filter {
+    /// When selecting tasks, this will specify a filter query to run against the Todoist API to narrow down possibilities.
+    #[clap(short='f', long="filter", default_value_t=String::from(DEFAULT_FILTER))]
+    filter: String,
+}
+
+/// TaskOrInteractive is a helper struct to be embedded into other Params so that they can perform
+/// selections based on Task ID or selecting interactively.
+#[derive(clap::Parser, Debug)]
+pub struct TaskOrInteractive {
+    /// The Task ID as provided from the Todoist API. Use `list` to find out what ID your task has.
+    /// If omitted, will interactively select task.
+    id: Option<TaskID>,
+    #[clap(flatten)]
+    filter: Filter,
+}
+
+impl TaskOrInteractive {
+    pub fn with_id(id: TaskID) -> Self {
+        Self {
+            id: Some(id),
+            filter: Filter {
+                filter: DEFAULT_FILTER.to_string(),
+            },
+        }
+    }
+    pub async fn task_id(&self, gw: &Gateway) -> Result<TaskID> {
+        match self.id {
+            Some(id) => Ok(id),
+            None => select_task(Some(&self.filter.filter), gw)
+                .await?
+                .map(|t| t.id)
+                .ok_or_else(|| eyre!("no task selected")),
+        }
+    }
+}
+
+impl From<TaskID> for TaskOrInteractive {
+    fn from(id: TaskID) -> Self {
+        Self::with_id(id)
+    }
+}
+
 /// List lists the tasks of the current user accessing the gateway with the given filter.
 pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
-    let tasks = gw.tasks(Some(&params.filter)).await?;
-    let projects = gw
-        .projects()
-        .await?
-        .into_iter()
-        .map(|p| (p.id, p))
-        .collect();
-    let tree = Tree::from_items(tasks).wrap_err("tasks do not form clean tree")?;
+    let (tree, projects) = fetch_tree(Some(&params.filter.filter), gw).await?;
     if params.nointeractive {
         list_tasks(&tree, &projects);
     } else {
@@ -40,6 +78,32 @@ pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
         }
     }
     Ok(())
+}
+
+pub async fn select_task(filter: Option<&str>, gw: &Gateway) -> Result<Option<Tree<Task>>> {
+    let (mut tree, projects) = fetch_tree(filter, gw).await?;
+    // TODO: fix getter for subtasks
+    let task = get_interactive_tasks(&tree, &projects)?
+        .and_then(|task| tree.iter().position(|t| t == task))
+        .map(|t| tree.swap_remove(t));
+    Ok(task)
+}
+
+async fn fetch_tree(
+    filter: Option<&str>,
+    gw: &Gateway,
+) -> Result<(Vec<Tree<Task>>, HashMap<ProjectID, Project>)> {
+    let tasks = gw.tasks(filter).await?;
+    let projects = gw
+        .projects()
+        .await?
+        .into_iter()
+        .map(|p| (p.id, p))
+        .collect();
+    Ok((
+        Tree::from_items(tasks).wrap_err("tasks do not form clean tree")?,
+        projects,
+    ))
 }
 
 pub fn get_interactive_tasks<'a, 'b>(
@@ -94,7 +158,7 @@ async fn select_task_option(
         TaskOptions::Close => {
             close::close(
                 close::Params {
-                    id: task.id,
+                    task: task.id.into(),
                     complete: false,
                 },
                 gw,
@@ -104,7 +168,7 @@ async fn select_task_option(
         TaskOptions::Complete => {
             close::close(
                 close::Params {
-                    id: task.id,
+                    task: task.id.into(),
                     complete: true,
                 },
                 gw,

@@ -1,5 +1,4 @@
 use color_eyre::Result;
-use serde::{Deserialize, Serialize};
 
 use crate::{
     api::{
@@ -9,23 +8,29 @@ use crate::{
     tasks::Priority,
 };
 
-#[derive(clap::Parser, Debug, Deserialize, Serialize)]
+use super::list::TaskOrInteractive;
+
+#[derive(clap::Parser, Debug)]
 pub struct Params {
-    /// The Task ID as provided from the Todoist API. Use `list` to find out what ID your task has.
-    pub id: api::rest::TaskID,
+    #[clap(flatten)]
+    pub task: TaskOrInteractive,
+    // Name of a task
+    #[clap(short = 'n', long = "name")]
     pub name: Option<String>,
-    #[clap(short = 'd')]
+    #[clap(short = 'd', long = "due")]
     pub due: Option<String>,
+    // Description of a task.
+    #[clap(long = "desc")]
     pub desc: Option<String>,
     /// Sets the priority on the task. The lower the priority the more urgent the task.
-    #[clap(value_enum)]
+    #[clap(value_enum, short = 'p', long = "priority")]
     pub priority: Option<Priority>,
 }
 
 impl Params {
     pub fn new(id: api::rest::TaskID) -> Self {
         Self {
-            id,
+            task: TaskOrInteractive::with_id(id),
             name: None,
             due: None,
             desc: None,
@@ -44,5 +49,5 @@ pub async fn edit(params: Params, gw: &Gateway) -> Result<()> {
     if let Some(due) = params.due {
         update.due = Some(TaskDue::String(due))
     }
-    gw.update(params.id, &update).await
+    gw.update(params.task.task_id(gw).await?, &update).await
 }

@@ -110,6 +110,9 @@ pub fn get_interactive_tasks<'a, 'b>(
     tree: &'a [Tree<Task>],
     projects: &'b HashMap<ProjectID, Project>,
 ) -> Result<Option<&'a Tree<Task>>> {
+    if tree.is_empty() {
+        return Err(eyre!("no tasks were found using the current filter"));
+    }
     let result = dialoguer::FuzzySelect::with_theme(&dialoguer::theme::ColorfulTheme::default())
         .items(
             &tree

@@ -69,6 +69,7 @@ fn list_tasks(tree: &[Tree<Task>], projects: &HashMap<ProjectID, Project>) {
 #[derive(Display, FromRepr, EnumVariantNames)]
 enum TaskOptions {
     Close,
+    Complete,
     Edit,
     Quit,
 }
@@ -95,6 +96,16 @@ async fn select_task_option(
                 close::Params {
                     id: task.id,
                     complete: false,
+                },
+                gw,
+            )
+            .await?
+        }
+        TaskOptions::Complete => {
+            close::close(
+                close::Params {
+                    id: task.id,
+                    complete: true,
                 },
                 gw,
             )

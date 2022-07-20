@@ -1,3 +1,4 @@
+use chrono::Utc;
 use color_eyre::{
     eyre::{eyre, WrapErr},
     Result,
@@ -77,7 +78,7 @@ impl Gateway {
         self.update(
             id,
             &UpdateTask {
-                due: Some(TaskDue::String("today".to_string())),
+                due: Some(TaskDue::DateTime(Utc::now())),
                 ..Default::default()
             },
         )

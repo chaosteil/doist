@@ -4,7 +4,7 @@ use std::fmt::Display;
 use crate::api::deserialize::deserialize_zero_to_none;
 use crate::api::tree::Treeable;
 use owo_colors::OwoColorize;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
 use super::{Project, ProjectID};
@@ -66,6 +66,7 @@ pub struct Task {
     pub assignee: Option<UserID>,
     #[serde(deserialize_with = "deserialize_zero_to_none")]
     pub assigner: Option<UserID>, // TODO: can be 0 -> map to None?
+    #[serde(serialize_with = "todoist_rfc3339")]
     pub created: chrono::DateTime<chrono::Utc>,
 }
 
@@ -223,8 +224,18 @@ pub enum TaskDue {
     String(String),
     #[serde(rename = "due_date")]
     Date(String), // TODO: chrono day
-    #[serde(rename = "due_datetime")]
+    #[serde(rename = "due_datetime", serialize_with = "todoist_rfc3339")]
     DateTime(chrono::DateTime<chrono::Utc>),
+}
+/// This function is there to serialize the datetime into something that the Todoist API can
+/// understand, as it doesn't quite implement the full rfc3339 spec and breaks with the default
+/// chrono formatter.
+fn todoist_rfc3339<S>(dt: &chrono::DateTime<chrono::Utc>, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let dt = dt.format("%Y-%m-%dT%H:%M:%SZ").to_string();
+    serializer.serialize_str(&dt)
 }
 
 /// Command used with [`super::Gateway::create`] to create a new Task.
@@ -247,13 +258,19 @@ pub struct CreateTask {
 /// Command used with [`super::Gateway::update`] to update a Task.
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct UpdateTask {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub label_ids: Option<Vec<LabelID>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub priority: Option<Priority>,
-    #[serde(flatten)]
+    #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub due: Option<TaskDue>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub due_lang: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub assignee: Option<UserID>,
 }
 

@@ -22,6 +22,7 @@ pub trait Treeable: std::fmt::Debug + std::cmp::Ord {
 pub struct Tree<T: Treeable> {
     pub item: T,
     pub subitems: Vec<Tree<T>>,
+    pub depth: usize,
 }
 
 impl<T: Treeable> Deref for Tree<T> {
@@ -53,7 +54,7 @@ struct TreeBuilder<Treeable> {
 }
 
 impl<T: Treeable> TreeBuilder<T> {
-    fn finalize(self) -> Tree<T> {
+    fn finalize(self, depth: usize) -> Tree<T> {
         let subitems: Vec<Tree<T>> = self
             .subitems
             .into_iter()
@@ -61,24 +62,36 @@ impl<T: Treeable> TreeBuilder<T> {
                 Rc::try_unwrap(c)
                     .expect("should consume single Rc")
                     .into_inner()
-                    .finalize()
+                    .finalize(depth + 1)
             })
             .collect();
         Tree {
             item: self.item,
             subitems,
+            depth,
         }
     }
 }
 
 impl<T: Treeable + std::cmp::Eq> Tree<T> {
+    pub fn new(item: T) -> Self {
+        Self {
+            item,
+            subitems: vec![],
+            depth: 0,
+        }
+    }
     /// Synthesizes a Tree out of a list of [`Treeable`] items.
     ///
     /// The main caveat here is that each item in the list of items must:
     /// 1. Have a unique ID
     /// 2. Not contain circular references and
     /// 3. If a parent ID exists, the actual parent must also exist.
+    ///
+    /// TODO: there is a case where a filtered todoist API will return only the subtasks and not
+    /// its parents, thus missing the whole tree might be solved by dynamically fetching parents?
     pub fn from_items(items: Vec<T>) -> Result<Vec<Tree<T>>> {
+        // Split into things without parents and things with parents
         let (top_level_items, mut subitems): (VecDeque<_>, VecDeque<_>) = items
             .into_iter()
             .map(|item| {
@@ -90,6 +103,7 @@ impl<T: Treeable + std::cmp::Eq> Tree<T> {
             })
             .partition(|item| item.borrow().item.parent_id().is_none());
 
+        // Create tree builder out of parents, this is where we'll slowly attach new items to
         let mut items: HashMap<_, Rc<RefCell<TreeBuilder<T>>>> = top_level_items
             .into_iter()
             .map(|item| (item.borrow().item.id(), item.clone()))
@@ -111,10 +125,12 @@ impl<T: Treeable + std::cmp::Eq> Tree<T> {
                 continue;
             }
             fails = 0;
+            // Get the parent, and add our entry
             parent.and_modify(|entry| {
                 subitem.borrow_mut().parent = Some(());
                 entry.borrow_mut().subitems.push(subitem.clone())
             });
+            // This item is now something that can be assigned as a parent
             items.insert(subitem.borrow().item.id(), subitem.clone());
         }
 
@@ -130,13 +146,21 @@ impl<T: Treeable + std::cmp::Eq> Tree<T> {
                 Ok(Rc::try_unwrap(c)
                     .map_err(|_| eyre!("Expected single item reference"))?
                     .into_inner()
-                    .finalize())
+                    .finalize(0))
             })
             .collect();
         items.map(|mut f| {
             f.sort();
             f
         })
+    }
+
+    pub fn flatten(&self) -> Vec<&Tree<T>> {
+        let mut items = vec![self];
+        for item in &self.subitems {
+            items.extend(item.flatten())
+        }
+        items
     }
 }
 
@@ -200,9 +224,13 @@ mod tests {
         let trees = Tree::from_items(tasks).unwrap();
         assert_eq!(trees.len(), 1);
         assert_eq!(trees[0].item.id, 1);
+        assert_eq!(trees[0].depth, 0);
         assert_eq!(trees[0].subitems[0].item.id, 2);
+        assert_eq!(trees[0].subitems[0].depth, 1);
         assert_eq!(trees[0].subitems[0].subitems[0].item.id, 3);
+        assert_eq!(trees[0].subitems[0].subitems[0].depth, 2);
         assert_eq!(trees[0].subitems[0].subitems[0].subitems[0].item.id, 4);
+        assert_eq!(trees[0].subitems[0].subitems[0].subitems[0].depth, 3);
     }
 
     #[test]

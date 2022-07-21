@@ -1,8 +1,8 @@
 use core::fmt;
 use std::fmt::Display;
 
-use crate::api::deserialize::deserialize_zero_to_none;
 use crate::api::tree::Treeable;
+use crate::api::{deserialize::deserialize_zero_to_none, tree::Tree};
 use owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize, Serializer};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -147,13 +147,19 @@ impl PartialOrd for Task {
 }
 
 /// Used to display task as an item in a list.
-pub struct TableTask<'a, 'b>(pub &'a Task, pub Option<&'b Project>);
+pub struct TableTask<'a, 'b>(pub &'a Tree<Task>, pub Option<&'b Project>);
 
 impl Display for TableTask<'_, '_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let subtask_padding = if self.0.depth > 0 {
+            format!("{}⌞ ", "  ".repeat(self.0.depth))
+        } else {
+            "".to_string()
+        };
         write!(
             f,
-            "{} {} {}",
+            "{}{} {} {}",
+            subtask_padding,
             self.0.id.bright_yellow(),
             self.0.priority,
             self.0.content.default_color(),

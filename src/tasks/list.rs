@@ -82,7 +82,6 @@ pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
 
 pub async fn select_task(filter: Option<&str>, gw: &Gateway) -> Result<Option<Tree<Task>>> {
     let (mut tree, projects) = fetch_tree(filter, gw).await?;
-    // TODO: fix getter for subtasks
     let task = get_interactive_tasks(&tree, &projects)?
         .and_then(|task| tree.iter().position(|t| t == task))
         .map(|t| tree.swap_remove(t));
@@ -113,9 +112,10 @@ pub fn get_interactive_tasks<'a, 'b>(
     if tree.is_empty() {
         return Err(eyre!("no tasks were found using the current filter"));
     }
+    let items = tree.iter().flat_map(Tree::flatten).collect::<Vec<_>>();
     let result = dialoguer::FuzzySelect::with_theme(&dialoguer::theme::ColorfulTheme::default())
         .items(
-            &tree
+            &items
                 .iter()
                 .map(|t| TableTask(t, projects.get(&t.project_id)))
                 .collect::<Vec<_>>(),
@@ -124,12 +124,13 @@ pub fn get_interactive_tasks<'a, 'b>(
         .default(0)
         .interact_opt()
         .wrap_err("Unable to make a selection")?;
-    Ok(result.map(|index| &tree[index]))
+    Ok(result.map(|index| items[index]))
 }
 
 fn list_tasks(tree: &[Tree<Task>], projects: &HashMap<ProjectID, Project>) {
     for task in tree.iter() {
         println!("{}", TableTask(task, projects.get(&task.project_id)));
+        list_tasks(&task.subitems, projects);
     }
 }
 

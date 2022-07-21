@@ -2,7 +2,10 @@ use color_eyre::Result;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    api::rest::{CreateTask, Gateway, TableTask, TaskDue},
+    api::{
+        rest::{CreateTask, Gateway, TableTask, TaskDue},
+        tree::Tree,
+    },
     tasks::Priority,
 };
 
@@ -33,6 +36,6 @@ pub async fn add(params: Params, gw: &Gateway) -> Result<()> {
         create.due = Some(TaskDue::String(due));
     }
     let task = gw.create(&create).await?;
-    println!("created task: {}", TableTask(&task, None));
+    println!("created task: {}", TableTask(&Tree::new(task), None));
     Ok(())
 }

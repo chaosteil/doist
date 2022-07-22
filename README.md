@@ -1,7 +1,7 @@
 # doist - Todoist CLI Client
 
-![Crates.io](https://img.shields.io/crates/v/doist)
-![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/chaosteil/doist/CI/main)
+[![Crates.io](https://img.shields.io/crates/v/doist)](https://crates.io/crates/doist)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/chaosteil/doist/CI/main)](https://github.com/chaosteil/doist/actions)
 
 An unofficial [Todoist](https://todoist.com/) API CLI client written in Rust.
 

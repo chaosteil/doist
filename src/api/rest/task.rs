@@ -7,10 +7,9 @@ use owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize, Serializer};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use super::{Project, ProjectID};
+use super::{Project, ProjectID, Section, SectionID};
 
 pub type TaskID = usize;
-pub type SectionID = usize;
 pub type LabelID = usize;
 pub type UserID = usize;
 
@@ -52,7 +51,7 @@ pub struct Task {
     pub id: TaskID,
     pub project_id: ProjectID,
     #[serde(deserialize_with = "deserialize_zero_to_none")]
-    pub section_id: Option<SectionID>, // TODO: can be 0 -> map to None?
+    pub section_id: Option<SectionID>,
     pub content: String,
     pub description: String,
     pub completed: bool,
@@ -65,7 +64,7 @@ pub struct Task {
     pub comment_count: usize,
     pub assignee: Option<UserID>,
     #[serde(deserialize_with = "deserialize_zero_to_none")]
-    pub assigner: Option<UserID>, // TODO: can be 0 -> map to None?
+    pub assigner: Option<UserID>,
     #[serde(serialize_with = "todoist_rfc3339")]
     pub created: chrono::DateTime<chrono::Utc>,
 }
@@ -81,9 +80,13 @@ impl Treeable for Task {
 }
 
 /// Used to display full information about a Task.
-pub struct FullTask<'a, 'b>(pub &'a Task, pub Option<&'b Project>);
+pub struct FullTask<'a, 'b, 'c>(
+    pub &'a Task,
+    pub Option<&'b Project>,
+    pub Option<&'c Section>,
+);
 
-impl Display for FullTask<'_, '_> {
+impl Display for FullTask<'_, '_, '_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -98,6 +101,9 @@ impl Display for FullTask<'_, '_> {
         }
         if let Some(project) = &self.1 {
             writeln!(f, "Project: {}", project.name)?;
+        }
+        if let Some(section) = &self.2 {
+            writeln!(f, "Section: {}", section)?;
         }
         Ok(())
     }
@@ -147,10 +153,15 @@ impl PartialOrd for Task {
 }
 
 /// Used to display task as an item in a list.
-pub struct TableTask<'a, 'b>(pub &'a Tree<Task>, pub Option<&'b Project>);
+pub struct TableTask<'a, 'b, 'c>(
+    pub &'a Tree<Task>,
+    pub Option<&'b Project>,
+    pub Option<&'c Section>,
+);
 
-impl Display for TableTask<'_, '_> {
+impl Display for TableTask<'_, '_, '_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let TableTask::<'_, '_, '_>(task, project, section) = self;
         let subtask_padding = if self.0.depth > 0 {
             format!("{}⌞ ", "  ".repeat(self.0.depth))
         } else {
@@ -160,15 +171,19 @@ impl Display for TableTask<'_, '_> {
             f,
             "{}{} {} {}",
             subtask_padding,
-            self.0.id.bright_yellow(),
-            self.0.priority,
-            self.0.content.default_color(),
+            task.id.bright_yellow(),
+            task.priority,
+            task.content.default_color(),
         )?;
-        if let Some(due) = &self.0.due {
+        if let Some(due) = &task.due {
             write!(f, " {}", due)?;
         }
-        if let Some(p) = &self.1 {
-            write!(f, " [{}]", p.name)?;
+        if let Some(p) = &project {
+            write!(f, " [{}", p.name)?;
+            if let Some(s) = &section {
+                write!(f, "/{}", s.name)?;
+            }
+            write!(f, "]")?;
         }
         Ok(())
     }

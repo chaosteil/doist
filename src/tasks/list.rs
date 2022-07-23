@@ -4,7 +4,9 @@ use color_eyre::{eyre::eyre, eyre::WrapErr, Result};
 
 use crate::{
     api::{
-        rest::{FullTask, Gateway, Project, ProjectID, TableTask, Task, TaskID},
+        rest::{
+            FullTask, Gateway, Project, ProjectID, Section, SectionID, TableTask, Task, TaskID,
+        },
         tree::Tree,
     },
     tasks::{close, edit},
@@ -68,12 +70,13 @@ impl From<TaskID> for TaskOrInteractive {
 
 /// List lists the tasks of the current user accessing the gateway with the given filter.
 pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
-    let (tree, projects) = fetch_tree(Some(&params.filter.filter), gw).await?;
+    // TODO: cleanup and just provide a task state
+    let (tree, projects, sections) = fetch_tree(Some(&params.filter.filter), gw).await?;
     if params.nointeractive {
-        list_tasks(&tree, &projects);
+        list_tasks(&tree, &projects, &sections);
     } else {
-        match get_interactive_tasks(&tree, &projects)? {
-            Some(task) => select_task_option(task, &projects, gw).await?,
+        match get_interactive_tasks(&tree, &projects, &sections)? {
+            Some(task) => select_task_option(task, &projects, &sections, gw).await?,
             None => println!("No selection was made"),
         }
     }
@@ -81,8 +84,8 @@ pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
 }
 
 pub async fn select_task(filter: Option<&str>, gw: &Gateway) -> Result<Option<Tree<Task>>> {
-    let (mut tree, projects) = fetch_tree(filter, gw).await?;
-    let task = get_interactive_tasks(&tree, &projects)?
+    let (mut tree, projects, sections) = fetch_tree(filter, gw).await?;
+    let task = get_interactive_tasks(&tree, &projects, &sections)?
         .and_then(|task| tree.iter().position(|t| t == task))
         .map(|t| tree.swap_remove(t));
     Ok(task)
@@ -91,7 +94,11 @@ pub async fn select_task(filter: Option<&str>, gw: &Gateway) -> Result<Option<Tr
 async fn fetch_tree(
     filter: Option<&str>,
     gw: &Gateway,
-) -> Result<(Vec<Tree<Task>>, HashMap<ProjectID, Project>)> {
+) -> Result<(
+    Vec<Tree<Task>>,
+    HashMap<ProjectID, Project>,
+    HashMap<SectionID, Section>,
+)> {
     let tasks = gw.tasks(filter).await?;
     let projects = gw
         .projects()
@@ -99,15 +106,23 @@ async fn fetch_tree(
         .into_iter()
         .map(|p| (p.id, p))
         .collect();
+    let sections = gw
+        .sections()
+        .await?
+        .into_iter()
+        .map(|p| (p.id, p))
+        .collect();
     Ok((
         Tree::from_items(tasks).wrap_err("tasks do not form clean tree")?,
         projects,
+        sections,
     ))
 }
 
 pub fn get_interactive_tasks<'a, 'b>(
     tree: &'a [Tree<Task>],
     projects: &'b HashMap<ProjectID, Project>,
+    sections: &'b HashMap<SectionID, Section>,
 ) -> Result<Option<&'a Tree<Task>>> {
     if tree.is_empty() {
         return Err(eyre!("no tasks were found using the current filter"));
@@ -117,7 +132,13 @@ pub fn get_interactive_tasks<'a, 'b>(
         .items(
             &items
                 .iter()
-                .map(|t| TableTask(t, projects.get(&t.project_id)))
+                .map(|t| {
+                    TableTask(
+                        t,
+                        projects.get(&t.project_id),
+                        t.section_id.as_ref().map(|s| sections.get(s).unwrap()),
+                    )
+                })
                 .collect::<Vec<_>>(),
         )
         .with_prompt("Select task")
@@ -127,10 +148,21 @@ pub fn get_interactive_tasks<'a, 'b>(
     Ok(result.map(|index| items[index]))
 }
 
-fn list_tasks(tree: &[Tree<Task>], projects: &HashMap<ProjectID, Project>) {
+fn list_tasks(
+    tree: &[Tree<Task>],
+    projects: &HashMap<ProjectID, Project>,
+    sections: &HashMap<SectionID, Section>,
+) {
     for task in tree.iter() {
-        println!("{}", TableTask(task, projects.get(&task.project_id)));
-        list_tasks(&task.subitems, projects);
+        println!(
+            "{}",
+            TableTask(
+                task,
+                projects.get(&task.project_id),
+                task.section_id.as_ref().map(|s| sections.get(s).unwrap())
+            )
+        );
+        list_tasks(&task.subitems, projects, sections);
     }
 }
 
@@ -145,11 +177,17 @@ enum TaskOptions {
 async fn select_task_option(
     task: &Tree<Task>,
     projects: &HashMap<ProjectID, Project>,
+    sections: &HashMap<SectionID, Section>,
     gw: &Gateway,
 ) -> Result<()> {
     println!(
         "{}",
-        FullTask(&task.item, projects.get(&task.item.project_id))
+        // TODO: make that big list struct generate these items
+        FullTask(
+            &task.item,
+            projects.get(&task.item.project_id),
+            task.section_id.as_ref().map(|s| sections.get(s).unwrap())
+        )
     );
     let result = match make_selection(TaskOptions::VARIANTS)? {
         Some(index) => TaskOptions::from_repr(index).unwrap(),

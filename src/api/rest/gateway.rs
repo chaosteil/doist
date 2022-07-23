@@ -7,7 +7,7 @@ use lazy_static::lazy_static;
 use reqwest::{Client, RequestBuilder, StatusCode};
 use serde::{de::DeserializeOwned, Serialize};
 
-use super::{CreateTask, Project, ProjectID, Task, TaskDue, TaskID, UpdateTask};
+use super::{CreateTask, Project, ProjectID, Section, Task, TaskDue, TaskID, UpdateTask};
 
 /// Makes network calls to the Todoist API and returns structs that can then be worked with.
 pub struct Gateway {
@@ -109,6 +109,13 @@ impl Gateway {
         self.get::<(), _>("rest/v1/projects", None)
             .await
             .wrap_err("unable to get projects")
+    }
+
+    /// Returns the list of all Sections.
+    pub async fn sections(&self) -> Result<Vec<Section>> {
+        self.get::<(), _>("rest/v1/sections", None)
+            .await
+            .wrap_err("unable to get sections")
     }
 
     /// Returns details about a single project.

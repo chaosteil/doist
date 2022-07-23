@@ -8,8 +8,10 @@
 //! To get started, take a look at [`Gateway`].
 mod gateway;
 mod project;
+mod section;
 mod task;
 
 pub use gateway::*;
 pub use project::*;
+pub use section::*;
 pub use task::*;

@@ -87,7 +87,7 @@ A quick way to close one of todays tasks is:
 
 ```bash
 doist close
-# Alternatively: `doist c
+# Alternatively: `doist c`
 ```
 
 And then fuzzy finding the task you want to close. Submitting the ID directly
@@ -95,7 +95,7 @@ also works if you're more comfortable with that:
 
 ```bash
 doist close "BIG_ID_FROM_API"
-# Alternatively: `doist c BIG_ID_FROM_API
+# Alternatively: `doist c BIG_ID_FROM_API`
 ```
 
 ### Help

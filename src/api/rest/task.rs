@@ -7,10 +7,9 @@ use owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize, Serializer};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use super::{Project, ProjectID, Section, SectionID};
+use super::{Label, LabelID, Project, ProjectID, Section, SectionID};
 
 pub type TaskID = usize;
-pub type LabelID = usize;
 pub type UserID = usize;
 
 /// Priority as is given from the Todoist API.
@@ -80,29 +79,42 @@ impl Treeable for Task {
 }
 
 /// Used to display full information about a Task.
-pub struct FullTask<'a, 'b, 'c>(
+pub struct FullTask<'a>(
     pub &'a Task,
-    pub Option<&'b Project>,
-    pub Option<&'c Section>,
+    pub Option<&'a Project>,
+    pub Option<&'a Section>,
+    pub Vec<&'a Label>,
 );
 
-impl Display for FullTask<'_, '_, '_> {
+impl Display for FullTask<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let FullTask::<'_>(task, project, section, labels) = self;
         write!(
             f,
             "ID: {}\nPriority: {}\nContent: {}\nDescription: {}\n",
-            self.0.id.bright_yellow(),
-            self.0.priority,
-            self.0.content.default_color(),
-            self.0.description.default_color()
+            task.id.bright_yellow(),
+            task.priority,
+            task.content.default_color(),
+            task.description.default_color()
         )?;
-        if let Some(due) = &self.0.due {
+        if let Some(due) = &task.due {
             writeln!(f, "Due: {}", due)?;
         }
-        if let Some(project) = &self.1 {
+        if !labels.is_empty() {
+            writeln!(
+                f,
+                "Labels: {}",
+                labels
+                    .iter()
+                    .map(|l| l.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )?;
+        }
+        if let Some(project) = &project {
             writeln!(f, "Project: {}", project.name)?;
         }
-        if let Some(section) = &self.2 {
+        if let Some(section) = &section {
             writeln!(f, "Section: {}", section)?;
         }
         Ok(())
@@ -153,17 +165,24 @@ impl PartialOrd for Task {
 }
 
 /// Used to display task as an item in a list.
-pub struct TableTask<'a, 'b, 'c>(
+pub struct TableTask<'a>(
     pub &'a Tree<Task>,
-    pub Option<&'b Project>,
-    pub Option<&'c Section>,
+    pub Option<&'a Project>,
+    pub Option<&'a Section>,
+    pub Vec<&'a Label>,
 );
 
-impl Display for TableTask<'_, '_, '_> {
+impl TableTask<'_> {
+    pub fn from_task(task: &Tree<Task>) -> TableTask {
+        TableTask(task, None, None, vec![])
+    }
+}
+
+impl Display for TableTask<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let TableTask::<'_, '_, '_>(task, project, section) = self;
-        let subtask_padding = if self.0.depth > 0 {
-            format!("{}⌞ ", "  ".repeat(self.0.depth))
+        let TableTask::<'_>(task, project, section, labels) = self;
+        let subtask_padding = if task.depth > 0 {
+            format!("{}⌞ ", "  ".repeat(task.depth))
         } else {
             "".to_string()
         };
@@ -177,6 +196,17 @@ impl Display for TableTask<'_, '_, '_> {
         )?;
         if let Some(due) = &task.due {
             write!(f, " {}", due)?;
+        }
+        if !labels.is_empty() {
+            write!(
+                f,
+                " {}",
+                labels
+                    .iter()
+                    .map(|l| l.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )?;
         }
         if let Some(p) = &project {
             write!(f, " [{}", p.name)?;

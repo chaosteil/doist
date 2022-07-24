@@ -7,11 +7,13 @@
 //!
 //! To get started, take a look at [`Gateway`].
 mod gateway;
+mod label;
 mod project;
 mod section;
 mod task;
 
 pub use gateway::*;
+pub use label::*;
 pub use project::*;
 pub use section::*;
 pub use task::*;

@@ -5,7 +5,8 @@ use color_eyre::{eyre::eyre, eyre::WrapErr, Result};
 use crate::{
     api::{
         rest::{
-            FullTask, Gateway, Project, ProjectID, Section, SectionID, TableTask, Task, TaskID,
+            FullTask, Gateway, Label, LabelID, Project, ProjectID, Section, SectionID, TableTask,
+            Task, TaskID,
         },
         tree::Tree,
     },
@@ -73,28 +74,22 @@ struct List {
     tasks: Vec<Tree<Task>>,
     projects: HashMap<ProjectID, Project>,
     sections: HashMap<SectionID, Section>,
+    labels: HashMap<LabelID, Label>,
 }
 
 impl List {
     async fn fetch_tree(filter: Option<&str>, gw: &Gateway) -> Result<List> {
-        let tasks = gw.tasks(filter).await?;
-        let projects = gw
-            .projects()
-            .await?
-            .into_iter()
-            .map(|p| (p.id, p))
-            .collect();
-        let sections = gw
-            .sections()
-            .await?
-            .into_iter()
-            .map(|p| (p.id, p))
-            .collect();
+        let (tasks, projects, sections, labels) =
+            tokio::try_join!(gw.tasks(filter), gw.projects(), gw.sections(), gw.labels())?;
+        let projects = projects.into_iter().map(|p| (p.id, p)).collect();
+        let sections = sections.into_iter().map(|p| (p.id, p)).collect();
+        let labels = labels.into_iter().map(|p| (p.id, p)).collect();
         let tasks = Tree::from_items(tasks).wrap_err("tasks do not form clean tree")?;
         Ok(List {
             tasks,
             projects,
             sections,
+            labels,
         })
     }
 
@@ -108,12 +103,29 @@ impl List {
             .map(|s| self.sections.get(s).unwrap())
     }
 
+    fn labels<'a>(&'a self, task: &'a Tree<Task>) -> Vec<&'a Label> {
+        task.label_ids
+            .iter()
+            .map(|l| self.labels.get(l).unwrap())
+            .collect()
+    }
+
     fn table_task<'a>(&'a self, task: &'a Tree<Task>) -> TableTask {
-        TableTask(task, self.project(task), self.section(task))
+        TableTask(
+            task,
+            self.project(task),
+            self.section(task),
+            self.labels(task),
+        )
     }
 
     fn full_task<'a>(&'a self, task: &'a Tree<Task>) -> FullTask {
-        FullTask(task, self.project(task), self.section(task))
+        FullTask(
+            task,
+            self.project(task),
+            self.section(task),
+            self.labels(task),
+        )
     }
 }
 

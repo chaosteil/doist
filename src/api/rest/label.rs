@@ -1,3 +1,4 @@
+use owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize};
 
 use crate::api::Color;
@@ -31,6 +32,6 @@ impl PartialOrd for Label {
 
 impl std::fmt::Display for Label {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "@{}", self.name)
+        format!("@{}", self.name).bright_blue().fmt(f)
     }
 }

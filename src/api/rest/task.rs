@@ -205,7 +205,7 @@ impl Display for TableTask<'_> {
                     .iter()
                     .map(|l| l.to_string())
                     .collect::<Vec<_>>()
-                    .join(", ")
+                    .join(" ")
             )?;
         }
         if let Some(p) = &project {

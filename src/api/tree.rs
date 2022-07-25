@@ -13,15 +13,20 @@ use std::{
 
 /// Treeable allows to make trees out of an ID and parent IDs.
 pub trait Treeable: std::fmt::Debug + std::cmp::Ord {
+    /// The ID of the current item.
     fn id(&self) -> usize;
+    /// The optional parent ID of the current item.
     fn parent_id(&self) -> Option<usize>;
 }
 
 /// Tree is a representation of Items as a tree.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Tree<T: Treeable> {
+    /// The item of this Tree leaf.
     pub item: T,
+    /// Additional leaves under this item.
     pub subitems: Vec<Tree<T>>,
+    /// How deep we are in this tree, useful for representation.
     pub depth: usize,
 }
 
@@ -74,6 +79,7 @@ impl<T: Treeable> TreeBuilder<T> {
 }
 
 impl<T: Treeable + std::cmp::Eq> Tree<T> {
+    /// Creates a new Tree leaf from the given item.
     pub fn new(item: T) -> Self {
         Self {
             item,
@@ -155,6 +161,7 @@ impl<T: Treeable + std::cmp::Eq> Tree<T> {
         })
     }
 
+    /// Converts a Tree to a Vector of all items and their subitems (and so on) for easier handling.
     pub fn flatten(&self) -> Vec<&Tree<T>> {
         let mut items = vec![self];
         for item in &self.subitems {

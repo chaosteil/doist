@@ -8,6 +8,7 @@
 //! $ doist list
 //! $ doist add "buy some flowers" -d tomorrow
 //! ```
+#![warn(missing_docs)]
 pub mod api;
 mod command;
 mod config;

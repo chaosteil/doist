@@ -9,7 +9,9 @@ use serde_repr::{Deserialize_repr, Serialize_repr};
 
 use super::{Label, LabelID, Project, ProjectID, Section, SectionID};
 
+/// TaskID describes the unique ID of a [`Task`].
 pub type TaskID = usize;
+/// UserID is the unique ID of a User.
 pub type UserID = usize;
 
 /// Priority as is given from the Todoist API.
@@ -18,9 +20,13 @@ pub type UserID = usize;
 #[derive(Debug, Copy, Clone, Serialize_repr, Deserialize_repr, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u8)]
 pub enum Priority {
+    /// p1 in the Todoist UI.
     Normal = 1,
+    /// p2 in the Todoist UI.
     High = 2,
+    /// p3 in the Todoist UI.
     VeryHigh = 3,
+    /// p4 in the Todoist UI.
     Urgent = 4,
 }
 
@@ -47,23 +53,39 @@ impl Default for Priority {
 /// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v1/#tasks).
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Task {
+    /// Unique ID of a Task.
     pub id: TaskID,
+    /// Shows which [`Project`] the Task belongs to.
     pub project_id: ProjectID,
+    /// Set if the Task is also in a subsection of a Project.
     #[serde(deserialize_with = "deserialize_zero_to_none")]
     pub section_id: Option<SectionID>,
+    /// The main content of the Task, also known as Task name.
     pub content: String,
+    /// Description is the description found under the content.
     pub description: String,
+    /// Completed is set if this task was completed.
     pub completed: bool,
+    /// All associated [`Label`]s to this Task.
     pub label_ids: Vec<LabelID>,
+    /// If set, this Task is a subtask of another.
     pub parent_id: Option<TaskID>,
+    /// Order the order within the subtasks of a Task.
     pub order: isize,
+    /// Priority is how urgent the task is.
     pub priority: Priority,
+    /// The due date of the Task.
     pub due: Option<DueDate>,
+    /// Links the Task to a URL in the Todoist UI.
     pub url: String,
+    /// How many comments are written for this Task.
     pub comment_count: usize,
+    /// Who this task is assigned to.
     pub assignee: Option<UserID>,
+    /// Who assigned this task to the [`Task::assignee`]
     #[serde(deserialize_with = "deserialize_zero_to_none")]
     pub assigner: Option<UserID>,
+    /// Exact date when the task was created.
     #[serde(serialize_with = "todoist_rfc3339")]
     pub created: chrono::DateTime<chrono::Utc>,
 }
@@ -173,6 +195,8 @@ pub struct TableTask<'a>(
 );
 
 impl TableTask<'_> {
+    /// Initializes a TableTask item that only displays data that is directly available from a
+    /// [`Task`].
     pub fn from_task(task: &Tree<Task>) -> TableTask {
         TableTask(task, None, None, vec![])
     }
@@ -222,8 +246,10 @@ impl Display for TableTask<'_> {
 /// ExactTime exists in DueDate if this is an exact DueDate.
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ExactTime {
+    /// Exact DateTime for when the task is due.
     pub datetime: chrono::DateTime<chrono::FixedOffset>,
-    pub timezone: String, // TODO: fix for when it's a UTC offset
+    /// Timezone string or UTC offset. // TODO: currently will not interpret correctly if it's a UTC offset.
+    pub timezone: String,
 }
 
 impl Display for ExactTime {
@@ -241,10 +267,14 @@ impl Display for ExactTime {
 /// Mostly contains human-readable content for easier display.
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct DueDate {
+    /// Human-redable form of the due date.
     #[serde(rename = "string")]
     pub human_readable: String,
+    /// The date on which the Task is due.
     pub date: chrono::NaiveDate,
+    /// Lets us know if it is recurring (reopens after close).
     pub recurring: bool,
+    /// If set, this shows the exact time the task is due.
     #[serde(flatten)]
     pub exact: Option<ExactTime>,
 }
@@ -271,10 +301,13 @@ impl Display for DueDate {
 /// Human representation of the due date.
 #[derive(Debug, Serialize, Deserialize)]
 pub enum TaskDue {
+    /// Human readable representation of the date.
     #[serde(rename = "due_string")]
     String(String),
+    /// Loose target date with no exact time. TODO: should use way to encode it as a type.
     #[serde(rename = "due_date")]
-    Date(String), // TODO: chrono day
+    Date(String),
+    /// Exact DateTime in UTC for the due date.
     #[serde(rename = "due_datetime", serialize_with = "todoist_rfc3339")]
     DateTime(chrono::DateTime<chrono::Utc>),
 }
@@ -292,35 +325,55 @@ where
 /// Command used with [`super::Gateway::create`] to create a new Task.
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct CreateTask {
+    /// Sets the [`Task::content`] on the new [`Task`].
     pub content: String,
+    /// Sets the [`Task::description`] on the new [`Task`].
     pub description: Option<String>,
+    /// Sets the [`Task::project_id`] on the new [`Task`].
     pub project_id: Option<ProjectID>,
+    /// Sets the [`Task::section_id`] on the new [`Task`].
     pub section_id: Option<SectionID>,
+    /// Sets the [`Task::parent_id`] on the new [`Task`].
     pub parent_id: Option<TaskID>,
+    /// Sets the [`Task::order`] on the new [`Task`].
     pub order: Option<isize>,
+    /// Sets the [`Task::label_ids`] on the new [`Task`].
     pub label_ids: Vec<LabelID>,
+    /// Sets the [`Task::priority`] on the new [`Task`].
     pub priority: Option<Priority>,
+    /// Sets the [`Task::due`] on the new [`Task`].
     #[serde(flatten)]
     pub due: Option<TaskDue>,
+    /// If due is [TaskDue::String], this two-letter code optionally specifies the language if it's not english.
     pub due_lang: Option<String>,
+    /// Sets the [`Task::assignee`] on the new [`Task`].
     pub assignee: Option<UserID>,
 }
 
-/// Command used with [`super::Gateway::update`] to update a Task.
+/// Command used with [`super::Gateway::update`] to update a [`Task`].
+///
+/// Each field is optional, so if something exists, that part of the [`Task`] will get overwritten.
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct UpdateTask {
+    /// Overwrites [`Task::content`] if set.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
+    /// Overwrites [`Task::description`] if set.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    /// Overwrites [`Task::label_ids`] if set.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label_ids: Option<Vec<LabelID>>,
+    /// Overwrites [`Task::priority`] if set.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub priority: Option<Priority>,
+    /// Overwrites [`Task::due`] if set.
     #[serde(flatten, skip_serializing_if = "Option::is_none")]
     pub due: Option<TaskDue>,
+    /// If due is [TaskDue::String], this two-letter code optionally specifies the language if it's not english.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub due_lang: Option<String>,
+    /// Overwrites [`Task::assignee`] if set.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub assignee: Option<UserID>,
 }

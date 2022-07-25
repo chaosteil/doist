@@ -7,6 +7,7 @@ use crate::{
 use clap::{Parser, Subcommand};
 use color_eyre::{eyre::eyre, Result};
 
+/// Args are the main entry point struct of the CLI app.
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
 pub struct Args {
@@ -14,7 +15,7 @@ pub struct Args {
     command: Commands,
 }
 
-///
+/// All commands available for the CLI app.
 #[derive(Subcommand, Debug)]
 enum Commands {
     /// Authenticates with the Todoist API.
@@ -58,6 +59,7 @@ enum ProjectCommands {
 }
 
 impl Args {
+    /// Runs the CLI app.
     pub async fn exec(self) -> Result<()> {
         let mut cfg = Config::load()?;
         match self.command {

@@ -1,4 +1,5 @@
 /// Maps the color number used by the Todoist API to a specific color name.
+#[allow(missing_docs)]
 #[derive(
     Clone,
     Copy,

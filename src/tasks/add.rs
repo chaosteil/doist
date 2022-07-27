@@ -1,14 +1,15 @@
-use color_eyre::{eyre::eyre, Result};
-use fuzzy_matcher::{skim::SkimMatcherV2, FuzzyMatcher};
+use color_eyre::Result;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     api::{
-        rest::{CreateTask, Gateway, ProjectID, TableTask, TaskDue},
+        rest::{CreateTask, Gateway, TableTask, TaskDue},
         tree::Tree,
     },
     tasks::Priority,
 };
+
+use super::project::ProjectSelect;
 
 #[derive(clap::Parser, Debug, Deserialize, Serialize)]
 pub struct Params {
@@ -26,38 +27,6 @@ pub struct Params {
     priority: Option<Priority>,
     #[clap(flatten)]
     project: ProjectSelect,
-}
-
-#[derive(clap::Args, Debug, Serialize, Deserialize)]
-struct ProjectSelect {
-    /// Assigns the project name with the closest name, if possible. Does fuzzy matching for the
-    /// name.
-    #[clap(short = 'P', long = "project")]
-    project_name: Option<String>,
-    /// ID of the project to attach this task to. Does nothing if -P is specified.
-    #[clap(long = "project_id")]
-    project_id: Option<ProjectID>,
-}
-
-impl ProjectSelect {
-    // TODO: make this reusable by edit etc. into own module
-    // TODO: make this generic over anything that has string input and todoist ID output
-    async fn project(&self, gw: &Gateway) -> Result<Option<ProjectID>> {
-        if self.project_name.is_none() {
-            return Ok(self.project_id);
-        }
-        let input = self.project_name.as_ref().unwrap();
-        let matcher = SkimMatcherV2::default();
-        let projects = gw.projects().await?;
-        let project = projects
-            .iter()
-            .filter_map(|p| matcher.fuzzy_match(&p.name, input).map(|s| (s, p.id)))
-            .max_by(|left, right| left.0.cmp(&right.0));
-        match project {
-            Some((_, id)) => Ok(Some(id)),
-            None => Err(eyre!("no suitable project found, aborting")),
-        }
-    }
 }
 
 pub async fn add(params: Params, gw: &Gateway) -> Result<()> {

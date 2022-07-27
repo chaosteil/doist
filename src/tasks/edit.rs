@@ -20,7 +20,7 @@ pub struct Params {
     #[clap(short = 'd', long = "due")]
     pub due: Option<String>,
     // Description of a task.
-    #[clap(long = "desc")]
+    #[clap(short = 'D', long = "desc")]
     pub desc: Option<String>,
     /// Sets the priority on the task. The lower the priority the more urgent the task.
     #[clap(value_enum, short = 'p', long = "priority")]

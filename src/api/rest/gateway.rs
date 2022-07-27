@@ -128,8 +128,8 @@ impl Gateway {
     /// Returns details about a single project.
     ///
     /// * `id` - the ID as used by the Todoist API.
-    pub async fn _project(&self, id: ProjectID) -> Result<Project> {
-        self.get::<(), _>(&format!("rest/v1/project/{}", id), None)
+    pub async fn project(&self, id: ProjectID) -> Result<Project> {
+        self.get::<(), _>(&format!("rest/v1/projects/{}", id), None)
             .await
             .wrap_err("unable to get project")
     }

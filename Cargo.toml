@@ -3,7 +3,7 @@ name = "doist"
 homepage = "https://github.com/chaosteil/doist"
 repository = "https://github.com/chaosteil/doist"
 authors = ["Dominykas Djacenko <chaosteil@gmail.com>"]
-version = "0.1.8"
+version = "0.1.9"
 edition = "2021"
 description = "doist is an unofficial command line app for interacting with the Todoist API"
 license = "MIT"
@@ -24,6 +24,7 @@ color-eyre = "0.6"
 config = { version = "0.13", features = ["toml"] }
 dialoguer = { version = "0.10", features = ["fuzzy-select"] }
 dirs = "4"
+fuzzy-matcher = "0.3.7"
 indicatif = "0.16"
 json-patch = "0.2"
 lazy_static = "1.4.0"

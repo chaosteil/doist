@@ -13,10 +13,13 @@ use std::{
 
 /// Treeable allows to make trees out of an ID and parent IDs.
 pub trait Treeable: std::fmt::Debug + std::cmp::Ord {
+    /// This is the ID type that will be used to generate the tree.
+    type ID: std::cmp::Eq + std::hash::Hash;
+
     /// The ID of the current item.
-    fn id(&self) -> u64;
+    fn id(&self) -> Self::ID;
     /// The optional parent ID of the current item.
-    fn parent_id(&self) -> Option<u64>;
+    fn parent_id(&self) -> Option<Self::ID>;
 }
 
 /// Tree is a representation of Items as a tree.

@@ -42,11 +42,13 @@ pub struct Project {
 }
 
 impl Treeable for Project {
+    type ID = ProjectID;
+
     fn id(&self) -> u64 {
         self.id
     }
 
-    fn parent_id(&self) -> Option<u64> {
+    fn parent_id(&self) -> Option<ProjectID> {
         self.parent_id
     }
 }

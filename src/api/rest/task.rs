@@ -92,11 +92,13 @@ pub struct Task {
 }
 
 impl Treeable for Task {
-    fn id(&self) -> u64 {
+    type ID = TaskID;
+
+    fn id(&self) -> TaskID {
         self.id
     }
 
-    fn parent_id(&self) -> Option<u64> {
+    fn parent_id(&self) -> Option<TaskID> {
         self.parent_id
     }
 }

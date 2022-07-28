@@ -8,7 +8,8 @@ use reqwest::{Client, RequestBuilder, StatusCode};
 use serde::{de::DeserializeOwned, Serialize};
 
 use super::{
-    CreateTask, Label, Project, ProjectID, Section, SectionID, Task, TaskDue, TaskID, UpdateTask,
+    CreateTask, Label, LabelID, Project, ProjectID, Section, SectionID, Task, TaskDue, TaskID,
+    UpdateTask,
 };
 
 /// Makes network calls to the Todoist API and returns structs that can then be worked with.
@@ -143,6 +144,15 @@ impl Gateway {
         self.get::<(), _>(&format!("rest/v1/sections/{}", id), None)
             .await
             .wrap_err("unable to get section")
+    }
+
+    /// Returns details about a single label.
+    ///
+    /// * `id` - the ID as used by the Todoist API.
+    pub async fn label(&self, id: LabelID) -> Result<Label> {
+        self.get::<(), _>(&format!("rest/v1/labels/{}", id), None)
+            .await
+            .wrap_err("unable to get label")
     }
 
     /// Makes a GET request to the Todoist API with an optional query.

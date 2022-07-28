@@ -3,6 +3,7 @@ pub mod add;
 pub mod close;
 pub mod edit;
 mod fuzz_select;
+mod label;
 pub mod list;
 mod priority;
 mod project;

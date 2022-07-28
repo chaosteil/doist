@@ -93,13 +93,13 @@ doist add "Party hard" --project "personal"
 # Adding section information. Will automatically attach to the correct project,
 # but setting the project will narrow it down.
 doist add "Party hard" --section "weekend"
-# Alternatively: `doist a "Party hard" -S weekend
+# Alternatively: `doist a "Party hard" -S weekend`
 doist add "Party hard" --project personal --section weekend
-# Alternatively: `doist a "Party hard" -P personal -S weekend
+# Alternatively: `doist a "Party hard" -P personal -S weekend`
 
 # Multiple labels can be provided when creating tasks as well
 doist add "Party hard" --label dance --label happy
-# Alternatively: `doist a "Party hard" -L dance -L happy
+# Alternatively: `doist a "Party hard" -L dance -L happy`
 ```
 
 Instead of providing names to be matched, you can also directly provide their

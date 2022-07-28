@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 
-use super::{timestamp::todoist_rfc3339, ProjectID, TaskID};
+use crate::api::serialize::todoist_rfc3339;
+
+use super::{ProjectID, TaskID};
 
 /// CommentID describes the unique ID of a [`Comment`].
 type CommentID = u64;

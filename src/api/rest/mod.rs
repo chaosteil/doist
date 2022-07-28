@@ -12,7 +12,6 @@ mod label;
 mod project;
 mod section;
 mod task;
-mod timestamp;
 
 pub use comment::*;
 pub use gateway::*;

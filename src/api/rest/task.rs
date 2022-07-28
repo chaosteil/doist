@@ -2,13 +2,13 @@ use core::fmt;
 use std::fmt::Display;
 
 use crate::api::tree::Treeable;
-use crate::api::{deserialize::deserialize_zero_to_none, tree::Tree};
+use crate::api::{deserialize::deserialize_zero_to_none, serialize::todoist_rfc3339, tree::Tree};
 use owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
 use super::Label;
-use super::{timestamp::todoist_rfc3339, LabelID, Project, ProjectID, Section, SectionID};
+use super::{LabelID, Project, ProjectID, Section, SectionID};
 
 /// TaskID describes the unique ID of a [`Task`].
 pub type TaskID = u64;

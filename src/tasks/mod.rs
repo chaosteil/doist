@@ -6,5 +6,6 @@ mod fuzz_select;
 pub mod list;
 mod priority;
 mod project;
+mod section;
 
 pub use priority::*;

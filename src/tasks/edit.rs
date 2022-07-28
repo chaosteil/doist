@@ -14,12 +14,12 @@ use super::list::TaskOrInteractive;
 pub struct Params {
     #[clap(flatten)]
     pub task: TaskOrInteractive,
-    // Name of a task
+    /// Name of a task
     #[clap(short = 'n', long = "name")]
     pub name: Option<String>,
     #[clap(short = 'd', long = "due")]
     pub due: Option<String>,
-    // Description of a task.
+    /// Description of a task.
     #[clap(short = 'D', long = "desc")]
     pub desc: Option<String>,
     /// Sets the priority on the task. The lower the priority the more urgent the task.

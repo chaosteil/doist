@@ -9,7 +9,7 @@ use crate::{
     tasks::Priority,
 };
 
-use super::project::ProjectSelect;
+use super::{project::ProjectSelect, section::SectionSelect};
 
 #[derive(clap::Parser, Debug, Deserialize, Serialize)]
 pub struct Params {
@@ -28,15 +28,19 @@ pub struct Params {
     priority: Option<Priority>,
     #[clap(flatten)]
     project: ProjectSelect,
+    #[clap(flatten)]
+    section: SectionSelect,
 }
 
 pub async fn add(params: Params, gw: &Gateway) -> Result<()> {
     let project_id = params.project.project(gw).await?;
+    let section_id = params.section.section(project_id, gw).await?;
     let mut create = CreateTask {
         content: params.name,
         description: params.desc,
         priority: params.priority.map(|p| p.into()),
         project_id,
+        section_id,
         ..Default::default()
     };
     if let Some(due) = params.due {
@@ -46,9 +50,14 @@ pub async fn add(params: Params, gw: &Gateway) -> Result<()> {
         Some(pid) => Some(gw.project(pid).await?),
         None => None,
     };
+    let section = match section_id {
+        Some(sid) => Some(gw.section(sid).await?),
+        None => None,
+    };
     let task = Tree::new(gw.create(&create).await?);
     let mut table = TableTask::from_task(&task);
     table.1 = project.as_ref();
+    table.2 = section.as_ref();
     println!("created task: {}", table);
     Ok(())
 }

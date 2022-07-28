@@ -14,9 +14,9 @@ use std::{
 /// Treeable allows to make trees out of an ID and parent IDs.
 pub trait Treeable: std::fmt::Debug + std::cmp::Ord {
     /// The ID of the current item.
-    fn id(&self) -> usize;
+    fn id(&self) -> u64;
     /// The optional parent ID of the current item.
-    fn parent_id(&self) -> Option<usize>;
+    fn parent_id(&self) -> Option<u64>;
 }
 
 /// Tree is a representation of Items as a tree.

@@ -8,8 +8,8 @@ use reqwest::{Client, RequestBuilder, StatusCode};
 use serde::{de::DeserializeOwned, Serialize};
 
 use super::{
-    CreateTask, Label, LabelID, Project, ProjectID, Section, SectionID, Task, TaskDue, TaskID,
-    UpdateTask,
+    Comment, CreateTask, Label, LabelID, Project, ProjectID, Section, SectionID, Task, TaskDue,
+    TaskID, UpdateTask,
 };
 
 /// Makes network calls to the Todoist API and returns structs that can then be worked with.
@@ -126,6 +126,20 @@ impl Gateway {
         self.get::<(), _>("rest/v1/labels", None)
             .await
             .wrap_err("unable to get labels")
+    }
+
+    /// Returns the list of all comments attached to the given Project.
+    pub async fn project_comments(&self, id: ProjectID) -> Result<Vec<Comment>> {
+        self.get("rest/v1/comments", Some(("project_id", id)))
+            .await
+            .wrap_err("unable to get comments")
+    }
+
+    /// Returns the list of all comments attached to the given Task.
+    pub async fn task_comments(&self, id: TaskID) -> Result<Vec<Comment>> {
+        self.get("rest/v1/comments", Some(("task_id", id)))
+            .await
+            .wrap_err("unable to get comments")
     }
 
     /// Returns details about a single project.

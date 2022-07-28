@@ -77,26 +77,40 @@ doist list --filter "all"
 A quick way to add a task is:
 
 ```bash
-doist add "Do the laundry" --due "tomorrow"
-# Alternatively: `doist a "Do the laundry" -d tomorrow`
+doist add "Do the laundry" --desc "I always forget" --due "tomorrow"
+# Alternatively: `doist a "Do the laundry" -D "I always forget" -d tomorrow`
 ```
 
-There are several things you can do to add richer information to a task. All
-inputs can be partially provided and will fuzzy match to the closest name you
-probably had in mind:
+Only the task name is required, everything else will assume a default of
+*nothing*.
+
+It's also possible to provide the task with a priority:
+
+```bash
+doist add "Party hard" --priority 1
+# Alternatively: `doist a "Party hard" -p1`
+```
+
+There are several other things you can do to add richer information to a task.
+All inputs can be partially provided and will fuzzy match to the closest name
+you probably had in mind:
 
 ```bash
 # Adding project information
 doist add "Party hard" --project "personal"
 # Alternatively: `doist a "Party hard" -P personal`
+```
 
+```bash
 # Adding section information. Will automatically attach to the correct project,
 # but setting the project will narrow it down.
 doist add "Party hard" --section "weekend"
 # Alternatively: `doist a "Party hard" -S weekend`
 doist add "Party hard" --project personal --section weekend
 # Alternatively: `doist a "Party hard" -P personal -S weekend`
+```
 
+```bash
 # Multiple labels can be provided when creating tasks as well
 doist add "Party hard" --label dance --label happy
 # Alternatively: `doist a "Party hard" -L dance -L happy`

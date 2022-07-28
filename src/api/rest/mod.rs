@@ -6,12 +6,14 @@
 //! serialization/deserialization..
 //!
 //! To get started, take a look at [`Gateway`].
+mod comment;
 mod gateway;
 mod label;
 mod project;
 mod section;
 mod task;
 
+pub use comment::*;
 pub use gateway::*;
 pub use label::*;
 pub use project::*;

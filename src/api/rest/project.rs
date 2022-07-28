@@ -5,9 +5,9 @@ use reqwest::Url;
 use serde::{Deserialize, Serialize};
 
 /// ProjectID is the unique ID of a [`Project`]
-pub type ProjectID = usize;
+pub type ProjectID = u64;
 /// ProjectSyncID is an identifier to mark between copies of shared projects.
-pub type ProjectSyncID = usize;
+pub type ProjectSyncID = u64;
 
 /// Project as described by the Todoist API.
 ///
@@ -42,11 +42,13 @@ pub struct Project {
 }
 
 impl Treeable for Project {
-    fn id(&self) -> usize {
+    type ID = ProjectID;
+
+    fn id(&self) -> ProjectID {
         self.id
     }
 
-    fn parent_id(&self) -> Option<usize> {
+    fn parent_id(&self) -> Option<ProjectID> {
         self.parent_id
     }
 }

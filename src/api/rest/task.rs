@@ -2,17 +2,18 @@ use core::fmt;
 use std::fmt::Display;
 
 use crate::api::tree::Treeable;
-use crate::api::{deserialize::deserialize_zero_to_none, tree::Tree};
+use crate::api::{deserialize::deserialize_zero_to_none, serialize::todoist_rfc3339, tree::Tree};
 use owo_colors::OwoColorize;
-use serde::{Deserialize, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use super::{Label, LabelID, Project, ProjectID, Section, SectionID};
+use super::Label;
+use super::{LabelID, Project, ProjectID, Section, SectionID};
 
 /// TaskID describes the unique ID of a [`Task`].
-pub type TaskID = usize;
+pub type TaskID = u64;
 /// UserID is the unique ID of a User.
-pub type UserID = usize;
+pub type UserID = u64;
 
 /// Priority as is given from the Todoist API.
 ///
@@ -91,11 +92,13 @@ pub struct Task {
 }
 
 impl Treeable for Task {
-    fn id(&self) -> usize {
+    type ID = TaskID;
+
+    fn id(&self) -> TaskID {
         self.id
     }
 
-    fn parent_id(&self) -> Option<usize> {
+    fn parent_id(&self) -> Option<TaskID> {
         self.parent_id
     }
 }
@@ -139,6 +142,7 @@ impl Display for FullTask<'_> {
         if let Some(section) = &section {
             writeln!(f, "Section: {}", section)?;
         }
+        writeln!(f, "Comments: {}", task.comment_count)?;
         Ok(())
     }
 }
@@ -311,17 +315,6 @@ pub enum TaskDue {
     #[serde(rename = "due_datetime", serialize_with = "todoist_rfc3339")]
     DateTime(chrono::DateTime<chrono::Utc>),
 }
-/// This function is there to serialize the datetime into something that the Todoist API can
-/// understand, as it doesn't quite implement the full rfc3339 spec and breaks with the default
-/// chrono formatter.
-fn todoist_rfc3339<S>(dt: &chrono::DateTime<chrono::Utc>, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    let dt = dt.format("%Y-%m-%dT%H:%M:%SZ").to_string();
-    serializer.serialize_str(&dt)
-}
-
 /// Command used with [`super::Gateway::create`] to create a new Task.
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct CreateTask {

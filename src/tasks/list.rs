@@ -160,12 +160,19 @@ fn get_interactive_tasks(list: &List) -> Result<Option<&Tree<Task>>> {
         .iter()
         .flat_map(Tree::flatten)
         .collect::<Vec<_>>();
-    let result = dialoguer::FuzzySelect::with_theme(&dialoguer::theme::ColorfulTheme::default())
-        .items(&items.iter().map(|t| list.table_task(t)).collect::<Vec<_>>())
-        .with_prompt("Select task")
-        .default(0)
-        .interact_opt()
-        .wrap_err("Unable to make a selection")?;
+    let result = dialoguer::FuzzySelect::with_theme(&dialoguer::theme::ColorfulTheme {
+        fuzzy_match_highlight_style: dialoguer::console::Style::new()
+            .for_stderr()
+            .yellow()
+            .bold(),
+        active_item_style: dialoguer::console::Style::new().for_stderr(),
+        ..Default::default()
+    })
+    .items(&items.iter().map(|t| list.table_task(t)).collect::<Vec<_>>())
+    .with_prompt("Select task")
+    .default(0)
+    .interact_opt()
+    .wrap_err("Unable to make a selection")?;
     Ok(result.map(|index| items[index]))
 }
 

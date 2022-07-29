@@ -29,8 +29,8 @@ More options coming eventually.
 
 ### Auth
 
-First, set up your API token. Go into your Todoist settings, go to
-`Integrations` and copy out the `API token`. Plug it into the tool:
+First, set up your API token. Go into your [Todoist settings](https://todoist.com/app/settings/integrations),
+go to `Integrations` and copy out the `API token`. Plug it into the tool:
 
 ```bash
 doist auth MY_TOKEN

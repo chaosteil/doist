@@ -172,6 +172,19 @@ impl<T: Treeable + std::cmp::Eq> Tree<T> {
         }
         items
     }
+
+    /// Tries to find the item with the given ID in this tree.
+    pub fn find(&self, id: &<T as Treeable>::ID) -> Option<&Tree<T>> {
+        if self.item.id() == *id {
+            return Some(self);
+        }
+        for item in &self.subitems {
+            if let Some(tree) = item.find(id) {
+                return Some(tree);
+            }
+        }
+        None
+    }
 }
 
 #[cfg(test)]

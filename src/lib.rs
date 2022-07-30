@@ -11,6 +11,7 @@
 #![warn(missing_docs)]
 pub mod api;
 mod command;
+mod comments;
 mod config;
 mod projects;
 mod tasks;

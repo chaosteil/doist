@@ -2,7 +2,7 @@ use crate::{
     api::rest::Gateway,
     config::Config,
     projects,
-    tasks::{add, close, edit, list},
+    tasks::{add, close, edit, list, view},
 };
 use clap::{Parser, Subcommand};
 use color_eyre::{eyre::eyre, Result};
@@ -45,6 +45,9 @@ enum AuthCommands {
     /// Closes a task.
     #[clap(alias = "c")]
     Close(close::Params),
+    /// Views a task.
+    #[clap(alias = "v")]
+    View(view::Params),
 
     /// Manages projects.
     #[clap(subcommand, alias = "p")]
@@ -78,6 +81,7 @@ impl Args {
                     AuthCommands::List(p) => list::list(p, &gw).await?,
                     AuthCommands::Edit(p) => edit::edit(p, &gw).await?,
                     AuthCommands::Close(p) => close::close(p, &gw).await?,
+                    AuthCommands::View(p) => view::view(p, &gw).await?,
                     AuthCommands::Projects(p) => match p {
                         ProjectCommands::List(p) => projects::list::list(p, &gw).await?,
                     },

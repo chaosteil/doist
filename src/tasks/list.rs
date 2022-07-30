@@ -53,13 +53,20 @@ impl TaskOrInteractive {
         }
     }
     pub async fn task_id(&self, gw: &Gateway) -> Result<TaskID> {
-        match self.id {
-            Some(id) => Ok(id),
-            None => select_task(Some(&self.filter.filter), gw)
-                .await?
+        let (id, _) = self.task(gw).await?;
+        Ok(id)
+    }
+
+    pub async fn task(&self, gw: &Gateway) -> Result<(TaskID, List)> {
+        let list = List::fetch_tree(Some(&self.filter.filter), gw).await?;
+        let id = match self.id {
+            Some(id) => id,
+            None => list
+                .select_task()?
                 .map(|t| t.id)
-                .ok_or_else(|| eyre!("no task selected")),
-        }
+                .ok_or_else(|| eyre!("no task selected"))?,
+        };
+        Ok((id, list))
     }
 }
 
@@ -70,7 +77,7 @@ impl From<TaskID> for TaskOrInteractive {
 }
 
 /// List is a helper to fully construct a tasks state for display.
-struct List {
+pub struct List {
     tasks: Vec<Tree<Task>>,
     projects: HashMap<ProjectID, Project>,
     sections: HashMap<SectionID, Section>,
@@ -93,6 +100,19 @@ impl List {
         })
     }
 
+    pub fn task(&self, id: TaskID) -> Option<&Tree<Task>> {
+        for task in &self.tasks {
+            if let Some(task) = task.find(&id) {
+                return Some(task);
+            }
+        }
+        None
+    }
+
+    pub fn select_task(&self) -> Result<Option<&Tree<Task>>> {
+        get_interactive_tasks(self)
+    }
+
     fn project<'a>(&'a self, task: &'a Tree<Task>) -> Option<&'a Project> {
         self.projects.get(&task.project_id)
     }
@@ -110,7 +130,7 @@ impl List {
             .collect()
     }
 
-    fn table_task<'a>(&'a self, task: &'a Tree<Task>) -> TableTask {
+    pub fn table_task<'a>(&'a self, task: &'a Tree<Task>) -> TableTask {
         TableTask(
             task,
             self.project(task),
@@ -119,7 +139,7 @@ impl List {
         )
     }
 
-    fn full_task<'a>(&'a self, task: &'a Tree<Task>) -> FullTask {
+    pub fn full_task<'a>(&'a self, task: &'a Tree<Task>) -> FullTask {
         FullTask(
             task,
             self.project(task),
@@ -141,14 +161,6 @@ pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
         }
     }
     Ok(())
-}
-
-pub async fn select_task(filter: Option<&str>, gw: &Gateway) -> Result<Option<Tree<Task>>> {
-    let mut list = List::fetch_tree(filter, gw).await?;
-    let task = get_interactive_tasks(&list)?
-        .and_then(|task| list.tasks.iter().position(|t| t == task))
-        .map(|t| list.tasks.swap_remove(t));
-    Ok(task)
 }
 
 fn get_interactive_tasks(list: &List) -> Result<Option<&Tree<Task>>> {

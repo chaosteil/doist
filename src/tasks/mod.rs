@@ -8,5 +8,6 @@ pub mod list;
 mod priority;
 mod project;
 mod section;
+pub mod view;
 
 pub use priority::*;

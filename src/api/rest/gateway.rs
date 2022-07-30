@@ -130,14 +130,14 @@ impl Gateway {
 
     /// Returns the list of all comments attached to the given Project.
     pub async fn project_comments(&self, id: ProjectID) -> Result<Vec<Comment>> {
-        self.get("rest/v1/comments", Some(("project_id", id)))
+        self.get("rest/v1/comments", Some(&[("project_id", id)]))
             .await
             .wrap_err("unable to get comments")
     }
 
     /// Returns the list of all comments attached to the given Task.
     pub async fn task_comments(&self, id: TaskID) -> Result<Vec<Comment>> {
-        self.get("rest/v1/comments", Some(("task_id", id)))
+        self.get("rest/v1/comments", Some(&[("task_id", id)]))
             .await
             .wrap_err("unable to get comments")
     }

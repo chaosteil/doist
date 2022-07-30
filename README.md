@@ -136,6 +136,17 @@ doist close "BIG_ID_FROM_API"
 # Alternatively: `doist c BIG_ID_FROM_API`
 ```
 
+### View details
+
+To view details of tasks and the comments asssociated with a task:
+
+```bash
+doist view
+# Alternatively: `doist v`
+```
+
+This accepts the same parameters as `doist list` for task selection.
+
 ### Help
 
 Feel free to browse the help output for more help:

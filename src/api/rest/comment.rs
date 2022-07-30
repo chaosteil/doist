@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::api::serialize::todoist_rfc3339;
+use owo_colors::OwoColorize;
 
 use super::{ProjectID, TaskID};
 
@@ -31,3 +32,25 @@ pub struct Comment {
 /// TODO: empty for now, so it acts as a marker.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Attachment {}
+
+/// FullComment allows to display full comment metadata when [std::fmt::Display]ing it.
+pub struct FullComment<'a>(pub &'a Comment);
+
+impl std::fmt::Display for FullComment<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let FullComment(comment) = self;
+        writeln!(f, "ID: {}", comment.id.bright_yellow())?;
+        writeln!(f, "Posted: {}", comment.posted)?;
+        writeln!(
+            f,
+            "Attachment: {}",
+            if comment.attachment.is_some() {
+                "Yes"
+            } else {
+                "No"
+            }
+        )?;
+        write!(f, "Content: {}", comment.content)?;
+        Ok(())
+    }
+}

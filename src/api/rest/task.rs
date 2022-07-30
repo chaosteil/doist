@@ -116,19 +116,19 @@ impl Display for FullTask<'_> {
         let FullTask::<'_>(task, project, section, labels) = self;
         write!(
             f,
-            "ID: {}\nPriority: {}\nContent: {}\nDescription: {}\n",
+            "ID: {}\nPriority: {}\nContent: {}\nDescription: {}",
             task.id.bright_yellow(),
             task.priority,
             task.content.default_color(),
             task.description.default_color()
         )?;
         if let Some(due) = &task.due {
-            writeln!(f, "Due: {}", due)?;
+            write!(f, "\nDue: {}", due)?;
         }
         if !labels.is_empty() {
-            writeln!(
+            write!(
                 f,
-                "Labels: {}",
+                "\nLabels: {}",
                 labels
                     .iter()
                     .map(|l| l.to_string())
@@ -137,12 +137,12 @@ impl Display for FullTask<'_> {
             )?;
         }
         if let Some(project) = &project {
-            writeln!(f, "Project: {}", project.name)?;
+            write!(f, "\nProject: {}", project.name)?;
         }
         if let Some(section) = &section {
-            writeln!(f, "Section: {}", section)?;
+            write!(f, "\nSection: {}", section)?;
         }
-        writeln!(f, "Comments: {}", task.comment_count)?;
+        write!(f, "\nComments: {}", task.comment_count)?;
         Ok(())
     }
 }

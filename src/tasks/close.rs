@@ -3,12 +3,12 @@ use owo_colors::OwoColorize;
 
 use crate::api::{self, rest::Gateway};
 
-use super::list::TaskOrInteractive;
+use super::filter;
 
 #[derive(clap::Parser, Debug)]
 pub struct Params {
     #[clap(flatten)]
-    pub task: TaskOrInteractive,
+    pub task: filter::TaskOrInteractive,
     /// Complete will completely close a task, even if it's recurring.
     /// Since the REST API does not support completely closing tasks, this will change the due date
     /// of the task to "today" and then close it.

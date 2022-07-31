@@ -137,7 +137,7 @@ impl Display for FullTask<'_> {
             )?;
         }
         if let Some(project) = &project {
-            write!(f, "\nProject: {}", project.name)?;
+            write!(f, "\nProject: {}", project)?;
         }
         if let Some(section) = &section {
             write!(f, "\nSection: {}", section)?;

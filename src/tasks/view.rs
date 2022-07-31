@@ -2,7 +2,7 @@ use color_eyre::{eyre::eyre, Result};
 
 use crate::{api::rest::Gateway, comments};
 
-use super::list::TaskOrInteractive;
+use super::filter::TaskOrInteractive;
 
 #[derive(clap::Parser, Debug)]
 pub struct Params {

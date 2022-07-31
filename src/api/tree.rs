@@ -187,6 +187,30 @@ impl<T: Treeable + std::cmp::Eq> Tree<T> {
     }
 }
 
+/// Extension Trait to provide some additional common functionality for vectors of [Tree]s.
+pub trait TreeFlattenExt<T: Treeable> {
+    /// Takes the whole tree of tasks and flattens it out to a single vector with each tree being
+    /// its own indexable item. Useful for user selection lists.
+    fn flat_tree(&self) -> Vec<&Tree<T>>;
+    /// Finds a particular Tree item within the whole vector of Trees.
+    fn find(&self, id: T::ID) -> Option<&Tree<T>>;
+}
+
+impl<T: Treeable> TreeFlattenExt<T> for Vec<Tree<T>> {
+    fn flat_tree(&self) -> Vec<&Tree<T>> {
+        self.iter().flat_map(Tree::flatten).collect()
+    }
+
+    fn find(&self, id: T::ID) -> Option<&Tree<T>> {
+        for item in self {
+            if let Some(item) = item.find(&id) {
+                return Some(item);
+            }
+        }
+        None
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::api::rest::Task;

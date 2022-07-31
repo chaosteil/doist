@@ -2,6 +2,7 @@
 pub mod add;
 pub mod close;
 pub mod edit;
+mod filter;
 mod fuzz_select;
 mod label;
 pub mod list;

@@ -13,6 +13,7 @@ pub mod api;
 mod command;
 mod comments;
 mod config;
+mod interactive;
 mod projects;
 mod tasks;
 

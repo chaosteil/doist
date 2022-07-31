@@ -1,3 +1,4 @@
+use owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize};
 
 use super::ProjectID;
@@ -38,6 +39,11 @@ impl PartialOrd for Section {
 
 impl std::fmt::Display for Section {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.name)
+        write!(
+            f,
+            "{} {}",
+            self.id.bright_yellow(),
+            self.name.default_color()
+        )
     }
 }

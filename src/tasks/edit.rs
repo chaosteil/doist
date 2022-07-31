@@ -5,10 +5,8 @@ use crate::{
         self,
         rest::{Gateway, TaskDue, UpdateTask},
     },
-    tasks::Priority,
+    tasks::{filter::TaskOrInteractive, Priority},
 };
-
-use super::list::TaskOrInteractive;
 
 #[derive(clap::Parser, Debug)]
 pub struct Params {

@@ -8,75 +8,24 @@ use crate::{
             FullTask, Gateway, Label, LabelID, Project, ProjectID, Section, SectionID, TableTask,
             Task, TaskID,
         },
-        tree::Tree,
+        tree::{Tree, TreeFlattenExt},
     },
-    tasks::{close, edit},
+    interactive,
+    tasks::{close, edit, filter},
 };
 use strum::{Display, EnumVariantNames, FromRepr, VariantNames};
-
-const DEFAULT_FILTER: &str = "(today | overdue)";
 
 #[derive(clap::Parser, Debug)]
 pub struct Params {
     #[clap(flatten)]
-    filter: Filter,
+    filter: filter::Filter,
     /// Disables interactive mode and simply displays the list.
     #[clap(short = 'n', long = "nointeractive")]
     nointeractive: bool,
 }
 
-#[derive(clap::Parser, Debug)]
-pub struct Filter {
-    /// When selecting tasks, this will specify a filter query to run against the Todoist API to narrow down possibilities.
-    #[clap(short='f', long="filter", default_value_t=String::from(DEFAULT_FILTER))]
-    filter: String,
-}
-
-/// TaskOrInteractive is a helper struct to be embedded into other Params so that they can perform
-/// selections based on Task ID or selecting interactively.
-#[derive(clap::Parser, Debug)]
-pub struct TaskOrInteractive {
-    /// The Task ID as provided from the Todoist API. Use `list` to find out what ID your task has.
-    /// If omitted, will interactively select task.
-    id: Option<TaskID>,
-    #[clap(flatten)]
-    filter: Filter,
-}
-
-impl TaskOrInteractive {
-    pub fn with_id(id: TaskID) -> Self {
-        Self {
-            id: Some(id),
-            filter: Filter {
-                filter: DEFAULT_FILTER.to_string(),
-            },
-        }
-    }
-    pub async fn task_id(&self, gw: &Gateway) -> Result<TaskID> {
-        let (id, _) = self.task(gw).await?;
-        Ok(id)
-    }
-
-    pub async fn task(&self, gw: &Gateway) -> Result<(TaskID, List)> {
-        let list = List::fetch_tree(Some(&self.filter.filter), gw).await?;
-        let id = match self.id {
-            Some(id) => id,
-            None => list
-                .select_task()?
-                .map(|t| t.id)
-                .ok_or_else(|| eyre!("no task selected"))?,
-        };
-        Ok((id, list))
-    }
-}
-
-impl From<TaskID> for TaskOrInteractive {
-    fn from(id: TaskID) -> Self {
-        Self::with_id(id)
-    }
-}
-
 /// List is a helper to fully construct a tasks state for display.
+/// TODO: rename and move to some other module.
 pub struct List {
     tasks: Vec<Tree<Task>>,
     projects: HashMap<ProjectID, Project>,
@@ -85,7 +34,7 @@ pub struct List {
 }
 
 impl List {
-    async fn fetch_tree(filter: Option<&str>, gw: &Gateway) -> Result<List> {
+    pub async fn fetch_tree(filter: Option<&str>, gw: &Gateway) -> Result<List> {
         let (tasks, projects, sections, labels) =
             tokio::try_join!(gw.tasks(filter), gw.projects(), gw.sections(), gw.labels())?;
         let projects = projects.into_iter().map(|p| (p.id, p)).collect();
@@ -101,12 +50,7 @@ impl List {
     }
 
     pub fn task(&self, id: TaskID) -> Option<&Tree<Task>> {
-        for task in &self.tasks {
-            if let Some(task) = task.find(&id) {
-                return Some(task);
-            }
-        }
-        None
+        self.tasks.find(id)
     }
 
     pub fn select_task(&self) -> Result<Option<&Tree<Task>>> {
@@ -167,24 +111,11 @@ fn get_interactive_tasks(list: &List) -> Result<Option<&Tree<Task>>> {
     if list.tasks.is_empty() {
         return Err(eyre!("no tasks were found using the current filter"));
     }
-    let items = list
-        .tasks
-        .iter()
-        .flat_map(Tree::flatten)
-        .collect::<Vec<_>>();
-    let result = dialoguer::FuzzySelect::with_theme(&dialoguer::theme::ColorfulTheme {
-        fuzzy_match_highlight_style: dialoguer::console::Style::new()
-            .for_stderr()
-            .yellow()
-            .bold(),
-        active_item_style: dialoguer::console::Style::new().for_stderr(),
-        ..Default::default()
-    })
-    .items(&items.iter().map(|t| list.table_task(t)).collect::<Vec<_>>())
-    .with_prompt("Select task")
-    .default(0)
-    .interact_opt()
-    .wrap_err("Unable to make a selection")?;
+    let items = list.tasks.flat_tree();
+    let result = interactive::select(
+        "Select task",
+        &items.iter().map(|t| list.table_task(t)).collect::<Vec<_>>(),
+    )?;
     Ok(result.map(|index| items[index]))
 }
 

@@ -45,7 +45,7 @@ enum AuthCommands {
     /// Closes a task.
     #[clap(alias = "c")]
     Close(close::Params),
-    /// Views a task.
+    /// View details of a single task.
     #[clap(alias = "v")]
     View(view::Params),
 
@@ -59,6 +59,9 @@ enum ProjectCommands {
     /// Lists all current projects
     #[clap(alias = "l")]
     List(projects::list::Params),
+    /// View details of a single project.
+    #[clap(alias = "v")]
+    View(projects::view::Params),
 }
 
 impl Args {
@@ -84,6 +87,7 @@ impl Args {
                     AuthCommands::View(p) => view::view(p, &gw).await?,
                     AuthCommands::Projects(p) => match p {
                         ProjectCommands::List(p) => projects::list::list(p, &gw).await?,
+                        ProjectCommands::View(p) => projects::view::view(p, &gw).await?,
                     },
                 }
             }

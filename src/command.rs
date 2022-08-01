@@ -2,7 +2,7 @@ use crate::{
     api::rest::Gateway,
     config::Config,
     projects,
-    tasks::{add, close, edit, list, view},
+    tasks::{add, close, comment, edit, list, view},
 };
 use clap::{Parser, Subcommand};
 use color_eyre::{eyre::eyre, Result};
@@ -48,6 +48,9 @@ enum AuthCommands {
     /// View details of a single task.
     #[clap(alias = "v")]
     View(view::Params),
+    /// Add a comment on a task.
+    #[clap(alias = "C")]
+    Comment(comment::Params),
 
     /// Manages projects.
     #[clap(subcommand, alias = "p")]
@@ -62,6 +65,9 @@ enum ProjectCommands {
     /// View details of a single project.
     #[clap(alias = "v")]
     View(projects::view::Params),
+    /// Add a comment on a project.
+    #[clap(alias = "C")]
+    Comment(projects::comment::Params),
 }
 
 impl Args {
@@ -85,9 +91,11 @@ impl Args {
                     AuthCommands::Edit(p) => edit::edit(p, &gw).await?,
                     AuthCommands::Close(p) => close::close(p, &gw).await?,
                     AuthCommands::View(p) => view::view(p, &gw).await?,
+                    AuthCommands::Comment(p) => comment::comment(p, &gw).await?,
                     AuthCommands::Projects(p) => match p {
                         ProjectCommands::List(p) => projects::list::list(p, &gw).await?,
                         ProjectCommands::View(p) => projects::view::view(p, &gw).await?,
+                        ProjectCommands::Comment(p) => projects::comment::comment(p, &gw).await?,
                     },
                 }
             }

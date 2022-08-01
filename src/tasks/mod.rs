@@ -1,6 +1,7 @@
 //! Controls things that work with [`crate::api::rest::Task`]s.
 pub mod add;
 pub mod close;
+pub mod comment;
 pub mod edit;
 mod filter;
 mod fuzz_select;

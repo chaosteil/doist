@@ -235,3 +235,127 @@ async fn handle_req<R: DeserializeOwned>(req: RequestBuilder) -> Result<Option<R
     let result = serde_json::from_str(&text).wrap_err("Unable to parse API response")?;
     Ok(Some(result))
 }
+
+#[cfg(test)]
+mod test {
+    use chrono::Utc;
+    use wiremock::{
+        matchers::{method, path},
+        Mock, MockServer, ResponseTemplate,
+    };
+
+    use super::*;
+    use crate::api::rest::{ProjectID, Task, TaskID};
+    use color_eyre::Result;
+
+    #[tokio::test]
+    async fn task() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/rest/v1/tasks/123"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(create_task(123, 456, "hello")))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let task = gw.task(123).await.unwrap();
+        mock_server.verify().await;
+        assert_eq!(task.id, 123);
+        assert!(gw.task(1234).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn tasks() -> Result<()> {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/rest/v1/tasks"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(&[
+                create_task(123, 456, "hello there"),
+                create_task(234, 567, "general kenobi"),
+            ]))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let tasks = gw.tasks(None).await.unwrap();
+        mock_server.verify().await;
+        assert_eq!(tasks.len(), 2);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn close_task() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/rest/v1/tasks/123/close"))
+            .respond_with(ResponseTemplate::new(204))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let closed = gw.close(123).await;
+        assert!(closed.is_ok());
+    }
+
+    #[tokio::test]
+    async fn complete_task() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/rest/v1/tasks/123"))
+            .respond_with(ResponseTemplate::new(204))
+            .mount(&mock_server)
+            .await;
+        Mock::given(method("POST"))
+            .and(path("/rest/v1/tasks/123/close"))
+            .respond_with(ResponseTemplate::new(204))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let completed = gw.complete(123).await;
+        mock_server.verify().await;
+        assert!(completed.is_ok());
+    }
+
+    #[tokio::test]
+    async fn creates_task() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/rest/v1/tasks"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(create_task(123, 456, "hello")))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let task = gw
+            .create(&CreateTask {
+                content: "hello".to_string(),
+                project_id: Some(456),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        mock_server.verify().await;
+        assert_eq!(task.id, 123);
+    }
+
+    fn gateway(token: &str, ms: &MockServer) -> Gateway {
+        Gateway::new(token, ms.uri().parse().unwrap())
+    }
+
+    fn create_task(id: TaskID, project_id: ProjectID, content: &str) -> Task {
+        crate::api::rest::Task {
+            id,
+            project_id,
+            content: content.to_string(),
+            section_id: None,
+            description: "".to_string(),
+            completed: false,
+            label_ids: vec![],
+            parent_id: None,
+            order: -1,
+            priority: crate::api::rest::Priority::Normal,
+            due: None,
+            url: "".to_string(),
+            comment_count: 0,
+            assignee: None,
+            assigner: None,
+            created: Utc::now(),
+        }
+    }
+}

@@ -41,3 +41,6 @@ tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread"] }
 toml = "0.5"
 url = { version = "2.2", features = ["serde"] }
 xdg = "2"
+
+[dev-dependencies]
+wiremock = "0.5.13"

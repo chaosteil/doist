@@ -240,13 +240,27 @@ async fn handle_req<R: DeserializeOwned>(req: RequestBuilder) -> Result<Option<R
 mod test {
     use chrono::Utc;
     use wiremock::{
-        matchers::{method, path},
+        matchers::{bearer_token, method, path},
         Mock, MockServer, ResponseTemplate,
     };
 
     use super::*;
     use crate::api::rest::{ProjectID, Task, TaskID};
     use color_eyre::Result;
+
+    #[tokio::test]
+    async fn has_authentication() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(bearer_token("hellothere"))
+            .and(path("/rest/v1/tasks/123"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(create_task(123, 456, "hello")))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("hellothere", &mock_server);
+        let task = gw.task(123).await;
+        assert!(task.is_ok());
+    }
 
     #[tokio::test]
     async fn task() {

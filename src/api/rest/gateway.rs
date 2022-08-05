@@ -238,7 +238,6 @@ async fn handle_req<R: DeserializeOwned>(req: RequestBuilder) -> Result<Option<R
 
 #[cfg(test)]
 mod test {
-    use chrono::Utc;
     use wiremock::{
         matchers::{bearer_token, method, path},
         Mock, MockServer, ResponseTemplate,
@@ -328,6 +327,28 @@ mod test {
     }
 
     #[tokio::test]
+    async fn update_task() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/rest/v1/tasks/123"))
+            .respond_with(ResponseTemplate::new(204))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let completed = gw
+            .update(
+                123,
+                &UpdateTask {
+                    content: Some("hello".to_string()),
+                    ..Default::default()
+                },
+            )
+            .await;
+        mock_server.verify().await;
+        assert!(completed.is_ok());
+    }
+
+    #[tokio::test]
     async fn creates_task() {
         let mock_server = MockServer::start().await;
         Mock::given(method("POST"))
@@ -348,28 +369,45 @@ mod test {
         assert_eq!(task.id, 123);
     }
 
+    #[tokio::test]
+    async fn lists_projects() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/rest/v1/projects"))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_json(vec![Project::new(123, "one"), Project::new(456, "two")]),
+            )
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let projects = gw.projects().await.unwrap();
+        mock_server.verify().await;
+        assert_eq!(projects.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn show_project() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/rest/v1/projects/123"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(Project::new(123, "one")))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let projects = gw.project(123).await.unwrap();
+        mock_server.verify().await;
+        assert_eq!(projects.id, 123);
+        assert_eq!(projects.name, "one");
+    }
+
     fn gateway(token: &str, ms: &MockServer) -> Gateway {
         Gateway::new(token, ms.uri().parse().unwrap())
     }
 
     fn create_task(id: TaskID, project_id: ProjectID, content: &str) -> Task {
-        crate::api::rest::Task {
-            id,
-            project_id,
-            content: content.to_string(),
-            section_id: None,
-            description: "".to_string(),
-            completed: false,
-            label_ids: vec![],
-            parent_id: None,
-            order: -1,
-            priority: crate::api::rest::Priority::Normal,
-            due: None,
-            url: "".to_string(),
-            comment_count: 0,
-            assignee: None,
-            assigner: None,
-            created: Utc::now(),
-        }
+        let mut task = crate::api::rest::Task::new(id, content);
+        task.project_id = project_id;
+        task
     }
 }

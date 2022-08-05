@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    - name: format
+      run: cargo fmt --check
     - name: Clippy
       run: cargo clippy
     - name: Build

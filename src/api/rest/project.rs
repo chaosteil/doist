@@ -63,3 +63,25 @@ impl std::fmt::Display for Project {
         )
     }
 }
+
+#[cfg(test)]
+impl Project {
+    /// This is initializer is used for tests, as in general the tool relies on the API and not
+    /// local state.
+    pub fn new(id: ProjectID, name: &str) -> Project {
+        Project {
+            id,
+            name: name.to_string(),
+            parent_id: None,
+            comment_count: 0,
+            color: crate::api::Color::Unknown,
+            shared: false,
+            order: None,
+            inbox_project: None,
+            team_inbox: None,
+            sync_id: None,
+            favorite: false,
+            url: "http://localhost".to_string().parse().unwrap(),
+        }
+    }
+}

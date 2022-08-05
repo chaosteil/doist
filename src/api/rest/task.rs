@@ -4,6 +4,7 @@ use std::fmt::Display;
 use crate::api::tree::Treeable;
 use crate::api::{deserialize::deserialize_zero_to_none, serialize::todoist_rfc3339, tree::Tree};
 use owo_colors::OwoColorize;
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
@@ -78,7 +79,7 @@ pub struct Task {
     /// The due date of the Task.
     pub due: Option<DueDate>,
     /// Links the Task to a URL in the Todoist UI.
-    pub url: String,
+    pub url: Url,
     /// How many comments are written for this Task.
     pub comment_count: usize,
     /// Who this task is assigned to.
@@ -388,7 +389,7 @@ impl Task {
             order: 0,
             priority: Priority::default(),
             due: None,
-            url: String::new(),
+            url: "http://localhost".to_string().parse().unwrap(),
             comment_count: 0,
             assignee: None,
             assigner: None,

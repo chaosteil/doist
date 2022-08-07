@@ -3,6 +3,7 @@ use crate::api::{tree::Treeable, Color};
 use owo_colors::OwoColorize;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DefaultOnError};
 
 /// ProjectID is the unique ID of a [`Project`]
 pub type ProjectID = u64;
@@ -12,6 +13,7 @@ pub type ProjectSyncID = u64;
 /// Project as described by the Todoist API.
 ///
 /// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v1/#projects).
+#[serde_as]
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Project {
     /// ID of the Project.
@@ -23,6 +25,7 @@ pub struct Project {
     /// How many project comments.
     pub comment_count: usize,
     /// Color as used by the Todoist UI.
+    #[serde_as(deserialize_as = "DefaultOnError")]
     pub color: Color,
     /// Whether the project is shared with someone else.
     pub shared: bool,

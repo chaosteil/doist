@@ -6,7 +6,7 @@ use owo_colors::OwoColorize;
 use super::{ProjectID, TaskID};
 
 /// CommentID describes the unique ID of a [`Comment`].
-type CommentID = u64;
+pub type CommentID = u64;
 
 /// ThreadID is the ID of the location where the comment is posted.
 #[derive(Debug, Serialize, Deserialize, Copy, Clone)]

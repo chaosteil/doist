@@ -239,12 +239,12 @@ async fn handle_req<R: DeserializeOwned>(req: RequestBuilder) -> Result<Option<R
 #[cfg(test)]
 mod test {
     use wiremock::{
-        matchers::{bearer_token, method, path},
+        matchers::{bearer_token, method, path, query_param},
         Mock, MockServer, ResponseTemplate,
     };
 
     use super::*;
-    use crate::api::rest::{ProjectID, Task, TaskID};
+    use crate::api::rest::{CommentID, ProjectID, Task, TaskID, ThreadID};
     use color_eyre::Result;
 
     #[tokio::test]
@@ -395,10 +395,155 @@ mod test {
             .mount(&mock_server)
             .await;
         let gw = gateway("", &mock_server);
-        let projects = gw.project(123).await.unwrap();
+        let project = gw.project(123).await.unwrap();
         mock_server.verify().await;
-        assert_eq!(projects.id, 123);
-        assert_eq!(projects.name, "one");
+        assert_eq!(project.id, 123);
+        assert_eq!(project.name, "one");
+    }
+
+    #[tokio::test]
+    async fn lists_labels() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/rest/v1/labels"))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_json(vec![Label::new(123, "one"), Label::new(456, "two")]),
+            )
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let labels = gw.labels().await.unwrap();
+        mock_server.verify().await;
+        assert_eq!(labels.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn show_label() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/rest/v1/labels/123"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(Label::new(123, "one")))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let label = gw.label(123).await.unwrap();
+        mock_server.verify().await;
+        assert_eq!(label.id, 123);
+        assert_eq!(label.name, "one");
+    }
+
+    #[tokio::test]
+    async fn lists_sections() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/rest/v1/sections"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(vec![
+                Section::new(123, 1, "one"),
+                Section::new(456, 2, "two"),
+            ]))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let sections = gw.sections().await.unwrap();
+        mock_server.verify().await;
+        assert_eq!(sections.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn show_section() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/rest/v1/sections/123"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(Section::new(123, 1, "one")))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let section = gw.section(123).await.unwrap();
+        mock_server.verify().await;
+        assert_eq!(section.id, 123);
+        assert_eq!(section.name, "one");
+    }
+
+    #[tokio::test]
+    async fn create_project_comment() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/rest/v1/comments"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(create_comment(
+                1,
+                ThreadID::Project { project_id: 123 },
+                "hello",
+            )))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let comment = gw
+            .create_comment(&CreateComment {
+                thread: ThreadID::Project { project_id: 123 },
+                content: "hello".to_string(),
+            })
+            .await
+            .unwrap();
+        mock_server.verify().await;
+        assert_eq!(comment.id, 1);
+        assert_eq!(comment.content, "hello");
+    }
+
+    #[tokio::test]
+    async fn create_task_comment() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/rest/v1/comments"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(create_comment(
+                1,
+                ThreadID::Task { task_id: 123 },
+                "hello",
+            )))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let comment = gw
+            .create_comment(&CreateComment {
+                thread: ThreadID::Task { task_id: 123 },
+                content: "hello".to_string(),
+            })
+            .await
+            .unwrap();
+        mock_server.verify().await;
+        assert_eq!(comment.id, 1);
+        assert_eq!(comment.content, "hello");
+    }
+
+    #[tokio::test]
+    async fn show_comments() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/rest/v1/comments"))
+            .and(query_param("project_id", "123"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(vec![
+                create_comment(1, ThreadID::Project { project_id: 123 }, "hello"),
+                create_comment(1, ThreadID::Project { project_id: 123 }, "there"),
+            ]))
+            .mount(&mock_server)
+            .await;
+        Mock::given(method("GET"))
+            .and(path("/rest/v1/comments"))
+            .and(query_param("task_id", "456"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(vec![
+                create_comment(1, ThreadID::Task { task_id: 456 }, "no"),
+                create_comment(1, ThreadID::Task { task_id: 456 }, "way"),
+            ]))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let project_comments = gw.project_comments(123).await.unwrap();
+        let task_comments = gw.task_comments(456).await.unwrap();
+        mock_server.verify().await;
+        assert_eq!(project_comments.len(), 2);
+        assert_eq!(project_comments[0].content, "hello");
+        assert_eq!(task_comments.len(), 2);
+        assert_eq!(task_comments[0].content, "no");
     }
 
     fn gateway(token: &str, ms: &MockServer) -> Gateway {
@@ -409,5 +554,15 @@ mod test {
         let mut task = crate::api::rest::Task::new(id, content);
         task.project_id = project_id;
         task
+    }
+
+    fn create_comment(id: CommentID, tid: ThreadID, content: &str) -> Comment {
+        Comment {
+            id,
+            thread: tid,
+            posted: Utc::now(),
+            content: content.to_string(),
+            attachment: None,
+        }
     }
 }

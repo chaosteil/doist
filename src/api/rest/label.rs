@@ -44,3 +44,18 @@ impl std::fmt::Display for Label {
         format!("@{}", self.name).bright_blue().fmt(f)
     }
 }
+
+#[cfg(test)]
+impl Label {
+    /// This is initializer is used for tests, as in general the tool relies on the API and not
+    /// local state.
+    pub fn new(id: LabelID, name: &str) -> Label {
+        Label {
+            id,
+            name: name.to_string(),
+            color: crate::api::Color::Unknown,
+            order: 0,
+            favorite: false,
+        }
+    }
+}

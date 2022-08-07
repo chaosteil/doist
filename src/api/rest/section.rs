@@ -47,3 +47,17 @@ impl std::fmt::Display for Section {
         )
     }
 }
+
+#[cfg(test)]
+impl Section {
+    /// This is initializer is used for tests, as in general the tool relies on the API and not
+    /// local state.
+    pub fn new(id: SectionID, project_id: ProjectID, name: &str) -> Section {
+        Section {
+            id,
+            project_id,
+            name: name.to_string(),
+            order: 0,
+        }
+    }
+}

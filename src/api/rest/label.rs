@@ -1,5 +1,6 @@
 use owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DefaultOnError};
 
 use crate::api::Color;
 
@@ -9,6 +10,7 @@ pub type LabelID = usize;
 /// Label is a tag associated with a Task. Marked with `@name` in the UI.
 ///
 /// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v1/#labels).
+#[serde_as]
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Label {
     /// Unique ID of a label.
@@ -16,6 +18,7 @@ pub struct Label {
     /// Name of the label. Written as `@name` in the UI.
     pub name: String,
     /// The display color of the label as given from the API.
+    #[serde_as(deserialize_as = "DefaultOnError")]
     pub color: Color,
     /// The order among labels if we were to sort them.
     pub order: isize,
@@ -57,5 +60,14 @@ impl Label {
             order: 0,
             favorite: false,
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn succeeds_with_bad_color() {
+        let label = r#"{"id":123,"name":"hello","color":7,"order":0,"favorite":false}"#;
+        assert!(serde_json::from_str::<'_, super::Label>(label).is_ok());
     }
 }

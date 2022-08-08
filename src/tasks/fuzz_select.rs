@@ -5,6 +5,9 @@ use fuzzy_matcher::FuzzyMatcher;
 use crate::api::rest::{Label, LabelID, Project, ProjectID, Section, SectionID, Task, TaskID};
 
 pub fn fuzz_select<U, T: FuzzSelect<U>>(items: &[T], input: &str) -> Result<U> {
+    if items.is_empty() {
+        return Err(eyre!("no items available for selection, aborting"));
+    }
     let matcher = SkimMatcherV2::default();
     let item = items
         .iter()

@@ -11,7 +11,7 @@ use crate::{
         tree::{Tree, TreeFlattenExt},
     },
     interactive,
-    tasks::{close, edit, filter},
+    tasks::{close, edit, filter, label, project, section},
 };
 use strum::{Display, EnumVariantNames, FromRepr, VariantNames};
 
@@ -22,6 +22,12 @@ pub struct Params {
     /// Disables interactive mode and simply displays the list.
     #[clap(short = 'n', long = "nointeractive")]
     nointeractive: bool,
+    #[clap(flatten)]
+    project: project::ProjectSelect,
+    #[clap(flatten)]
+    section: section::SectionSelect,
+    #[clap(flatten)]
+    label: label::LabelSelect,
 }
 
 /// List is a helper to fully construct a tasks state for display.
@@ -55,6 +61,19 @@ impl List {
 
     pub fn select_task(&self) -> Result<Option<&Tree<Task>>> {
         get_interactive_tasks(self)
+    }
+
+    pub fn filter<F>(self, filter: F) -> List
+    where
+        F: Fn(&Tree<Task>) -> bool,
+    {
+        let tasks: Vec<_> = self.tasks.into_iter().filter(&filter).collect();
+        List {
+            tasks,
+            projects: self.projects,
+            sections: self.sections,
+            labels: self.labels,
+        }
     }
 
     fn project<'a>(&'a self, task: &'a Tree<Task>) -> Option<&'a Project> {
@@ -95,7 +114,12 @@ impl List {
 
 /// List lists the tasks of the current user accessing the gateway with the given filter.
 pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
-    let list = List::fetch_tree(Some(&params.filter.filter), gw).await?;
+    let list = filter_list(
+        List::fetch_tree(Some(&params.filter.filter), gw).await?,
+        &params,
+        &gw,
+    )
+    .await?;
     if params.nointeractive {
         list_tasks(&list.tasks, &list);
     } else {
@@ -105,6 +129,23 @@ pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
         }
     }
     Ok(())
+}
+
+async fn filter_list(list: List, params: &Params, gw: &Gateway) -> Result<List> {
+    let project = params.project.project(gw).await?;
+    let section = params.section.section(project, gw).await?;
+    let labels = params.label.labels(gw).await?;
+    let mut list = list;
+    if let Some(id) = project {
+        list = list.filter(|tree| tree.project_id == id);
+    }
+    if let Some(id) = section {
+        list = list.filter(|tree| tree.section_id == Some(id));
+    }
+    if !labels.is_empty() {
+        list = list.filter(|tree| labels.iter().any(|l| tree.label_ids.contains(l)));
+    }
+    Ok(list)
 }
 
 fn get_interactive_tasks(list: &List) -> Result<Option<&Tree<Task>>> {

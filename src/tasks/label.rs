@@ -6,11 +6,11 @@ use crate::api::rest::{Gateway, LabelID};
 
 #[derive(clap::Args, Debug, Serialize, Deserialize)]
 pub struct LabelSelect {
-    /// Assigns the label with the closest name, if possible. Does fuzzy matching for the name. Can
+    /// Uses the label with the closest name, if possible. Does fuzzy matching for the name. Can
     /// be used multiple times to attach more labels.
     #[clap(short = 'L', long = "label")]
     label_names: Option<Vec<String>>,
-    /// Assigns the label with the given ID. Can be used multiple times to attach more labels.
+    /// Uses the label with the given ID. Can be used multiple times to attach more labels.
     #[clap(long = "label_id")]
     label_ids: Option<Vec<LabelID>>,
 }

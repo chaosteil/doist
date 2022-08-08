@@ -117,7 +117,7 @@ pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
     let list = filter_list(
         List::fetch_tree(Some(&params.filter.filter), gw).await?,
         &params,
-        &gw,
+        gw,
     )
     .await?;
     if params.nointeractive {

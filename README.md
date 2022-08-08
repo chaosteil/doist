@@ -46,8 +46,8 @@ work with the CLI.
 By default the list view shows todays tasks and lets you work with them:
 
 ```bash
-doist list
-# Alternatively: `doist l`
+doist
+# Alternatively: `doist list` or `doist l`.
 ```
 
 This will allow you to type parts of the output until you select the task you

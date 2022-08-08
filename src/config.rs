@@ -1,9 +1,10 @@
 use std::{fs, path::PathBuf};
 
+use color_eyre::{eyre::eyre, Result};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::api::rest::TODOIST_API_URL;
+use crate::api::rest::{Gateway, TODOIST_API_URL};
 
 /// Stores configuration used by the application.
 #[derive(Serialize, Deserialize)]
@@ -75,5 +76,14 @@ impl Config {
         let data = toml::to_string(self)?;
         fs::write(&file, &data).map_err(|io| ConfigError::File { file, io })?;
         Ok(())
+    }
+
+    /// Returns a fully initialized gateway if the config is valid, or otherwise informs about
+    /// potential issues with the configuration.
+    pub fn gateway(&self) -> Result<Gateway> {
+        let token = self.token.as_deref().ok_or_else(|| {
+            eyre!("No token in config specified. Use `doist auth` to register your token.")
+        })?;
+        Ok(Gateway::new(token, &self.url))
     }
 }

@@ -31,11 +31,11 @@ impl Gateway {
     ///
     /// * `token` - the API token used for network calls.
     /// * `url` - the base URL to call. See [`struct@TODOIST_API_URL`]
-    pub fn new(token: &str, url: url::Url) -> Gateway {
+    pub fn new(token: &str, url: &url::Url) -> Gateway {
         Gateway {
             client: Client::new(),
             token: token.to_string(),
-            url,
+            url: url.clone(),
         }
     }
 
@@ -547,7 +547,7 @@ mod test {
     }
 
     fn gateway(token: &str, ms: &MockServer) -> Gateway {
-        Gateway::new(token, ms.uri().parse().unwrap())
+        Gateway::new(token, &ms.uri().parse().unwrap())
     }
 
     fn create_task(id: TaskID, project_id: ProjectID, content: &str) -> Task {

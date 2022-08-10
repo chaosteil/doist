@@ -14,6 +14,7 @@ mod command;
 mod comments;
 mod config;
 mod interactive;
+mod labels;
 mod projects;
 mod tasks;
 

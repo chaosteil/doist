@@ -1,6 +1,6 @@
 use crate::{
     config::Config,
-    projects,
+    labels, projects,
     tasks::{add, close, comment, edit, list, view},
 };
 use clap::{AppSettings, Parser, Subcommand};
@@ -57,6 +57,9 @@ enum AuthCommands {
     /// Manages projects.
     #[clap(subcommand, alias = "p")]
     Projects(ProjectCommands),
+    /// Manages labels.
+    #[clap(subcommand, alias = "l")]
+    Labels(LabelCommands),
 }
 
 #[derive(Subcommand, Debug)]
@@ -70,6 +73,13 @@ enum ProjectCommands {
     /// Add a comment on a project.
     #[clap(alias = "C")]
     Comment(projects::comment::Params),
+}
+
+#[derive(Subcommand, Debug)]
+enum LabelCommands {
+    /// Lists all current labels
+    #[clap(alias = "l")]
+    List(labels::list::Params),
 }
 
 impl Args {
@@ -98,6 +108,9 @@ impl Args {
                             ProjectCommands::Comment(p) => {
                                 projects::comment::comment(p, &gw).await?
                             }
+                        },
+                        AuthCommands::Labels(p) => match p {
+                            LabelCommands::List(p) => labels::list::list(p, &gw).await?,
                         },
                     }
                 }

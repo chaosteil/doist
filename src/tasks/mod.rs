@@ -4,8 +4,6 @@ pub mod close;
 pub mod comment;
 pub mod edit;
 mod filter;
-mod fuzz_select;
-mod label;
 pub mod list;
 mod priority;
 mod project;

@@ -11,7 +11,7 @@ pub type LabelID = usize;
 ///
 /// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v1/#labels).
 #[serde_as]
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 pub struct Label {
     /// Unique ID of a label.
     pub id: LabelID,
@@ -46,6 +46,22 @@ impl std::fmt::Display for Label {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         format!("@{}", self.name).bright_blue().fmt(f)
     }
+}
+
+/// Command used with [`super::Gateway::label_create`] to create a new [`Label`].
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct CreateLabel {
+    /// Name of the label to create.
+    pub name: String,
+    /// Order of the label in lists.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub order: Option<isize>,
+    /// Color of the label icon.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub color: Option<Color>,
+    /// Mark as favorite or not.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub favorite: Option<bool>,
 }
 
 #[cfg(test)]

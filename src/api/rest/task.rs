@@ -53,7 +53,7 @@ impl Default for Priority {
 /// Task describes a Task from the Todoist API.
 ///
 /// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v1/#tasks).
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 pub struct Task {
     /// Unique ID of a Task.
     pub id: TaskID,
@@ -249,7 +249,7 @@ impl Display for TableTask<'_> {
 }
 
 /// ExactTime exists in DueDate if this is an exact DueDate.
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct ExactTime {
     /// Exact DateTime for when the task is due.
     pub datetime: chrono::DateTime<chrono::FixedOffset>,
@@ -270,7 +270,7 @@ impl Display for ExactTime {
 /// DueDate is the Due object from the Todoist API.
 ///
 /// Mostly contains human-readable content for easier display.
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct DueDate {
     /// Human-redable form of the due date.
     #[serde(rename = "string")]

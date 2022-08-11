@@ -14,7 +14,7 @@ pub type ProjectSyncID = u64;
 ///
 /// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v1/#projects).
 #[serde_as]
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone)]
 pub struct Project {
     /// ID of the Project.
     pub id: ProjectID,

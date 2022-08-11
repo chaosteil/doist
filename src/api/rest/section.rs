@@ -9,7 +9,7 @@ pub type SectionID = usize;
 /// Section describes a subsection of a [`super::Project`].
 ///
 /// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v1/#sections).
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 pub struct Section {
     /// The unique ID of this section.
     pub id: SectionID,

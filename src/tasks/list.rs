@@ -10,8 +10,8 @@ use crate::{
         },
         tree::{Tree, TreeFlattenExt},
     },
-    interactive,
-    tasks::{close, edit, filter, label, project, section},
+    interactive, labels,
+    tasks::{close, edit, filter, project, section},
 };
 use strum::{Display, EnumVariantNames, FromRepr, VariantNames};
 
@@ -27,7 +27,7 @@ pub struct Params {
     #[clap(flatten)]
     section: section::SectionSelect,
     #[clap(flatten)]
-    label: label::LabelSelect,
+    label: labels::LabelSelect,
 }
 
 /// List is a helper to fully construct a tasks state for display.
@@ -134,7 +134,10 @@ pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
 async fn filter_list(list: List, params: &Params, gw: &Gateway) -> Result<List> {
     let project = params.project.project(gw).await?;
     let section = params.section.section(project, gw).await?;
-    let labels = params.label.labels(gw).await?;
+    let labels = params
+        .label
+        .labels(gw, labels::Selection::AllowEmpty)
+        .await?;
     let mut list = list;
     if let Some(id) = project {
         list = list.filter(|tree| tree.project_id == id);
@@ -143,7 +146,12 @@ async fn filter_list(list: List, params: &Params, gw: &Gateway) -> Result<List> 
         list = list.filter(|tree| tree.section_id == Some(id));
     }
     if !labels.is_empty() {
-        list = list.filter(|tree| labels.iter().any(|l| tree.label_ids.contains(l)));
+        list = list.filter(|tree| {
+            labels
+                .iter()
+                .map(|l| l.id)
+                .any(|l| tree.label_ids.contains(&l))
+        });
     }
     Ok(list)
 }

@@ -77,9 +77,15 @@ enum ProjectCommands {
 
 #[derive(Subcommand, Debug)]
 enum LabelCommands {
-    /// Lists all current labels
+    /// Lists all current labels.
     #[clap(alias = "l")]
     List(labels::list::Params),
+    /// Adds (creates) a new label.
+    #[clap(alias = "a")]
+    Add(labels::add::Params),
+    /// Deletes a new label.
+    #[clap(alias = "d")]
+    Delete(labels::delete::Params),
 }
 
 impl Args {
@@ -111,6 +117,8 @@ impl Args {
                         },
                         AuthCommands::Labels(p) => match p {
                             LabelCommands::List(p) => labels::list::list(p, &gw).await?,
+                            LabelCommands::Add(p) => labels::add::add(p, &gw).await?,
+                            LabelCommands::Delete(p) => labels::delete::delete(p, &gw).await?,
                         },
                     }
                 }

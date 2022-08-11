@@ -8,8 +8,8 @@ use reqwest::{Client, RequestBuilder, StatusCode};
 use serde::{de::DeserializeOwned, Serialize};
 
 use super::{
-    Comment, CreateComment, CreateTask, Label, LabelID, Project, ProjectID, Section, SectionID,
-    Task, TaskDue, TaskID, UpdateTask,
+    Comment, CreateComment, CreateLabel, CreateTask, Label, LabelID, Project, ProjectID, Section,
+    SectionID, Task, TaskDue, TaskID, UpdateTask,
 };
 
 /// Makes network calls to the Todoist API and returns structs that can then be worked with.
@@ -177,6 +177,21 @@ impl Gateway {
             .wrap_err("unable to get label")
     }
 
+    /// Creates a label by calling the Todoist API.
+    pub async fn create_label(&self, label: &CreateLabel) -> Result<Label> {
+        self.post("rest/v1/labels", label)
+            .await
+            .wrap_err("unable to create label")?
+            .ok_or_else(|| eyre!("Unable to create label"))
+    }
+
+    /// Deletes a label by calling the Todoist API.
+    pub async fn delete_label(&self, label: LabelID) -> Result<()> {
+        self.delete(&format!("rest/v1/labels/{}", label))
+            .await
+            .wrap_err("unable to delete label")
+    }
+
     /// Makes a GET request to the Todoist API with an optional query.
     async fn get<'a, T: 'a + Serialize, R: DeserializeOwned>(
         &self,
@@ -211,6 +226,17 @@ impl Gateway {
                 .header(reqwest::header::CONTENT_TYPE, "application/json"),
         )
         .await
+    }
+
+    /// Sends a DELETE request to the Todoist API.
+    async fn delete(&self, path: &str) -> Result<()> {
+        handle_req::<()>(
+            self.client
+                .delete(self.url.join(path)?)
+                .bearer_auth(&self.token),
+        )
+        .await?;
+        Ok(())
     }
 
     /// Same as [`Gateway::post`], but doesn't require content to be set for the POST request.
@@ -544,6 +570,39 @@ mod test {
         assert_eq!(project_comments[0].content, "hello");
         assert_eq!(task_comments.len(), 2);
         assert_eq!(task_comments[0].content, "no");
+    }
+
+    #[tokio::test]
+    async fn creates_label() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/rest/v1/labels"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(Label::new(123, "hello")))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let label = gw
+            .create_label(&CreateLabel {
+                name: "hello".to_string(),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        mock_server.verify().await;
+        assert_eq!(label.id, 123);
+    }
+
+    #[tokio::test]
+    async fn delete_task() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("DELETE"))
+            .and(path("/rest/v1/labels/123"))
+            .respond_with(ResponseTemplate::new(204))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let closed = gw.delete_label(123).await;
+        assert!(closed.is_ok());
     }
 
     fn gateway(token: &str, ms: &MockServer) -> Gateway {

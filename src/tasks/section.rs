@@ -1,4 +1,4 @@
-use super::fuzz_select::fuzz_select;
+use crate::fuzz_select;
 use color_eyre::{eyre::WrapErr, Result};
 use serde::{Deserialize, Serialize};
 

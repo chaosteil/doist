@@ -8,10 +8,11 @@ use crate::{
         rest::{CreateTask, Gateway, TableTask, TaskDue},
         tree::Tree,
     },
+    labels::{self, LabelSelect},
     tasks::Priority,
 };
 
-use super::{label::LabelSelect, project::ProjectSelect, section::SectionSelect};
+use super::{project::ProjectSelect, section::SectionSelect};
 
 #[derive(clap::Parser, Debug, Deserialize, Serialize)]
 pub struct Params {
@@ -39,14 +40,17 @@ pub struct Params {
 pub async fn add(params: Params, gw: &Gateway) -> Result<()> {
     let project_id = params.project.project(gw).await?;
     let section_id = params.section.section(project_id, gw).await?;
-    let label_ids = params.labels.labels(gw).await?;
+    let labels = params
+        .labels
+        .labels(gw, labels::Selection::AllowEmpty)
+        .await?;
     let mut create = CreateTask {
         content: params.name,
         description: params.desc,
         priority: params.priority.map(|p| p.into()),
         project_id,
         section_id,
-        label_ids,
+        label_ids: labels.iter().map(|l| l.id).collect(),
         ..Default::default()
     };
     if let Some(due) = params.due {

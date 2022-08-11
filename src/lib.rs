@@ -13,10 +13,13 @@ pub mod api;
 mod command;
 mod comments;
 mod config;
+mod fuzz_select;
 mod interactive;
 mod labels;
 mod projects;
 mod tasks;
+
+use fuzz_select::fuzz_select;
 
 #[doc(hidden)]
 pub use command::Args;

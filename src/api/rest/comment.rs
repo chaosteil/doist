@@ -27,7 +27,7 @@ pub enum ThreadID {
 /// Comment describes a Comment from the Todoist API.
 ///
 /// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v1/#comments)
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Comment {
     /// The unique ID of a comment.
     pub id: CommentID,
@@ -45,7 +45,7 @@ pub struct Comment {
 
 /// An optional attachment file attached to a comment.
 /// TODO: empty for now, so it acts as a marker.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Attachment {}
 
 /// CreateComment allows to create a new comment through the API.

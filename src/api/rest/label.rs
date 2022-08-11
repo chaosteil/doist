@@ -48,6 +48,15 @@ impl std::fmt::Display for Label {
     }
 }
 
+/// FullLabel shows label including ID
+pub struct FullLabel<'a>(pub &'a Label);
+
+impl<'a> std::fmt::Display for FullLabel<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} {}", self.0.id.bright_yellow(), self.0)
+    }
+}
+
 #[cfg(test)]
 impl Label {
     /// This is initializer is used for tests, as in general the tool relies on the API and not

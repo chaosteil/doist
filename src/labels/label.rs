@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 
-use crate::{api::rest::Label, fuzz_select::fuzz_select, interactive};
+use crate::{
+    api::rest::{FullLabel, Label},
+    fuzz_select::fuzz_select,
+    interactive,
+};
 use color_eyre::{eyre::eyre, Result};
 use serde::{Deserialize, Serialize};
 
@@ -56,8 +60,11 @@ impl LabelSelect {
             if found_labels.is_empty() && selection == Selection::MustChoose {
                 return Ok(vec![all_labels
                     .remove(
-                        &label_list[interactive::select("Select label", &label_list)?
-                            .ok_or_else(|| eyre!("no labels selected"))?]
+                        &label_list[interactive::select(
+                            "Select label",
+                            &label_list.iter().map(|l| FullLabel(l)).collect::<Vec<_>>(),
+                        )?
+                        .ok_or_else(|| eyre!("no labels selected"))?]
                         .id,
                     )
                     .unwrap()]);

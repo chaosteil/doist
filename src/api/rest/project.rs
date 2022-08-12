@@ -54,6 +54,10 @@ impl Treeable for Project {
     fn parent_id(&self) -> Option<ProjectID> {
         self.parent_id
     }
+
+    fn reset_parent(&mut self) {
+        self.parent_id = None;
+    }
 }
 
 impl std::fmt::Display for Project {

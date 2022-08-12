@@ -6,7 +6,7 @@
 use color_eyre::{eyre::eyre, Result};
 use std::{
     cell::RefCell,
-    collections::{hash_map::Entry, HashMap, VecDeque},
+    collections::{hash_map::Entry, HashMap, HashSet, VecDeque},
     ops::Deref,
     rc::Rc,
 };
@@ -20,6 +20,9 @@ pub trait Treeable: std::fmt::Debug + std::cmp::Ord {
     fn id(&self) -> Self::ID;
     /// The optional parent ID of the current item.
     fn parent_id(&self) -> Option<Self::ID>;
+    /// To help finish trees that are perhaps not complete, reset_parent is called on items that
+    /// could not find a parent.
+    fn reset_parent(&mut self);
 }
 
 /// Tree is a representation of Items as a tree.
@@ -99,11 +102,18 @@ impl<T: Treeable + std::cmp::Eq> Tree<T> {
     ///
     /// TODO: there is a case where a filtered todoist API will return only the subtasks and not
     /// its parents, thus missing the whole tree might be solved by dynamically fetching parents?
+    /// Currently solved it by resetting parents of tasks that are not in the initial vector.
     pub fn from_items(items: Vec<T>) -> Result<Vec<Tree<T>>> {
+        let ids = items.iter().map(|t| t.id()).collect::<HashSet<_>>();
         // Split into things without parents and things with parents
         let (top_level_items, mut subitems): (VecDeque<_>, VecDeque<_>) = items
             .into_iter()
-            .map(|item| {
+            .map(|mut item| {
+                if let Some(parent) = item.parent_id() {
+                    if !ids.contains(&parent) {
+                        item.reset_parent();
+                    }
+                }
                 Rc::new(RefCell::new(TreeBuilder {
                     item,
                     parent: None,
@@ -118,8 +128,7 @@ impl<T: Treeable + std::cmp::Eq> Tree<T> {
             .map(|item| (item.borrow().item.id(), item.clone()))
             .collect();
 
-        let mut fails = 0; // Tracks for infinite loop on subitems
-        while !subitems.is_empty() && fails <= subitems.len() {
+        while !subitems.is_empty() {
             let subitem = subitems.pop_front().unwrap();
             let parent = items.entry(
                 subitem
@@ -129,11 +138,9 @@ impl<T: Treeable + std::cmp::Eq> Tree<T> {
                     .ok_or_else(|| eyre!("Subitem has bad parent assigned"))?,
             );
             if let Entry::Vacant(_) = parent {
-                fails += 1;
                 subitems.push_back(subitem);
                 continue;
             }
-            fails = 0;
             // Get the parent, and add our entry
             parent.and_modify(|entry| {
                 subitem.borrow_mut().parent = Some(());
@@ -143,9 +150,6 @@ impl<T: Treeable + std::cmp::Eq> Tree<T> {
             items.insert(subitem.borrow().item.id(), subitem.clone());
         }
 
-        if !subitems.is_empty() {
-            return Err(eyre!("missing parent nodes in {} subitems", subitems.len()));
-        }
         let items: Result<Vec<_>> = items
             .into_iter()
             .filter(|(_, c)| c.borrow().parent.is_none())
@@ -281,7 +285,7 @@ mod tests {
     }
 
     #[test]
-    fn task_tree_bad_input() {
+    fn task_tree_no_parent() {
         let tasks = vec![
             Task {
                 parent_id: Some(1),
@@ -292,6 +296,9 @@ mod tests {
                 ..Task::new(3, "three")
             },
         ];
-        assert!(Tree::from_items(tasks).is_err());
+        let trees = Tree::from_items(tasks).unwrap();
+        assert_eq!(trees.len(), 1);
+        assert_eq!(trees[0].item.parent_id, None);
+        assert_eq!(trees[0].subitems[0].item.id, 3);
     }
 }

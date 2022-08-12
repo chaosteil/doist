@@ -102,6 +102,10 @@ impl Treeable for Task {
     fn parent_id(&self) -> Option<TaskID> {
         self.parent_id
     }
+
+    fn reset_parent(&mut self) {
+        self.parent_id = None;
+    }
 }
 
 /// Used to display full information about a Task.

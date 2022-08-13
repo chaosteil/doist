@@ -22,7 +22,7 @@ pub struct LabelSelect {
 }
 
 /// Selection changes the selection mode of [`LabelSelect::labels`].
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 pub enum Selection {
     /// If no labels were chosen, an empty vector is returned
     AllowEmpty,
@@ -62,7 +62,7 @@ impl LabelSelect {
                     .remove(
                         &label_list[interactive::select(
                             "Select label",
-                            &label_list.iter().map(|l| FullLabel(l)).collect::<Vec<_>>(),
+                            &label_list.iter().map(FullLabel).collect::<Vec<_>>(),
                         )?
                         .ok_or_else(|| eyre!("no labels selected"))?]
                         .id,

@@ -73,6 +73,12 @@ enum ProjectCommands {
     /// Add a comment on a project.
     #[clap(alias = "C")]
     Comment(projects::comment::Params),
+    /// Adds (creates) a new project.
+    #[clap(alias = "a")]
+    Add(projects::add::Params),
+    /// Deletes a project
+    #[clap(alias = "d")]
+    Delete(projects::delete::Params),
 }
 
 #[derive(Subcommand, Debug)]
@@ -83,7 +89,7 @@ enum LabelCommands {
     /// Adds (creates) a new label.
     #[clap(alias = "a")]
     Add(labels::add::Params),
-    /// Deletes a new label.
+    /// Deletes a label.
     #[clap(alias = "d")]
     Delete(labels::delete::Params),
 }
@@ -114,6 +120,8 @@ impl Args {
                             ProjectCommands::Comment(p) => {
                                 projects::comment::comment(p, &gw).await?
                             }
+                            ProjectCommands::Add(p) => projects::add::add(p, &gw).await?,
+                            ProjectCommands::Delete(p) => projects::delete::delete(p, &gw).await?,
                         },
                         AuthCommands::Labels(p) => match p {
                             LabelCommands::List(p) => labels::list::list(p, &gw).await?,

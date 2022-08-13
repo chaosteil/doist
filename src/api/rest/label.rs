@@ -57,7 +57,7 @@ impl<'a> std::fmt::Display for FullLabel<'a> {
     }
 }
 
-/// Command used with [`super::Gateway::label_create`] to create a new [`Label`].
+/// Command used with [`super::Gateway::create_label`] to create a new [`Label`].
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct CreateLabel {
     /// Name of the label to create.

@@ -71,6 +71,22 @@ impl std::fmt::Display for Project {
     }
 }
 
+/// Command used with [`super::Gateway::create_project`] to create a new [`Projectk`].
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct CreateProject {
+    /// Name of the project to create.
+    pub name: String,
+    /// Makes the newly created project a child of this parent project.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parent_id: Option<ProjectID>,
+    /// Color of the project icon.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub color: Option<Color>,
+    /// Mark as favorite or not.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub favorite: Option<bool>,
+}
+
 #[cfg(test)]
 impl Project {
     /// This is initializer is used for tests, as in general the tool relies on the API and not

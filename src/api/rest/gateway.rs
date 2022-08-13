@@ -8,8 +8,8 @@ use reqwest::{Client, RequestBuilder, StatusCode};
 use serde::{de::DeserializeOwned, Serialize};
 
 use super::{
-    Comment, CreateComment, CreateLabel, CreateTask, Label, LabelID, Project, ProjectID, Section,
-    SectionID, Task, TaskDue, TaskID, UpdateTask,
+    Comment, CreateComment, CreateLabel, CreateProject, CreateTask, Label, LabelID, Project,
+    ProjectID, Section, SectionID, Task, TaskDue, TaskID, UpdateTask,
 };
 
 /// Makes network calls to the Todoist API and returns structs that can then be worked with.
@@ -157,6 +157,21 @@ impl Gateway {
         self.get::<(), _>(&format!("rest/v1/projects/{}", id), None)
             .await
             .wrap_err("unable to get project")
+    }
+
+    /// Creates a project by calling the Todoist API.
+    pub async fn create_project(&self, project: &CreateProject) -> Result<Project> {
+        self.post("rest/v1/projects", project)
+            .await
+            .wrap_err("unable to create project")?
+            .ok_or_else(|| eyre!("Unable to create project"))
+    }
+
+    /// Deletes a project by calling the Todoist API.
+    pub async fn delete_project(&self, project: ProjectID) -> Result<()> {
+        self.delete(&format!("rest/v1/projects/{}", project))
+            .await
+            .wrap_err("unable to delete project")
     }
 
     /// Returns details about a single section.
@@ -593,7 +608,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn delete_task() {
+    async fn delete_label() {
         let mock_server = MockServer::start().await;
         Mock::given(method("DELETE"))
             .and(path("/rest/v1/labels/123"))
@@ -602,6 +617,39 @@ mod test {
             .await;
         let gw = gateway("", &mock_server);
         let closed = gw.delete_label(123).await;
+        assert!(closed.is_ok());
+    }
+
+    #[tokio::test]
+    async fn creates_project() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/rest/v1/projects"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(Project::new(123, "hello")))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let project = gw
+            .create_project(&CreateProject {
+                name: "hello".to_string(),
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        mock_server.verify().await;
+        assert_eq!(project.id, 123);
+    }
+
+    #[tokio::test]
+    async fn delete_project() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("DELETE"))
+            .and(path("/rest/v1/projects/123"))
+            .respond_with(ResponseTemplate::new(204))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let closed = gw.delete_project(123).await;
         assert!(closed.is_ok());
     }
 

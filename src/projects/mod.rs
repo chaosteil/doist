@@ -2,6 +2,6 @@
 pub mod add;
 pub mod comment;
 pub mod delete;
-mod filter;
+pub(crate) mod filter;
 pub mod list;
 pub mod view;

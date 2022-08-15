@@ -17,6 +17,7 @@ mod fuzz_select;
 mod interactive;
 mod labels;
 mod projects;
+mod sections;
 mod tasks;
 
 use fuzz_select::fuzz_select;

@@ -1,6 +1,6 @@
 use crate::{
     config::Config,
-    labels, projects,
+    labels, projects, sections,
     tasks::{add, close, comment, edit, list, view},
 };
 use clap::{AppSettings, Parser, Subcommand};
@@ -79,6 +79,10 @@ enum ProjectCommands {
     /// Deletes a project
     #[clap(alias = "d")]
     Delete(projects::delete::Params),
+
+    /// Manages sections.
+    #[clap(subcommand, alias = "s")]
+    Sections(SectionCommands),
 }
 
 #[derive(Subcommand, Debug)]
@@ -92,6 +96,19 @@ enum LabelCommands {
     /// Deletes a label.
     #[clap(alias = "d")]
     Delete(labels::delete::Params),
+}
+
+#[derive(Subcommand, Debug)]
+enum SectionCommands {
+    /// Lists all current sections of the project.
+    #[clap(alias = "l")]
+    List(sections::list::Params),
+    /// Adds (creates) a new section in a project.
+    #[clap(alias = "a")]
+    Add(sections::add::Params),
+    /// Deletes a section in a project.
+    #[clap(alias = "d")]
+    Delete(sections::delete::Params),
 }
 
 impl Args {
@@ -122,6 +139,13 @@ impl Args {
                             }
                             ProjectCommands::Add(p) => projects::add::add(p, &gw).await?,
                             ProjectCommands::Delete(p) => projects::delete::delete(p, &gw).await?,
+                            ProjectCommands::Sections(s) => match s {
+                                SectionCommands::List(p) => sections::list::list(p, &gw).await?,
+                                SectionCommands::Add(p) => sections::add::add(p, &gw).await?,
+                                SectionCommands::Delete(p) => {
+                                    sections::delete::delete(p, &gw).await?
+                                }
+                            },
                         },
                         AuthCommands::Labels(p) => match p {
                             LabelCommands::List(p) => labels::list::list(p, &gw).await?,

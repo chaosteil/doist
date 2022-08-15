@@ -11,7 +11,9 @@ use crate::{
         tree::{Tree, TreeFlattenExt},
     },
     interactive, labels,
-    tasks::{close, edit, filter, project, section},
+    projects::project::ProjectSelect,
+    sections::section::SectionSelect,
+    tasks::{close, edit, filter},
 };
 use strum::{Display, EnumVariantNames, FromRepr, VariantNames};
 
@@ -23,9 +25,9 @@ pub struct Params {
     #[clap(short = 'n', long = "nointeractive")]
     nointeractive: bool,
     #[clap(flatten)]
-    project: project::ProjectSelect,
+    project: ProjectSelect,
     #[clap(flatten)]
-    section: section::SectionSelect,
+    section: SectionSelect,
     #[clap(flatten)]
     label: labels::LabelSelect,
 }

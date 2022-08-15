@@ -71,7 +71,7 @@ impl std::fmt::Display for Project {
     }
 }
 
-/// Command used with [`super::Gateway::create_project`] to create a new [`Projectk`].
+/// Command used with [`super::Gateway::create_project`] to create a new [`Project`].
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct CreateProject {
     /// Name of the project to create.

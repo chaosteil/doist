@@ -9,10 +9,10 @@ use crate::{
         tree::Tree,
     },
     labels::{self, LabelSelect},
+    projects::project::ProjectSelect,
+    sections::section::SectionSelect,
     tasks::Priority,
 };
-
-use super::{project::ProjectSelect, section::SectionSelect};
 
 #[derive(clap::Parser, Debug, Deserialize, Serialize)]
 pub struct Params {

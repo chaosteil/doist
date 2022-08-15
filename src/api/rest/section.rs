@@ -48,6 +48,18 @@ impl std::fmt::Display for Section {
     }
 }
 
+/// Command used with [`super::Gateway::create_section`] to create a new [`Section`].
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct CreateSection {
+    /// Name of the project to create.
+    pub name: String,
+    /// The project of which this section is part of
+    pub project_id: ProjectID,
+    /// Order of the section in lists.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub order: Option<isize>,
+}
+
 #[cfg(test)]
 impl Section {
     /// This is initializer is used for tests, as in general the tool relies on the API and not

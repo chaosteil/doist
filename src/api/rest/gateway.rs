@@ -8,8 +8,8 @@ use reqwest::{Client, RequestBuilder, StatusCode};
 use serde::{de::DeserializeOwned, Serialize};
 
 use super::{
-    Comment, CreateComment, CreateLabel, CreateProject, CreateTask, Label, LabelID, Project,
-    ProjectID, Section, SectionID, Task, TaskDue, TaskID, UpdateTask,
+    Comment, CreateComment, CreateLabel, CreateProject, CreateSection, CreateTask, Label, LabelID,
+    Project, ProjectID, Section, SectionID, Task, TaskDue, TaskID, UpdateTask,
 };
 
 /// Makes network calls to the Todoist API and returns structs that can then be worked with.
@@ -181,6 +181,21 @@ impl Gateway {
         self.get::<(), _>(&format!("rest/v1/sections/{}", id), None)
             .await
             .wrap_err("unable to get section")
+    }
+
+    /// Creates a section by calling the Todoist API.
+    pub async fn create_section(&self, section: &CreateSection) -> Result<Section> {
+        self.post("rest/v1/sections", section)
+            .await
+            .wrap_err("unable to create section")?
+            .ok_or_else(|| eyre!("Unable to create section"))
+    }
+
+    /// Deletes a section by calling the Todoist API.
+    pub async fn delete_section(&self, section: SectionID) -> Result<()> {
+        self.delete(&format!("rest/v1/sections/{}", section))
+            .await
+            .wrap_err("unable to delete section")
     }
 
     /// Returns details about a single label.
@@ -657,10 +672,46 @@ mod test {
         Gateway::new(token, &ms.uri().parse().unwrap())
     }
 
+    #[tokio::test]
+    async fn creates_section() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/rest/v1/sections"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(Section::new(123, 456, "heya")))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let section = gw
+            .create_section(&CreateSection {
+                name: "hello".to_string(),
+                project_id: 456,
+                ..Default::default()
+            })
+            .await
+            .unwrap();
+        mock_server.verify().await;
+        assert_eq!(section.id, 123);
+        assert_eq!(section.project_id, 456);
+    }
+
+    #[tokio::test]
+    async fn delete_section() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("DELETE"))
+            .and(path("/rest/v1/sections/123"))
+            .respond_with(ResponseTemplate::new(204))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let closed = gw.delete_section(123).await;
+        assert!(closed.is_ok());
+    }
+
     fn create_task(id: TaskID, project_id: ProjectID, content: &str) -> Task {
-        let mut task = crate::api::rest::Task::new(id, content);
-        task.project_id = project_id;
-        task
+        crate::api::rest::Task {
+            project_id,
+            ..crate::api::rest::Task::new(id, content)
+        }
     }
 
     fn create_comment(id: CommentID, tid: ThreadID, content: &str) -> Comment {

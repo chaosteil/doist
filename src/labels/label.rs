@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use crate::{
     api::rest::{FullLabel, Label},
-    fuzz_select::fuzz_select,
     interactive,
 };
 use color_eyre::{eyre::eyre, Result};
@@ -78,7 +77,8 @@ impl LabelSelect {
                 .unwrap()
                 .iter()
                 .map(|label| {
-                    fuzz_select(&label_list, label).map(|id| all_labels.remove(&id).unwrap())
+                    interactive::fuzz_select(&label_list, label)
+                        .map(|id| all_labels.remove(&id).unwrap())
                 })
                 .collect::<Result<Vec<_>>>()?,
         );

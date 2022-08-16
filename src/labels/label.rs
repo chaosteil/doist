@@ -78,7 +78,7 @@ impl LabelSelect {
                 .iter()
                 .map(|label| {
                     interactive::fuzz_select(&label_list, label)
-                        .map(|id| all_labels.remove(&id).unwrap())
+                        .map(|label| all_labels.remove(&label.id).unwrap())
                 })
                 .collect::<Result<Vec<_>>>()?,
         );

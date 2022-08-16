@@ -30,27 +30,29 @@ pub fn select<T: ToString>(prompt: &str, items: &[T]) -> Result<Option<usize>> {
     Ok(result)
 }
 
-pub fn fuzz_select<U, T: FuzzSelect<U>>(items: &[T], input: &str) -> Result<U> {
+pub fn fuzz_select<'a, T: FuzzSelect>(items: &'a [T], input: &'_ str) -> Result<&'a T> {
     if items.is_empty() {
         return Err(eyre!("no items available for selection, aborting"));
     }
     let matcher = SkimMatcherV2::default();
-    let item = items
+    items
         .iter()
-        .filter_map(|i| matcher.fuzzy_match(i.name(), input).map(|s| (s, i.id())))
-        .max_by(|left, right| left.0.cmp(&right.0));
-    match item {
-        Some((_, id)) => Ok(id),
-        None => Err(eyre!("no suitable item found, aborting")),
-    }
+        .filter_map(|i| matcher.fuzzy_match(i.name(), input).map(|s| (s, i)))
+        .max_by(|left, right| left.0.cmp(&right.0))
+        .and_then(|v| Some(v.1))
+        .ok_or_else(|| eyre!("no suitable item found, aborting"))
 }
 
-pub trait FuzzSelect<T> {
-    fn id(&self) -> T;
+pub trait FuzzSelect {
+    type ID;
+
+    fn id(&self) -> Self::ID;
     fn name(&self) -> &str;
 }
 
-impl FuzzSelect<ProjectID> for Project {
+impl FuzzSelect for Project {
+    type ID = ProjectID;
+
     fn id(&self) -> ProjectID {
         self.id
     }
@@ -59,7 +61,9 @@ impl FuzzSelect<ProjectID> for Project {
     }
 }
 
-impl FuzzSelect<SectionID> for Section {
+impl FuzzSelect for Section {
+    type ID = SectionID;
+
     fn id(&self) -> SectionID {
         self.id
     }
@@ -68,7 +72,9 @@ impl FuzzSelect<SectionID> for Section {
     }
 }
 
-impl FuzzSelect<LabelID> for Label {
+impl FuzzSelect for Label {
+    type ID = LabelID;
+
     fn id(&self) -> LabelID {
         self.id
     }
@@ -77,7 +83,9 @@ impl FuzzSelect<LabelID> for Label {
     }
 }
 
-impl FuzzSelect<TaskID> for Task {
+impl FuzzSelect for Task {
+    type ID = TaskID;
+
     fn id(&self) -> TaskID {
         self.id
     }
@@ -92,7 +100,9 @@ mod test {
 
     type Selectable<'a> = (i32, &'a str);
 
-    impl<'a> FuzzSelect<i32> for Selectable<'a> {
+    impl<'a> FuzzSelect for Selectable<'a> {
+        type ID = i32;
+
         fn id(&self) -> i32 {
             self.0
         }
@@ -104,8 +114,8 @@ mod test {
     #[test]
     fn select_best() {
         let select: Vec<Selectable> = vec![(0, "zero"), (1, "one"), (2, "two"), (3, "three")];
-        assert_eq!(fuzz_select(&select, "one").unwrap(), 1);
-        assert_eq!(fuzz_select(&select, "w").unwrap(), 2);
+        assert_eq!(fuzz_select(&select, "one").unwrap().0, 1);
+        assert_eq!(fuzz_select(&select, "w").unwrap().0, 2);
         assert!(fuzz_select(&select, "what").is_err());
     }
 }

@@ -35,7 +35,9 @@ impl SectionSelect {
             None => sections,
         };
         Ok(Some(
-            fuzz_select(&sections, section_name).wrap_err("could not select section")?,
+            fuzz_select(&sections, section_name)
+                .wrap_err("could not select section")?
+                .id,
         ))
     }
 }

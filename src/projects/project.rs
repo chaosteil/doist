@@ -23,7 +23,8 @@ impl ProjectSelect {
         };
         Ok(Some(
             fuzz_select(&gw.projects().await?, project_name)
-                .wrap_err("could not select project")?,
+                .wrap_err("could not select project")?
+                .id,
         ))
     }
 }

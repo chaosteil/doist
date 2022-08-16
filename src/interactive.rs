@@ -4,14 +4,55 @@ use fuzzy_matcher::FuzzyMatcher;
 use crate::api::rest::{Label, LabelID, Project, ProjectID, Section, SectionID, Task, TaskID};
 use color_eyre::{eyre::eyre, eyre::WrapErr, Result};
 
-// TODO:
-// Optional:
-//   * Has ID? Check if valid, return Ok(Some(item))
-//   * Has name? Run through fuzzer, return Ok(Some(item))
-//   * Nothing? Return Ok(None)
-// Must Choose:
-//   * Go through optional, if Ok(None) ->
-//   * Nothing? Spin up interactive mode, return Ok(item)
+pub struct SelectOptional<T: FuzzSelect> {
+    name: Option<String>,
+    id: Option<T::ID>,
+}
+
+pub struct SelectMandatory<T: FuzzSelect> {
+    name: Option<String>,
+    id: Option<T::ID>,
+}
+
+// TODO: https://github.com/clap-rs/clap/blob/v3.1.18/examples/derive_ref/flatten_hand_args.rs
+
+impl<T: FuzzSelect> SelectOptional<T> {
+    pub fn select<'a>(&self, items: &'a [T]) -> Result<Option<&'a T>> {
+        let name = match &self.name {
+            Some(name) => name,
+            None => {
+                return Ok(self
+                    .id
+                    .as_ref()
+                    .and_then(|id| items.iter().find(|item| item.id() == *id)))
+            }
+        };
+        Ok(Some(fuzz_select(items, name)?))
+    }
+}
+
+impl<T: FuzzSelect + std::fmt::Display> SelectMandatory<T> {
+    pub fn select<'a>(&self, items: &'a [T]) -> Result<&'a T> {
+        let selection = SelectOptional::select(&self.into(), items)?;
+        match selection {
+            Some(s) => Ok(s),
+            None => Ok(select("select item", items)?
+                .map(|i| &items[i])
+                .ok_or_else(|| eyre!("no selection made"))?),
+        }
+    }
+}
+
+impl<T: FuzzSelect> From<&SelectMandatory<T>> for SelectOptional<T> {
+    fn from(s: &SelectMandatory<T>) -> Self {
+        SelectOptional {
+            name: s.name.clone(),
+            id: s.id.clone(),
+        }
+    }
+}
+
+impl<T: FuzzSelect> SelectMandatory<T> {}
 
 pub fn select<T: ToString>(prompt: &str, items: &[T]) -> Result<Option<usize>> {
     let result = dialoguer::FuzzySelect::with_theme(&dialoguer::theme::ColorfulTheme {
@@ -39,12 +80,12 @@ pub fn fuzz_select<'a, T: FuzzSelect>(items: &'a [T], input: &'_ str) -> Result<
         .iter()
         .filter_map(|i| matcher.fuzzy_match(i.name(), input).map(|s| (s, i)))
         .max_by(|left, right| left.0.cmp(&right.0))
-        .and_then(|v| Some(v.1))
+        .map(|v| v.1)
         .ok_or_else(|| eyre!("no suitable item found, aborting"))
 }
 
 pub trait FuzzSelect {
-    type ID;
+    type ID: std::cmp::PartialEq + std::clone::Clone;
 
     fn id(&self) -> Self::ID;
     fn name(&self) -> &str;

@@ -25,7 +25,7 @@ impl List {
         Ok(List { projects, sections })
     }
 
-    pub fn select_project(&self) -> Result<Option<&Tree<Project>>> {
+    pub fn _select_project(&self) -> Result<Option<&Tree<Project>>> {
         if self.projects.is_empty() {
             return Err(eyre!("no projects were found"));
         }

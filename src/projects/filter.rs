@@ -12,29 +12,6 @@ use color_eyre::{
     Result,
 };
 
-#[derive(clap::Parser, Debug)]
-pub struct ProjectOrInteractive {
-    id: Option<ProjectID>,
-}
-
-impl ProjectOrInteractive {
-    pub fn with_id(id: ProjectID) -> Self {
-        Self { id: Some(id) }
-    }
-
-    pub async fn project(&self, gw: &Gateway) -> Result<(ProjectID, List)> {
-        let projects = List::fetch_tree(gw).await?;
-        let id = match self.id {
-            Some(id) => id,
-            None => match projects.select_project()? {
-                Some(project) => project.id,
-                None => return Err(eyre!("no selection was made")),
-            },
-        };
-        Ok((id, projects))
-    }
-}
-
 pub struct List {
     projects: Vec<Tree<Project>>,
     sections: HashMap<SectionID, Section>,
@@ -75,11 +52,5 @@ impl List {
                 }
             })
             .collect()
-    }
-}
-
-impl From<ProjectID> for ProjectOrInteractive {
-    fn from(id: ProjectID) -> Self {
-        Self::with_id(id)
     }
 }

@@ -1,19 +1,19 @@
-use crate::api::rest::Gateway;
+use crate::{
+    api::rest::{Gateway, Project},
+    interactive,
+};
 use color_eyre::Result;
-
-use super::filter::ProjectOrInteractive;
 
 #[derive(clap::Parser, Debug)]
 pub struct Params {
     #[clap(flatten)]
-    project: ProjectOrInteractive,
+    project: interactive::Selection<Project>,
 }
 
 pub async fn delete(params: Params, gw: &Gateway) -> Result<()> {
-    let (id, projects) = params.project.project(gw).await?;
-    gw.delete_project(id).await?;
-    if let Some(project) = projects.project(id) {
-        println!("deleted project: {}", &project.item);
-    }
+    let projects = gw.projects().await?;
+    let project = params.project.mandatory(&projects)?;
+    gw.delete_project(project.id).await?;
+    println!("deleted project: {}", &project);
     Ok(())
 }

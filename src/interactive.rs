@@ -1,23 +1,100 @@
+use clap::{Arg, ArgAction, Args, FromArgMatches};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 
 use crate::api::rest::{Label, LabelID, Project, ProjectID, Section, SectionID, Task, TaskID};
 use color_eyre::{eyre::eyre, eyre::WrapErr, Result};
 
-pub struct SelectOptional<T: FuzzSelect> {
+#[derive(Debug)]
+pub struct Selection<T: FuzzSelect> {
     name: Option<String>,
     id: Option<T::ID>,
 }
 
-pub struct SelectMandatory<T: FuzzSelect> {
-    name: Option<String>,
-    id: Option<T::ID>,
+macro_rules! selection {
+    ($select_type:ty, $select_name:literal, $long:literal, $short:literal, $select_id:literal, $select_help:literal, $select_id_help:literal) => {
+        impl FromArgMatches for Selection<$select_type> {
+            fn from_arg_matches(matches: &clap::ArgMatches) -> Result<Self, clap::Error> {
+                let id = match matches.get_one::<String>($select_id).map(|i| i.to_owned()) {
+                    Some(id) => Some(id.parse().map_err(|_| {
+                        clap::Error::raw(clap::ErrorKind::ValueValidation, "must be valid ID")
+                    })?),
+                    None => None,
+                };
+                Ok(Self {
+                    name: matches
+                        .get_one::<String>($select_name)
+                        .map(|i| i.to_owned()),
+                    id,
+                })
+            }
+
+            fn update_from_arg_matches(
+                &mut self,
+                matches: &clap::ArgMatches,
+            ) -> Result<(), clap::Error> {
+                if let Some(name) = matches
+                    .get_one::<String>($select_name)
+                    .map(|i| i.to_owned())
+                {
+                    self.name = Some(name)
+                }
+                if let Some(id) = matches.get_one::<String>($select_id).map(|i| i.to_owned()) {
+                    self.id = Some(id.parse().map_err(|_| {
+                        clap::Error::raw(clap::ErrorKind::ValueValidation, "must be valid ID")
+                    })?)
+                }
+                Ok(())
+            }
+        }
+
+        impl Args for Selection<$select_type> {
+            fn augment_args(cmd: clap::Command<'_>) -> clap::Command<'_> {
+                cmd.arg(
+                    Arg::new($select_name)
+                        .short($short)
+                        .long($long)
+                        .help($select_help)
+                        .action(ArgAction::Set),
+                )
+                .arg(
+                    Arg::new($select_id)
+                        .long($select_id)
+                        .help($select_id_help)
+                        .action(ArgAction::Set),
+                )
+            }
+
+            fn augment_args_for_update(cmd: clap::Command<'_>) -> clap::Command<'_> {
+                Self::augment_args(cmd)
+            }
+        }
+    };
 }
 
-// TODO: https://github.com/clap-rs/clap/blob/v3.1.18/examples/derive_ref/flatten_hand_args.rs
+selection!(
+    Project,
+    "project",
+    "project",
+    'P',
+    "project_id",
+    "Uses the project name with the closest name, if possible. Does fuzzy matching for the name.",
+    "ID of the project to use. Does nothing if -P is specified."
+);
 
-impl<T: FuzzSelect> SelectOptional<T> {
-    pub fn select<'a>(&self, items: &'a [T]) -> Result<Option<&'a T>> {
+// TODO: filter down selection based on selected project if any
+selection!(
+    Section,
+    "section",
+    "section",
+    'S',
+    "section_id",
+    "Uses the section name with the closest name, if possible. Does fuzzy matching for the name.",
+    "ID of the section to use. Does nothing if -S is specified."
+);
+
+impl<T: FuzzSelect + std::fmt::Display> Selection<T> {
+    pub fn optional<'a>(&self, items: &'a [T]) -> Result<Option<&'a T>> {
         let name = match &self.name {
             Some(name) => name,
             None => {
@@ -29,11 +106,8 @@ impl<T: FuzzSelect> SelectOptional<T> {
         };
         Ok(Some(fuzz_select(items, name)?))
     }
-}
-
-impl<T: FuzzSelect + std::fmt::Display> SelectMandatory<T> {
-    pub fn select<'a>(&self, items: &'a [T]) -> Result<&'a T> {
-        let selection = SelectOptional::select(&self.into(), items)?;
+    pub fn mandatory<'a>(&self, items: &'a [T]) -> Result<&'a T> {
+        let selection = Self::optional(self, items)?;
         match selection {
             Some(s) => Ok(s),
             None => Ok(select("select item", items)?
@@ -42,17 +116,6 @@ impl<T: FuzzSelect + std::fmt::Display> SelectMandatory<T> {
         }
     }
 }
-
-impl<T: FuzzSelect> From<&SelectMandatory<T>> for SelectOptional<T> {
-    fn from(s: &SelectMandatory<T>) -> Self {
-        SelectOptional {
-            name: s.name.clone(),
-            id: s.id.clone(),
-        }
-    }
-}
-
-impl<T: FuzzSelect> SelectMandatory<T> {}
 
 pub fn select<T: ToString>(prompt: &str, items: &[T]) -> Result<Option<usize>> {
     let result = dialoguer::FuzzySelect::with_theme(&dialoguer::theme::ColorfulTheme {

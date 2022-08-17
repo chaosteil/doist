@@ -1,20 +1,18 @@
 use std::collections::HashMap;
 
 use color_eyre::Result;
-use serde::{Deserialize, Serialize};
 
 use crate::{
     api::{
-        rest::{CreateTask, Gateway, TableTask, TaskDue},
+        rest::{CreateTask, Gateway, Project, Section, TableTask, TaskDue},
         tree::Tree,
     },
+    interactive,
     labels::{self, LabelSelect},
-    projects::project::ProjectSelect,
-    sections::section::SectionSelect,
     tasks::Priority,
 };
 
-#[derive(clap::Parser, Debug, Deserialize, Serialize)]
+#[derive(clap::Parser, Debug)]
 pub struct Params {
     /// Name (title) of the task to add to the todo list.
     name: String,
@@ -30,16 +28,17 @@ pub struct Params {
     #[clap(value_enum, short = 'p', long = "priority")]
     priority: Option<Priority>,
     #[clap(flatten)]
-    project: ProjectSelect,
+    project: interactive::Selection<Project>,
     #[clap(flatten)]
-    section: SectionSelect,
+    section: interactive::Selection<Section>,
     #[clap(flatten)]
     labels: LabelSelect,
 }
 
 pub async fn add(params: Params, gw: &Gateway) -> Result<()> {
-    let project_id = params.project.project(gw).await?;
-    let section_id = params.section.section(project_id, gw).await?;
+    let (projects, sections) = tokio::try_join!(gw.projects(), gw.sections())?;
+    let project = params.project.optional(&projects)?;
+    let section = params.section.optional(&sections)?;
     let labels = params
         .labels
         .labels(gw, labels::Selection::AllowEmpty)
@@ -48,22 +47,14 @@ pub async fn add(params: Params, gw: &Gateway) -> Result<()> {
         content: params.name,
         description: params.desc,
         priority: params.priority.map(|p| p.into()),
-        project_id,
-        section_id,
+        project_id: project.map(|p| p.id),
+        section_id: section.map(|s| s.id),
         label_ids: labels.iter().map(|l| l.id).collect(),
         ..Default::default()
     };
     if let Some(due) = params.due {
         create.due = Some(TaskDue::String(due));
     }
-    let project = match project_id {
-        Some(pid) => Some(gw.project(pid).await?),
-        None => None,
-    };
-    let section = match section_id {
-        Some(sid) => Some(gw.section(sid).await?),
-        None => None,
-    };
     let labels = if !create.label_ids.is_empty() {
         let mut labels: HashMap<_, _> = gw
             .labels()
@@ -81,8 +72,8 @@ pub async fn add(params: Params, gw: &Gateway) -> Result<()> {
     };
     let task = Tree::new(gw.create(&create).await?);
     let mut table = TableTask::from_task(&task);
-    table.1 = project.as_ref();
-    table.2 = section.as_ref();
+    table.1 = project;
+    table.2 = section;
     table.3 = labels.iter().collect();
     println!("created task: {}", table);
     Ok(())

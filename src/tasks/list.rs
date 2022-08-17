@@ -11,8 +11,6 @@ use crate::{
         tree::{Tree, TreeFlattenExt},
     },
     interactive, labels,
-    projects::project::ProjectSelect,
-    sections::section::SectionSelect,
     tasks::{close, edit, filter},
 };
 use strum::{Display, EnumVariantNames, FromRepr, VariantNames};
@@ -25,9 +23,9 @@ pub struct Params {
     #[clap(short = 'n', long = "nointeractive")]
     nointeractive: bool,
     #[clap(flatten)]
-    project: ProjectSelect,
+    project: interactive::Selection<Project>,
     #[clap(flatten)]
-    section: SectionSelect,
+    section: interactive::Selection<Section>,
     #[clap(flatten)]
     label: labels::LabelSelect,
 }
@@ -134,18 +132,19 @@ pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
 }
 
 async fn filter_list(list: List, params: &Params, gw: &Gateway) -> Result<List> {
-    let project = params.project.project(gw).await?;
-    let section = params.section.section(project, gw).await?;
+    let (projects, sections) = tokio::try_join!(gw.projects(), gw.sections())?;
+    let project = params.project.optional(&projects)?;
+    let section = params.section.optional(&sections)?;
     let labels = params
         .label
         .labels(gw, labels::Selection::AllowEmpty)
         .await?;
     let mut list = list;
-    if let Some(id) = project {
-        list = list.filter(|tree| tree.project_id == id);
+    if let Some(p) = project {
+        list = list.filter(|tree| tree.project_id == p.id);
     }
-    if let Some(id) = section {
-        list = list.filter(|tree| tree.section_id == Some(id));
+    if let Some(s) = section {
+        list = list.filter(|tree| tree.section_id == Some(s.id));
     }
     if !labels.is_empty() {
         list = list.filter(|tree| {

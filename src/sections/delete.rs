@@ -1,25 +1,20 @@
-use crate::{api::rest::Gateway, projects::project::ProjectSelect};
-use color_eyre::{eyre::eyre, Result};
-
-use super::section::SectionSelect;
+use crate::{
+    api::rest::{Gateway, Section},
+    interactive,
+};
+use color_eyre::Result;
 
 #[derive(clap::Parser, Debug)]
 pub struct Params {
+    // TODO: make soft dependency on project selection here
     #[clap(flatten)]
-    project: ProjectSelect,
-    #[clap(flatten)]
-    section: SectionSelect,
+    section: interactive::Selection<Section>,
 }
 
 pub async fn delete(params: Params, gw: &Gateway) -> Result<()> {
-    let project_id = params.project.project(gw).await?;
-    let section_id = params
-        .section
-        .section(project_id, gw)
-        .await?
-        .ok_or_else(|| eyre!("must provide section to delete"))?;
-    let section = gw.section(section_id).await?;
-    gw.delete_section(section_id).await?;
+    let sections = gw.sections().await?;
+    let section = params.section.mandatory(&sections)?;
+    gw.delete_section(section.id).await?;
     println!("deleted section: {}", &section);
     Ok(())
 }

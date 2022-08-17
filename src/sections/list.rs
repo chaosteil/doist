@@ -1,28 +1,26 @@
-use crate::{api::rest::Gateway, projects::filter::ProjectOrInteractive};
-use color_eyre::{eyre::eyre, Result};
+use crate::{
+    api::rest::{Gateway, Project},
+    interactive,
+};
+use color_eyre::Result;
 
 #[derive(clap::Parser, Debug)]
 pub struct Params {
     #[clap(flatten)]
-    project: ProjectOrInteractive,
+    project: interactive::Selection<Project>,
 }
 
 /// Lists available sections in a project.
 pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
-    let (id, projects) = params.project.project(gw).await?;
+    let projects = gw.projects().await?;
+    let project = params.project.mandatory(&projects)?;
     let sections = gw
         .sections()
         .await?
         .into_iter()
-        .filter(|s| s.project_id == id)
+        .filter(|s| s.project_id == project.id)
         .collect::<Vec<_>>();
-    println!(
-        "{} sections:",
-        projects
-            .project(id)
-            .ok_or_else(|| eyre!("project not found in full project list"))?
-            .item
-    );
+    println!("{} sections:", project);
     for s in sections {
         println!("{}", s);
     }

@@ -3,7 +3,7 @@ use crate::{
     comments, interactive,
     projects::filter::List,
 };
-use color_eyre::Result;
+use color_eyre::{eyre::eyre, Result};
 
 #[derive(clap::Parser, Debug)]
 pub struct Params {
@@ -16,7 +16,16 @@ pub async fn view(params: Params, gw: &Gateway) -> Result<()> {
     let project = params.project.mandatory(&projects)?;
     // TODO: no refetch here
     let list = List::fetch_tree(gw).await?;
-    println!("Project: {}", project);
+    let tree = list
+        .project(project.id)
+        .ok_or_else(|| eyre!("full project list contained invalid data"))?;
+    println!("Project: {}", &tree.item);
+    if !tree.subitems.is_empty() {
+        println!("Subprojects:");
+        for project in &tree.subitems {
+            println!("{}", project.item)
+        }
+    }
     let sections = list.sections(project.id);
     if !sections.is_empty() {
         println!("Sections:");

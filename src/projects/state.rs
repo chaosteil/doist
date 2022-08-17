@@ -12,17 +12,17 @@ use color_eyre::{
     Result,
 };
 
-pub struct List {
+pub struct State {
     projects: Vec<Tree<Project>>,
     sections: HashMap<SectionID, Section>,
 }
 
-impl List {
-    pub async fn fetch_tree(gw: &Gateway) -> Result<List> {
+impl State {
+    pub async fn fetch_tree(gw: &Gateway) -> Result<State> {
         let (projects, sections) = tokio::try_join!(gw.projects(), gw.sections())?;
         let projects = Tree::from_items(projects).wrap_err("projects do not form a clean tree")?;
         let sections = sections.into_iter().map(|s| (s.id, s)).collect();
-        Ok(List { projects, sections })
+        Ok(State { projects, sections })
     }
 
     pub fn _select_project(&self) -> Result<Option<&Tree<Project>>> {

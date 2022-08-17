@@ -6,6 +6,7 @@ pub mod edit;
 mod filter;
 pub mod list;
 mod priority;
+mod state;
 pub mod view;
 
 pub use priority::*;

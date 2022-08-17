@@ -5,7 +5,7 @@ use fuzzy_matcher::FuzzyMatcher;
 use crate::api::rest::{Label, LabelID, Project, ProjectID, Section, SectionID, Task, TaskID};
 use color_eyre::{eyre::eyre, eyre::WrapErr, Result};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Selection<T: FuzzSelect> {
     name: Option<String>,
     id: Option<T::ID>,

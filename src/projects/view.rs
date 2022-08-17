@@ -1,7 +1,7 @@
 use crate::{
     api::rest::{Gateway, Project},
     comments, interactive,
-    projects::filter::List,
+    projects::state::State,
 };
 use color_eyre::{eyre::eyre, Result};
 
@@ -15,8 +15,8 @@ pub async fn view(params: Params, gw: &Gateway) -> Result<()> {
     let projects = gw.projects().await?;
     let project = params.project.mandatory(&projects)?;
     // TODO: no refetch here
-    let list = List::fetch_tree(gw).await?;
-    let tree = list
+    let state = State::fetch_tree(gw).await?;
+    let tree = state
         .project(project.id)
         .ok_or_else(|| eyre!("full project list contained invalid data"))?;
     println!("Project: {}", &tree.item);
@@ -26,7 +26,7 @@ pub async fn view(params: Params, gw: &Gateway) -> Result<()> {
             println!("{}", project.item)
         }
     }
-    let sections = list.sections(project.id);
+    let sections = state.sections(project.id);
     if !sections.is_empty() {
         println!("Sections:");
         for section in sections {

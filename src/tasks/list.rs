@@ -1,17 +1,12 @@
-use std::collections::HashMap;
-
-use color_eyre::{eyre::eyre, eyre::WrapErr, Result};
+use color_eyre::{eyre::WrapErr, Result};
 
 use crate::{
     api::{
-        rest::{
-            FullTask, Gateway, Label, LabelID, Project, ProjectID, Section, SectionID, TableTask,
-            Task, TaskID,
-        },
-        tree::{Tree, TreeFlattenExt},
+        rest::{Gateway, Project, Section, Task},
+        tree::Tree,
     },
     interactive, labels,
-    tasks::{close, edit, filter},
+    tasks::{close, edit, filter, state::State},
 };
 use strum::{Display, EnumVariantNames, FromRepr, VariantNames};
 
@@ -30,108 +25,27 @@ pub struct Params {
     label: labels::LabelSelect,
 }
 
-/// List is a helper to fully construct a tasks state for display.
-/// TODO: rename and move to some other module.
-pub struct List {
-    tasks: Vec<Tree<Task>>,
-    projects: HashMap<ProjectID, Project>,
-    sections: HashMap<SectionID, Section>,
-    labels: HashMap<LabelID, Label>,
-}
-
-impl List {
-    pub async fn fetch_tree(filter: Option<&str>, gw: &Gateway) -> Result<List> {
-        let (tasks, projects, sections, labels) =
-            tokio::try_join!(gw.tasks(filter), gw.projects(), gw.sections(), gw.labels())?;
-        let projects = projects.into_iter().map(|p| (p.id, p)).collect();
-        let sections = sections.into_iter().map(|p| (p.id, p)).collect();
-        let labels = labels.into_iter().map(|p| (p.id, p)).collect();
-        let tasks = Tree::from_items(tasks).wrap_err("tasks do not form clean tree")?;
-        Ok(List {
-            tasks,
-            projects,
-            sections,
-            labels,
-        })
-    }
-
-    pub fn task(&self, id: TaskID) -> Option<&Tree<Task>> {
-        self.tasks.find(id)
-    }
-
-    pub fn select_task(&self) -> Result<Option<&Tree<Task>>> {
-        get_interactive_tasks(self)
-    }
-
-    pub fn filter<F>(self, filter: F) -> List
-    where
-        F: Fn(&Tree<Task>) -> bool,
-    {
-        let tasks: Vec<_> = self.tasks.into_iter().filter(&filter).collect();
-        List {
-            tasks,
-            projects: self.projects,
-            sections: self.sections,
-            labels: self.labels,
-        }
-    }
-
-    fn project<'a>(&'a self, task: &'a Tree<Task>) -> Option<&'a Project> {
-        self.projects.get(&task.project_id)
-    }
-
-    fn section<'a>(&'a self, task: &'a Tree<Task>) -> Option<&'a Section> {
-        task.section_id
-            .as_ref()
-            .map(|s| self.sections.get(s).unwrap())
-    }
-
-    fn labels<'a>(&'a self, task: &'a Tree<Task>) -> Vec<&'a Label> {
-        task.label_ids
-            .iter()
-            .map(|l| self.labels.get(l).unwrap())
-            .collect()
-    }
-
-    pub fn table_task<'a>(&'a self, task: &'a Tree<Task>) -> TableTask {
-        TableTask(
-            task,
-            self.project(task),
-            self.section(task),
-            self.labels(task),
-        )
-    }
-
-    pub fn full_task<'a>(&'a self, task: &'a Tree<Task>) -> FullTask {
-        FullTask(
-            task,
-            self.project(task),
-            self.section(task),
-            self.labels(task),
-        )
-    }
-}
-
 /// List lists the tasks of the current user accessing the gateway with the given filter.
 pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
-    let list = filter_list(
-        List::fetch_tree(Some(&params.filter.filter), gw).await?,
+    let state = filter_list(
+        State::fetch_tree(Some(&params.filter.filter), gw).await?,
         &params,
         gw,
     )
     .await?;
     if params.nointeractive {
-        list_tasks(&list.tasks, &list);
+        list_tasks(&state.tasks, &state);
     } else {
-        match get_interactive_tasks(&list)? {
-            Some(task) => select_task_option(task, &list, gw).await?,
+        match state.select_task()? {
+            Some(task) => select_task_option(task, &state, gw).await?,
             None => println!("No selection was made"),
         }
     }
     Ok(())
 }
 
-async fn filter_list(list: List, params: &Params, gw: &Gateway) -> Result<List> {
+/// Show a list that's filtered down based on the params.
+async fn filter_list(state: State, params: &Params, gw: &Gateway) -> Result<State> {
     let (projects, sections) = tokio::try_join!(gw.projects(), gw.sections())?;
     let project = params.project.optional(&projects)?;
     let section = params.section.optional(&sections)?;
@@ -139,40 +53,28 @@ async fn filter_list(list: List, params: &Params, gw: &Gateway) -> Result<List> 
         .label
         .labels(gw, labels::Selection::AllowEmpty)
         .await?;
-    let mut list = list;
+    let mut state = state;
     if let Some(p) = project {
-        list = list.filter(|tree| tree.project_id == p.id);
+        state = state.filter(|tree| tree.project_id == p.id);
     }
     if let Some(s) = section {
-        list = list.filter(|tree| tree.section_id == Some(s.id));
+        state = state.filter(|tree| tree.section_id == Some(s.id));
     }
     if !labels.is_empty() {
-        list = list.filter(|tree| {
+        state = state.filter(|tree| {
             labels
                 .iter()
                 .map(|l| l.id)
                 .any(|l| tree.label_ids.contains(&l))
         });
     }
-    Ok(list)
+    Ok(state)
 }
 
-fn get_interactive_tasks(list: &List) -> Result<Option<&Tree<Task>>> {
-    if list.tasks.is_empty() {
-        return Err(eyre!("no tasks were found using the current filter"));
-    }
-    let items = list.tasks.flat_tree();
-    let result = interactive::select(
-        "Select task",
-        &items.iter().map(|t| list.table_task(t)).collect::<Vec<_>>(),
-    )?;
-    Ok(result.map(|index| items[index]))
-}
-
-fn list_tasks<'a>(tasks: &'a [Tree<Task>], list: &'a List) {
+fn list_tasks<'a>(tasks: &'a [Tree<Task>], state: &'a State) {
     for task in tasks.iter() {
-        println!("{}", list.table_task(task));
-        list_tasks(&task.subitems, list);
+        println!("{}", state.table_task(task));
+        list_tasks(&task.subitems, state);
     }
 }
 
@@ -186,10 +88,10 @@ enum TaskOptions {
 
 async fn select_task_option<'a, 'b>(
     task: &'a Tree<Task>,
-    list: &'a List,
+    state: &'a State,
     gw: &'b Gateway,
 ) -> Result<()> {
-    println!("{}", list.full_task(task));
+    println!("{}", state.full_task(task));
     let result = match make_selection(TaskOptions::VARIANTS)? {
         Some(index) => TaskOptions::from_repr(index).unwrap(),
         None => {
@@ -230,7 +132,7 @@ enum EditOptions {
     Description,
     Due,
     Priority,
-    // Project, TODO: allow to edit project and section
+    // Project, TODO: allow to edit project and section when API supports it
     Quit,
 }
 

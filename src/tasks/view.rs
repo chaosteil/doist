@@ -12,8 +12,8 @@ pub struct Params {
 
 /// Displays full information about a task.
 pub async fn view(params: Params, gw: &Gateway) -> Result<()> {
-    let (id, list) = params.task.task(gw).await?;
-    let task = list.full_task(list.task(id).ok_or_else(|| eyre!("no valid task"))?);
+    let (id, state) = params.task.task(gw).await?;
+    let task = state.full_task(state.task(id).ok_or_else(|| eyre!("no valid task"))?);
     println!("{}", task);
     if task.0.comment_count > 0 {
         let comments = gw.task_comments(id).await?;

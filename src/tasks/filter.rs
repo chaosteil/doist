@@ -2,7 +2,7 @@ use color_eyre::{eyre::eyre, Result};
 
 use crate::api::rest::{Gateway, TaskID};
 
-use super::list::List;
+use super::state::State;
 
 const DEFAULT_FILTER: &str = "(today | overdue)";
 
@@ -38,16 +38,16 @@ impl TaskOrInteractive {
         Ok(id)
     }
 
-    pub async fn task(&self, gw: &Gateway) -> Result<(TaskID, List)> {
-        let list = List::fetch_tree(Some(&self.filter.filter), gw).await?;
+    pub async fn task(&self, gw: &Gateway) -> Result<(TaskID, State)> {
+        let state = State::fetch_tree(Some(&self.filter.filter), gw).await?;
         let id = match self.id {
             Some(id) => id,
-            None => list
+            None => state
                 .select_task()?
                 .map(|t| t.id)
                 .ok_or_else(|| eyre!("no task selected"))?,
         };
-        Ok((id, list))
+        Ok((id, state))
     }
 }
 

@@ -48,15 +48,6 @@ impl std::fmt::Display for Label {
     }
 }
 
-/// FullLabel shows label including ID
-pub struct FullLabel<'a>(pub &'a Label);
-
-impl<'a> std::fmt::Display for FullLabel<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} {}", self.0.id.bright_yellow(), self.0)
-    }
-}
-
 /// Command used with [`super::Gateway::create_label`] to create a new [`Label`].
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct CreateLabel {

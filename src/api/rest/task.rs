@@ -2,53 +2,18 @@ use core::fmt;
 use std::fmt::Display;
 
 use crate::api::tree::Treeable;
-use crate::api::{deserialize::deserialize_zero_to_none, serialize::todoist_rfc3339, tree::Tree};
+use crate::api::{deserialize::deserialize_zero_to_none, serialize::todoist_rfc3339};
 use owo_colors::OwoColorize;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use super::Label;
-use super::{LabelID, Project, ProjectID, Section, SectionID};
+use super::{LabelID, ProjectID, SectionID};
 
 /// TaskID describes the unique ID of a [`Task`].
 pub type TaskID = u64;
 /// UserID is the unique ID of a User.
 pub type UserID = u64;
-
-/// Priority as is given from the Todoist API.
-///
-/// 1 for Normal up to 4 for Urgent.
-#[derive(Debug, Copy, Clone, Serialize_repr, Deserialize_repr, PartialEq, Eq, PartialOrd, Ord)]
-#[repr(u8)]
-pub enum Priority {
-    /// p1 in the Todoist UI.
-    Normal = 1,
-    /// p2 in the Todoist UI.
-    High = 2,
-    /// p3 in the Todoist UI.
-    VeryHigh = 3,
-    /// p4 in the Todoist UI.
-    Urgent = 4,
-}
-
-impl Display for Priority {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // The priority display is reversed as in the actual desktop client compared to the API.
-        match self {
-            Priority::Normal => write!(f, "{}", "p4".default_color()),
-            Priority::High => write!(f, "{}", "p3".blue()),
-            Priority::VeryHigh => write!(f, "{}", "p2".yellow()),
-            Priority::Urgent => write!(f, "{}", "p1".red()),
-        }
-    }
-}
-
-impl Default for Priority {
-    fn default() -> Self {
-        Priority::Normal
-    }
-}
 
 /// Task describes a Task from the Todoist API.
 ///
@@ -57,7 +22,7 @@ impl Default for Priority {
 pub struct Task {
     /// Unique ID of a Task.
     pub id: TaskID,
-    /// Shows which [`Project`] the Task belongs to.
+    /// Shows which [`super::Project`] the Task belongs to.
     pub project_id: ProjectID,
     /// Set if the Task is also in a subsection of a Project.
     #[serde(deserialize_with = "deserialize_zero_to_none")]
@@ -68,7 +33,7 @@ pub struct Task {
     pub description: String,
     /// Completed is set if this task was completed.
     pub completed: bool,
-    /// All associated [`Label`]s to this Task.
+    /// All associated [`super::Label`]s to this Task.
     pub label_ids: Vec<LabelID>,
     /// If set, this Task is a subtask of another.
     pub parent_id: Option<TaskID>,
@@ -105,50 +70,6 @@ impl Treeable for Task {
 
     fn reset_parent(&mut self) {
         self.parent_id = None;
-    }
-}
-
-/// Used to display full information about a Task.
-pub struct FullTask<'a>(
-    pub &'a Task,
-    pub Option<&'a Project>,
-    pub Option<&'a Section>,
-    pub Vec<&'a Label>,
-);
-
-impl Display for FullTask<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let FullTask::<'_>(task, project, section, labels) = self;
-        write!(
-            f,
-            "ID: {}\nPriority: {}\nContent: {}\nDescription: {}",
-            task.id.bright_yellow(),
-            task.priority,
-            task.content.default_color(),
-            task.description.default_color()
-        )?;
-        if let Some(due) = &task.due {
-            write!(f, "\nDue: {}", due)?;
-        }
-        if !labels.is_empty() {
-            write!(
-                f,
-                "\nLabels: {}",
-                labels
-                    .iter()
-                    .map(|l| l.to_string())
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            )?;
-        }
-        if let Some(project) = &project {
-            write!(f, "\nProject: {}", project)?;
-        }
-        if let Some(section) = &section {
-            write!(f, "\nSection: {}", section)?;
-        }
-        write!(f, "\nComments: {}", task.comment_count)?;
-        Ok(())
     }
 }
 
@@ -195,60 +116,37 @@ impl PartialOrd for Task {
     }
 }
 
-/// Used to display task as an item in a list.
-pub struct TableTask<'a>(
-    pub &'a Tree<Task>,
-    pub Option<&'a Project>,
-    pub Option<&'a Section>,
-    pub Vec<&'a Label>,
-);
+/// Priority as is given from the Todoist API.
+///
+/// 1 for Normal up to 4 for Urgent.
+#[derive(Debug, Copy, Clone, Serialize_repr, Deserialize_repr, PartialEq, Eq, PartialOrd, Ord)]
+#[repr(u8)]
+pub enum Priority {
+    /// p1 in the Todoist UI.
+    Normal = 1,
+    /// p2 in the Todoist UI.
+    High = 2,
+    /// p3 in the Todoist UI.
+    VeryHigh = 3,
+    /// p4 in the Todoist UI.
+    Urgent = 4,
+}
 
-impl TableTask<'_> {
-    /// Initializes a TableTask item that only displays data that is directly available from a
-    /// [`Task`].
-    pub fn from_task(task: &Tree<Task>) -> TableTask {
-        TableTask(task, None, None, vec![])
+impl Display for Priority {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // The priority display is reversed as in the actual desktop client compared to the API.
+        match self {
+            Priority::Normal => write!(f, "{}", "p4".default_color()),
+            Priority::High => write!(f, "{}", "p3".blue()),
+            Priority::VeryHigh => write!(f, "{}", "p2".yellow()),
+            Priority::Urgent => write!(f, "{}", "p1".red()),
+        }
     }
 }
 
-impl Display for TableTask<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let TableTask::<'_>(task, project, section, labels) = self;
-        let subtask_padding = if task.depth > 0 {
-            format!("{}⌞ ", "  ".repeat(task.depth))
-        } else {
-            "".to_string()
-        };
-        write!(
-            f,
-            "{}{} {} {}",
-            subtask_padding,
-            task.id.bright_yellow(),
-            task.priority,
-            task.content.default_color(),
-        )?;
-        if let Some(due) = &task.due {
-            write!(f, " {}", due)?;
-        }
-        if !labels.is_empty() {
-            write!(
-                f,
-                " {}",
-                labels
-                    .iter()
-                    .map(|l| l.to_string())
-                    .collect::<Vec<_>>()
-                    .join(" ")
-            )?;
-        }
-        if let Some(p) = &project {
-            write!(f, " [{}", p.name)?;
-            if let Some(s) = &section {
-                write!(f, "/{}", s.name)?;
-            }
-            write!(f, "]")?;
-        }
-        Ok(())
+impl Default for Priority {
+    fn default() -> Self {
+        Priority::Normal
     }
 }
 

@@ -7,6 +7,7 @@
 //!
 //! To get started, take a look at [`Gateway`].
 mod comment;
+mod display;
 mod gateway;
 mod label;
 mod project;
@@ -14,6 +15,7 @@ mod section;
 mod task;
 
 pub use comment::*;
+pub use display::*;
 pub use gateway::*;
 pub use label::*;
 pub use project::*;

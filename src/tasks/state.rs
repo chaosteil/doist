@@ -23,12 +23,18 @@ pub struct State {
 
 impl State {
     pub async fn fetch_tree(filter: Option<&str>, gw: &Gateway) -> Result<State> {
-        let (tasks, projects, sections, labels) =
-            tokio::try_join!(gw.tasks(filter), gw.projects(), gw.sections(), gw.labels())?;
+        let (all_tasks, filtered_tasks, projects, sections, labels) = tokio::try_join!(
+            gw.tasks(Some("all")),
+            gw.tasks(filter),
+            gw.projects(),
+            gw.sections(),
+            gw.labels()
+        )?;
         let projects = projects.into_iter().map(|p| (p.id, p)).collect();
         let sections = sections.into_iter().map(|p| (p.id, p)).collect();
         let labels = labels.into_iter().map(|p| (p.id, p)).collect();
-        let tasks = Tree::from_items(tasks).wrap_err("tasks do not form clean tree")?;
+        let all_tasks = Tree::from_items(all_tasks).wrap_err("tasks do not form clean tree")?;
+        let tasks = all_tasks.keep_trees(&filtered_tasks)?;
         Ok(State {
             tasks,
             projects,

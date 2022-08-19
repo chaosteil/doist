@@ -100,9 +100,10 @@ impl<T: Treeable + std::cmp::Eq> Tree<T> {
     /// 2. Not contain circular references and
     /// 3. If a parent ID exists, the actual parent must also exist.
     ///
-    /// TODO: there is a case where a filtered todoist API will return only the subtasks and not
-    /// its parents, thus missing the whole tree might be solved by dynamically fetching parents?
-    /// Currently solved it by resetting parents of tasks that are not in the initial vector.
+    /// There is a case where a filtered todoist API will return only the subtasks and not
+    /// its parents. Currently solved it by resetting parents of tasks that are not in the initial vector.
+    ///
+    /// The output from a whole tree can be used with the [`Tree::keep_trees`] method to get a clean tree.
     pub fn from_items(items: Vec<T>) -> Result<Vec<Tree<T>>> {
         let ids = items.iter().map(|t| t.id()).collect::<HashSet<_>>();
         // Split into things without parents and things with parents
@@ -189,6 +190,19 @@ impl<T: Treeable + std::cmp::Eq> Tree<T> {
         }
         None
     }
+
+    /// Tries to find the item with the given ID in this tree, mutably.
+    pub fn find_mut(&mut self, id: &<T as Treeable>::ID) -> Option<&mut Tree<T>> {
+        if self.item.id() == *id {
+            return Some(self);
+        }
+        for item in &mut self.subitems {
+            if let Some(tree) = item.find_mut(id) {
+                return Some(tree);
+            }
+        }
+        None
+    }
 }
 
 /// Extension Trait to provide some additional common functionality for vectors of [Tree]s.
@@ -198,6 +212,13 @@ pub trait TreeFlattenExt<T: Treeable> {
     fn flat_tree(&self) -> Vec<&Tree<T>>;
     /// Finds a particular Tree item within the whole vector of Trees.
     fn find(&self, id: T::ID) -> Option<&Tree<T>>;
+    /// Finds a particular Tree item within the whole vector of Trees, mutably.
+    fn find_mut(&mut self, id: T::ID) -> Option<&mut Tree<T>>;
+    /// Uses the filter to keep only a subset of tasks of the current tree, but respects to keep
+    /// parents.
+    fn keep_trees(self, filter_items: &Vec<T>) -> Result<Self>
+    where
+        Self: Sized;
 }
 
 impl<T: Treeable> TreeFlattenExt<T> for Vec<Tree<T>> {
@@ -208,6 +229,15 @@ impl<T: Treeable> TreeFlattenExt<T> for Vec<Tree<T>> {
     fn find(&self, id: T::ID) -> Option<&Tree<T>> {
         for item in self {
             if let Some(item) = item.find(&id) {
+                return Some(item);
+            }
+        }
+        None
+    }
+
+    fn find_mut(&mut self, id: T::ID) -> Option<&mut Tree<T>> {
+        for item in self {
+            if let Some(item) = item.find_mut(&id) {
                 return Some(item);
             }
         }

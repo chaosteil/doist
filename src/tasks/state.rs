@@ -23,18 +23,27 @@ pub struct State {
 
 impl State {
     pub async fn fetch_tree(filter: Option<&str>, gw: &Gateway) -> Result<State> {
-        let (tasks, projects, sections, labels) =
+        let (filtered_tasks, projects, sections, labels) =
             tokio::try_join!(gw.tasks(filter), gw.projects(), gw.sections(), gw.labels())?;
         let projects = projects.into_iter().map(|p| (p.id, p)).collect();
         let sections = sections.into_iter().map(|p| (p.id, p)).collect();
         let labels = labels.into_iter().map(|p| (p.id, p)).collect();
-        let tasks = Tree::from_items(tasks).wrap_err("tasks do not form clean tree")?;
+        let tasks = Tree::from_items(filtered_tasks).wrap_err("tasks do not form clean tree")?;
         Ok(State {
             tasks,
             projects,
             sections,
             labels,
         })
+    }
+    pub async fn fetch_full_tree(filter: Option<&str>, gw: &Gateway) -> Result<State> {
+        let (mut state, all_tasks) =
+            tokio::try_join!(Self::fetch_tree(filter, gw), gw.tasks(Some("all")))?;
+        let all_tasks = Tree::from_items(all_tasks).wrap_err("tasks do not form clean tree")?;
+        let tasks = all_tasks.keep_trees(&state.tasks.iter().map(|t| t.id).collect::<Vec<_>>());
+
+        state.tasks = tasks;
+        Ok(state)
     }
 
     pub fn task(&self, id: TaskID) -> Option<&Tree<Task>> {

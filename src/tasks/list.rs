@@ -23,16 +23,20 @@ pub struct Params {
     section: interactive::Selection<Section>,
     #[clap(flatten)]
     label: labels::LabelSelect,
+    /// Expands to show all parents of tasks that are in the filter, even if the parent doesn't
+    /// match the filter.
+    #[clap(short = 'e', long = "expand")]
+    expand: bool,
 }
 
 /// List lists the tasks of the current user accessing the gateway with the given filter.
 pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
-    let state = filter_list(
-        State::fetch_tree(Some(&params.filter.filter), gw).await?,
-        &params,
-        gw,
-    )
-    .await?;
+    let state = if params.expand {
+        State::fetch_full_tree(Some(&params.filter.filter), gw).await
+    } else {
+        State::fetch_tree(Some(&params.filter.filter), gw).await
+    }?;
+    let state = filter_list(state, &params, gw).await?;
     if params.nointeractive {
         list_tasks(&state.tasks, &state);
     } else {

@@ -102,6 +102,7 @@ impl<T: Treeable + std::cmp::Eq> Tree<T> {
     ///
     /// There is a case where a filtered todoist API will return only the subtasks and not
     /// its parents. Currently solved it by resetting parents of tasks that are not in the initial vector.
+    /// This is curiously also what the Todoist Client does.
     ///
     /// The output from a whole tree can be used with the [`Tree::keep_trees`] method to get a clean tree.
     pub fn from_items(items: Vec<T>) -> Result<Vec<Tree<T>>> {
@@ -216,7 +217,7 @@ pub trait TreeFlattenExt<T: Treeable> {
     fn find_mut(&mut self, id: T::ID) -> Option<&mut Tree<T>>;
     /// Uses the filter to keep only a subset of tasks of the current tree, but respects to keep
     /// parents.
-    fn keep_trees(self, filter_items: &Vec<T>) -> Result<Self>
+    fn keep_trees(self, filter_items: &[T::ID]) -> Self
     where
         Self: Sized;
 }
@@ -242,6 +243,37 @@ impl<T: Treeable> TreeFlattenExt<T> for Vec<Tree<T>> {
             }
         }
         None
+    }
+
+    fn keep_trees(self, filter_items: &[T::ID]) -> Self {
+        fn find_tree<T: Treeable>(tree: &Tree<T>, id: &T::ID, ids: &mut HashSet<T::ID>) {
+            if tree.find(id).is_none() {
+                return;
+            }
+            ids.insert(tree.id());
+            for item in &tree.subitems {
+                find_tree(item, id, ids);
+            }
+        }
+        let mut hs = HashSet::new();
+        for filter_item in filter_items {
+            for item in &self {
+                find_tree(item, filter_item, &mut hs);
+            }
+        }
+
+        let mut tree = self;
+        tree.retain(|t| hs.contains(&t.id()));
+        fn filter<T: Treeable>(tree: &mut Tree<T>, hs: &HashSet<T::ID>) {
+            tree.subitems.retain(|p| hs.contains(&p.id()));
+            for item in tree.subitems.iter_mut() {
+                filter(item, hs);
+            }
+        }
+        for t in tree.iter_mut() {
+            filter(t, &hs);
+        }
+        tree
     }
 }
 
@@ -330,5 +362,39 @@ mod tests {
         assert_eq!(trees.len(), 1);
         assert_eq!(trees[0].item.parent_id, None);
         assert_eq!(trees[0].subitems[0].item.id, 3);
+    }
+
+    #[test]
+    fn keep_trees() {
+        let tasks = vec![
+            Task {
+                parent_id: None,
+                ..Task::new(1, "one")
+            },
+            Task {
+                parent_id: Some(1),
+                ..Task::new(2, "two")
+            },
+            Task {
+                parent_id: Some(2),
+                ..Task::new(3, "three")
+            },
+            Task {
+                parent_id: None,
+                ..Task::new(4, "four")
+            },
+            Task {
+                parent_id: None,
+                ..Task::new(5, "five")
+            },
+        ];
+        let trees = Tree::from_items(tasks).unwrap();
+        let trees = trees.keep_trees(&[3, 4]);
+        assert_eq!(trees.len(), 2);
+        assert_eq!(trees[0].item.id, 1);
+        assert_eq!(trees[0].item.parent_id, None);
+        assert_eq!(trees[0].subitems[0].item.id, 2);
+        assert_eq!(trees[0].subitems[0].subitems[0].item.id, 3);
+        assert_eq!(trees[1].item.id, 4);
     }
 }

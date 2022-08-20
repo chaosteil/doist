@@ -104,7 +104,7 @@ impl<T: Treeable + std::cmp::Eq> Tree<T> {
     /// its parents. Currently solved it by resetting parents of tasks that are not in the initial vector.
     /// This is curiously also what the Todoist Client does.
     ///
-    /// The output from a whole tree can be used with the [`Tree::keep_trees`] method to get a clean tree.
+    /// The output from a whole tree can be used with the [`TreeFlattenExt::keep_trees`] method to get a clean tree.
     pub fn from_items(items: Vec<T>) -> Result<Vec<Tree<T>>> {
         let ids = items.iter().map(|t| t.id()).collect::<HashSet<_>>();
         // Split into things without parents and things with parents

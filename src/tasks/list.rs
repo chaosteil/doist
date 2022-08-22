@@ -137,6 +137,7 @@ enum EditOptions {
     Due,
     Priority,
     // Project, TODO: allow to edit project and section when API supports it
+    // TODO: allow adding, removing labels
     Quit,
 }
 

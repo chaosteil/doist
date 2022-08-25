@@ -11,7 +11,8 @@ fn authentication() -> Result<()> {
     cmd.arg("auth")
         .arg("AUTH_KEY")
         .env("XDG_CONFIG_HOME", tmp.path())
-        .assert();
+        .assert()
+        .success();
     let cfg = tmp.child("doist/config.toml");
     cfg.assert(predicates::str::contains("AUTH_KEY"));
     let cfg: Config = toml::from_str(&std::fs::read_to_string(&cfg)?)?;

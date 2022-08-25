@@ -1,3 +1,4 @@
+//! Describes everything related to configuration of the binary.
 use std::{fs, path::PathBuf};
 
 use color_eyre::{eyre::eyre, Result};
@@ -9,8 +10,11 @@ use crate::api::rest::{Gateway, TODOIST_API_URL};
 /// Stores configuration used by the application.
 #[derive(Serialize, Deserialize)]
 pub struct Config {
+    /// The auth token that will be used to work with the Todoist API.
+    /// The API Token can be found in the [Todoist settings](https://todoist.com/app/settings/integrations).
     #[serde(default)]
     pub token: Option<String>,
+    /// Can override the API URL used by all commands. Mostly used for testing, but go crazy!
     #[serde(default = "default_url")]
     pub url: url::Url,
 }
@@ -23,14 +27,19 @@ fn default_url() -> url::Url {
 ///! Describes errors that occur when loading from configuration storage.
 #[derive(Error, Debug)]
 pub enum ConfigError {
+    /// Is returned when the location of the configuraiton was inaccessible.
     #[error("failed to place config into its directory")]
     Location(#[from] xdg::BaseDirectoriesError),
+    /// For errors that get returned when reading the config file.
     #[error("unable to work with config file {file}")]
     File {
+        /// The path of the file that experienced the error.
         file: PathBuf,
+        /// The error that prevented from working with the config file.
         #[source]
         io: std::io::Error,
     },
+    /// For errors that happen during saving of the config file.
     #[error("unable to save config file")]
     SaveFormat(#[from] toml::ser::Error),
 }

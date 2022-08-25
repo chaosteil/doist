@@ -5,11 +5,10 @@ use crate::{
     interactive,
 };
 use color_eyre::{eyre::eyre, Result};
-use serde::{Deserialize, Serialize};
 
 use crate::api::rest::{Gateway, LabelID};
 
-#[derive(clap::Args, Debug, Serialize, Deserialize)]
+#[derive(clap::Args, Debug, Default)]
 pub struct LabelSelect {
     /// Uses the label with the closest name, if possible. Does fuzzy matching for the name. Can
     /// be used multiple times to use more labels.

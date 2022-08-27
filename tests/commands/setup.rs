@@ -1,5 +1,6 @@
 use assert_cmd::prelude::*;
 use color_eyre::Result;
+use doist::config::Config;
 use std::process::Command;
 
 pub struct Tool {

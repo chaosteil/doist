@@ -41,8 +41,7 @@ pub async fn add(params: Params, gw: &Gateway) -> Result<()> {
     let section = params.section.optional(&sections)?;
     let labels = params
         .labels
-        .labels(gw, labels::Selection::AllowEmpty)
-        .await?;
+        .labels(&gw.labels().await?, labels::Selection::AllowEmpty)?;
     let mut create = CreateTask {
         content: params.name,
         description: params.desc,

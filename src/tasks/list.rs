@@ -31,12 +31,13 @@ pub struct Params {
 
 /// List lists the tasks of the current user accessing the gateway with the given filter.
 pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
+    println!("LISTING");
     let state = if params.expand {
         State::fetch_full_tree(Some(&params.filter.filter), gw).await
     } else {
         State::fetch_tree(Some(&params.filter.filter), gw).await
     }?;
-    let state = filter_list(state, &params, gw).await?;
+    let state = filter_list(state, &params).await?;
     if params.nointeractive {
         list_tasks(&state.tasks, &state);
     } else {
@@ -49,14 +50,27 @@ pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
 }
 
 /// Show a list that's filtered down based on the params.
-async fn filter_list(state: State, params: &Params, gw: &Gateway) -> Result<State> {
-    let (projects, sections) = tokio::try_join!(gw.projects(), gw.sections())?;
+async fn filter_list(state: State, params: &Params) -> Result<State> {
+    let projects = state
+        .projects
+        .values()
+        .map(ToOwned::to_owned)
+        .collect::<Vec<_>>();
+    let sections = state
+        .sections
+        .values()
+        .map(ToOwned::to_owned)
+        .collect::<Vec<_>>();
+    let labels = state
+        .labels
+        .values()
+        .map(ToOwned::to_owned)
+        .collect::<Vec<_>>();
     let project = params.project.optional(&projects)?;
     let section = params.section.optional(&sections)?;
     let labels = params
         .label
-        .labels(gw, labels::Selection::AllowEmpty)
-        .await?;
+        .labels(&labels, labels::Selection::AllowEmpty)?;
     let mut state = state;
     if let Some(p) = project {
         state = state.filter(|tree| tree.project_id == p.id);

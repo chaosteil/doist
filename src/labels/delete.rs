@@ -10,7 +10,9 @@ pub struct Params {
 }
 
 pub async fn delete(params: Params, gw: &Gateway) -> Result<()> {
-    let labels = params.labels.labels(gw, Selection::MustChoose).await?;
+    let labels = params
+        .labels
+        .labels(&gw.labels().await?, Selection::MustChoose)?;
     if labels.is_empty() {
         return Err(eyre!("no labels selected"));
     }

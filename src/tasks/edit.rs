@@ -45,8 +45,7 @@ pub async fn edit(params: Params, gw: &Gateway) -> Result<()> {
     let label_ids = {
         let labels = params
             .labels
-            .labels(gw, labels::Selection::AllowEmpty)
-            .await?;
+            .labels(&gw.labels().await?, labels::Selection::AllowEmpty)?;
         if labels.is_empty() {
             None
         } else {

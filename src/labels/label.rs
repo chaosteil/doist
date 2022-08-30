@@ -6,7 +6,7 @@ use crate::{
 };
 use color_eyre::{eyre::eyre, Result};
 
-use crate::api::rest::{Gateway, LabelID};
+use crate::api::rest::LabelID;
 
 #[derive(clap::Args, Debug, Default)]
 pub struct LabelSelect {
@@ -29,13 +29,11 @@ pub enum Selection {
 }
 
 impl LabelSelect {
-    pub async fn labels(&self, gw: &Gateway, selection: Selection) -> Result<Vec<Label>> {
+    pub fn labels(&self, labels: &[Label], selection: Selection) -> Result<Vec<Label>> {
         let label_ids = self.label_ids.clone().unwrap_or_default();
-        let mut all_labels = gw
-            .labels()
-            .await?
-            .into_iter()
-            .map(|l| (l.id, l))
+        let mut all_labels = labels
+            .iter()
+            .map(|l| (l.id, l.to_owned()))
             .collect::<HashMap<_, _>>();
         let label_list = all_labels
             .values()

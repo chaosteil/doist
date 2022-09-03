@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use chrono::Utc;
 use color_eyre::{
     eyre::{eyre, WrapErr},
@@ -279,7 +281,11 @@ impl Gateway {
 /// Does the actual call to the Todoist API and handles error handling.
 async fn handle_req<R: DeserializeOwned>(req: RequestBuilder) -> Result<Option<R>> {
     // TODO: implement retries/backoffs
-    let resp = req.send().await.wrap_err("Unable to send request")?;
+    let resp = req
+        .timeout(Duration::from_secs(30))
+        .send()
+        .await
+        .wrap_err("Unable to send request")?;
     let status = resp.status();
     if status == StatusCode::NO_CONTENT {
         return Ok(None);

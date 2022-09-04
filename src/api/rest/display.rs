@@ -1,6 +1,7 @@
-use crate::api::tree::Tree;
+use crate::{api::tree::Tree, config::Config};
 
-use super::{Comment, Label, Project, Section, Task};
+use super::{Comment, DueDateFormatter, Label, Project, Section, Task};
+use chrono::Utc;
 use owo_colors::OwoColorize;
 
 /// FullComment allows to display full comment metadata when [std::fmt::Display]ing it.
@@ -40,11 +41,12 @@ pub struct FullTask<'a>(
     pub Option<&'a Project>,
     pub Option<&'a Section>,
     pub Vec<&'a Label>,
+    pub &'a Config,
 );
 
 impl std::fmt::Display for FullTask<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let FullTask::<'_>(task, project, section, labels) = self;
+        let FullTask::<'_>(task, project, section, labels, config) = self;
         write!(
             f,
             "ID: {}\nPriority: {}\nContent: {}\nDescription: {}",
@@ -54,7 +56,11 @@ impl std::fmt::Display for FullTask<'_> {
             task.description.default_color()
         )?;
         if let Some(due) = &task.due {
-            write!(f, "\nDue: {}", due)?;
+            write!(
+                f,
+                "\nDue: {}",
+                DueDateFormatter(due, &config.override_time.unwrap_or_else(Utc::now))
+            )?;
         }
         if !labels.is_empty() {
             write!(
@@ -84,19 +90,20 @@ pub struct TableTask<'a>(
     pub Option<&'a Project>,
     pub Option<&'a Section>,
     pub Vec<&'a Label>,
+    pub &'a Config,
 );
 
 impl TableTask<'_> {
     /// Initializes a TableTask item that only displays data that is directly available from a
     /// [`Task`].
-    pub fn from_task(task: &Tree<Task>) -> TableTask {
-        TableTask(task, None, None, vec![])
+    pub fn from_task<'a>(task: &'a Tree<Task>, config: &'a Config) -> TableTask<'a> {
+        TableTask(task, None, None, vec![], config)
     }
 }
 
 impl std::fmt::Display for TableTask<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let TableTask::<'_>(task, project, section, labels) = self;
+        let TableTask::<'_>(task, project, section, labels, config) = self;
         let subtask_padding = if task.depth > 0 {
             format!("{}⌞ ", "  ".repeat(task.depth))
         } else {
@@ -111,7 +118,11 @@ impl std::fmt::Display for TableTask<'_> {
             task.content.default_color(),
         )?;
         if let Some(due) = &task.due {
-            write!(f, " {}", due)?;
+            write!(
+                f,
+                " {}",
+                DueDateFormatter(due, &config.override_time.unwrap_or_else(Utc::now))
+            )?;
         }
         if !labels.is_empty() {
             write!(

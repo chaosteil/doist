@@ -30,6 +30,7 @@ impl Tool {
         let mock = MockServer::start().await;
         let mut cfg = Config::load()?;
         cfg.url = url::Url::parse(&mock.uri())?;
+        cfg.override_time = Some(super::fixtures::FETCH_TIME.trim().parse()?);
         cfg.save()?;
         Ok(Tool {
             tmp,

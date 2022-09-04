@@ -1,6 +1,9 @@
 use color_eyre::{eyre::eyre, Result};
 
-use crate::api::rest::{Gateway, TaskID};
+use crate::{
+    api::rest::{Gateway, TaskID},
+    config::Config,
+};
 
 use super::state::State;
 
@@ -33,13 +36,17 @@ impl TaskOrInteractive {
             },
         }
     }
-    pub async fn task_id(&self, gw: &Gateway) -> Result<TaskID> {
-        let (id, _) = self.task(gw).await?;
+    pub async fn task_id(&self, gw: &Gateway, cfg: &Config) -> Result<TaskID> {
+        let (id, _) = self.task(gw, cfg).await?;
         Ok(id)
     }
 
-    pub async fn task(&self, gw: &Gateway) -> Result<(TaskID, State)> {
-        let state = State::fetch_tree(Some(&self.filter.filter), gw).await?;
+    pub async fn task<'a>(
+        &'_ self,
+        gw: &'_ Gateway,
+        cfg: &'a Config,
+    ) -> Result<(TaskID, State<'a>)> {
+        let state = State::fetch_tree(Some(&self.filter.filter), gw, cfg).await?;
         let id = match self.id {
             Some(id) => id,
             None => state

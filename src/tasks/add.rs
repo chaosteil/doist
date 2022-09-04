@@ -7,6 +7,7 @@ use crate::{
         rest::{CreateTask, Gateway, Project, Section, TableTask, TaskDue},
         tree::Tree,
     },
+    config::Config,
     interactive,
     labels::{self, LabelSelect},
     tasks::Priority,
@@ -35,7 +36,7 @@ pub struct Params {
     labels: LabelSelect,
 }
 
-pub async fn add(params: Params, gw: &Gateway) -> Result<()> {
+pub async fn add(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
     let (projects, sections) = tokio::try_join!(gw.projects(), gw.sections())?;
     let project = params.project.optional(&projects)?;
     let section = params.section.optional(&sections)?;
@@ -70,7 +71,7 @@ pub async fn add(params: Params, gw: &Gateway) -> Result<()> {
         Vec::new()
     };
     let task = Tree::new(gw.create(&create).await?);
-    let mut table = TableTask::from_task(&task);
+    let mut table = TableTask::from_task(&task, cfg);
     table.1 = project;
     table.2 = section;
     table.3 = labels.iter().collect();

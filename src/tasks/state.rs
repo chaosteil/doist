@@ -10,19 +10,25 @@ use crate::{
         },
         tree::{Tree, TreeFlattenExt},
     },
+    config::Config,
     interactive,
 };
 
 /// State is a helper to fully construct a tasks state for display.
-pub struct State {
+pub struct State<'a> {
     pub tasks: Vec<Tree<Task>>,
     pub projects: HashMap<ProjectID, Project>,
     pub sections: HashMap<SectionID, Section>,
     pub labels: HashMap<LabelID, Label>,
+    pub config: &'a Config,
 }
 
-impl State {
-    pub async fn fetch_tree(filter: Option<&str>, gw: &Gateway) -> Result<State> {
+impl<'a> State<'a> {
+    pub async fn fetch_tree(
+        filter: Option<&'_ str>,
+        gw: &'_ Gateway,
+        cfg: &'a Config,
+    ) -> Result<State<'a>> {
         let (filtered_tasks, projects, sections, labels) =
             tokio::try_join!(gw.tasks(filter), gw.projects(), gw.sections(), gw.labels())?;
         let projects = projects.into_iter().map(|p| (p.id, p)).collect();
@@ -34,11 +40,16 @@ impl State {
             projects,
             sections,
             labels,
+            config: cfg,
         })
     }
-    pub async fn fetch_full_tree(filter: Option<&str>, gw: &Gateway) -> Result<State> {
+    pub async fn fetch_full_tree(
+        filter: Option<&'_ str>,
+        gw: &'_ Gateway,
+        cfg: &'a Config,
+    ) -> Result<State<'a>> {
         let (mut state, all_tasks) =
-            tokio::try_join!(Self::fetch_tree(filter, gw), gw.tasks(Some("all")))?;
+            tokio::try_join!(Self::fetch_tree(filter, gw, cfg), gw.tasks(Some("all")))?;
         let all_tasks = Tree::from_items(all_tasks).wrap_err("tasks do not form clean tree")?;
         let tasks = all_tasks.keep_trees(&state.tasks.iter().map(|t| t.id).collect::<Vec<_>>());
 
@@ -62,7 +73,7 @@ impl State {
         Ok(result.map(|index| items[index]))
     }
 
-    pub fn filter<F>(self, filter: F) -> State
+    pub fn filter<F>(self, filter: F) -> State<'a>
     where
         F: Fn(&Tree<Task>) -> bool,
     {
@@ -72,41 +83,44 @@ impl State {
             projects: self.projects,
             sections: self.sections,
             labels: self.labels,
+            config: self.config,
         }
     }
 
-    fn project<'a>(&'a self, task: &'a Tree<Task>) -> Option<&'a Project> {
+    fn project<'s>(&'s self, task: &'s Tree<Task>) -> Option<&'s Project> {
         self.projects.get(&task.project_id)
     }
 
-    fn section<'a>(&'a self, task: &'a Tree<Task>) -> Option<&'a Section> {
+    fn section<'s>(&'s self, task: &'s Tree<Task>) -> Option<&'s Section> {
         task.section_id
             .as_ref()
             .map(|s| self.sections.get(s).unwrap())
     }
 
-    fn labels<'a>(&'a self, task: &'a Tree<Task>) -> Vec<&'a Label> {
+    fn labels<'s>(&'s self, task: &'s Tree<Task>) -> Vec<&'s Label> {
         task.label_ids
             .iter()
             .map(|l| self.labels.get(l).unwrap())
             .collect()
     }
 
-    pub fn table_task<'a>(&'a self, task: &'a Tree<Task>) -> TableTask {
+    pub fn table_task<'s>(&'s self, task: &'s Tree<Task>) -> TableTask {
         TableTask(
             task,
             self.project(task),
             self.section(task),
             self.labels(task),
+            self.config,
         )
     }
 
-    pub fn full_task<'a>(&'a self, task: &'a Tree<Task>) -> FullTask {
+    pub fn full_task<'s>(&'s self, task: &'s Tree<Task>) -> FullTask {
         FullTask(
             task,
             self.project(task),
             self.section(task),
             self.labels(task),
+            self.config,
         )
     }
 }

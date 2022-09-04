@@ -42,8 +42,6 @@ async fn list() -> Result<()> {
 
     cmd.cmd()?
         .arg("list")
-        .arg("-f")
-        .arg("all")
         .arg("--nointeractive")
         .env("RUST_BACKTRACE", "1")
         .assert()

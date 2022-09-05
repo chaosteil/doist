@@ -32,7 +32,6 @@ pub struct Params {
 
 /// List lists the tasks of the current user accessing the gateway with the given filter.
 pub async fn list(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
-    println!("LISTING");
     let state = if params.expand {
         State::fetch_full_tree(Some(&params.filter.filter), gw, cfg).await
     } else {

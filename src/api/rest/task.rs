@@ -206,7 +206,11 @@ pub struct DueDateFormatter<'a>(pub &'a DueDate, pub &'a DateTime<Utc>);
 impl<'a> Display for DueDateFormatter<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.0.recurring {
-            write!(f, "🔁 ")?;
+            write!(
+                f,
+                "{}",
+                "[REPEAT] ".if_supports_color(Stream::Stdout, |_| "🔁 ")
+            )?;
         }
         if let Some(exact) = &self.0.exact {
             if exact.datetime >= *self.1 {

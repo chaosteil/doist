@@ -137,7 +137,7 @@ impl Display for Priority {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // The priority display is reversed as in the actual desktop client compared to the API.
         match self {
-            Priority::Normal => write!(f, "{}", "p4"),
+            Priority::Normal => write!(f, "p4"),
             Priority::High => write!(
                 f,
                 "{}",

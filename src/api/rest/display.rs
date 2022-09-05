@@ -2,7 +2,7 @@ use crate::{api::tree::Tree, config::Config};
 
 use super::{Comment, DueDateFormatter, Label, Project, Section, Task};
 use chrono::Utc;
-use owo_colors::OwoColorize;
+use owo_colors::{OwoColorize, Stream};
 
 /// FullComment allows to display full comment metadata when [std::fmt::Display]ing it.
 pub struct FullComment<'a>(pub &'a Comment);
@@ -10,7 +10,13 @@ pub struct FullComment<'a>(pub &'a Comment);
 impl std::fmt::Display for FullComment<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let FullComment(comment) = self;
-        writeln!(f, "ID: {}", comment.id.bright_yellow())?;
+        writeln!(
+            f,
+            "ID: {}",
+            comment
+                .id
+                .if_supports_color(Stream::Stdout, |text| text.bright_yellow())
+        )?;
         writeln!(f, "Posted: {}", comment.posted)?;
         writeln!(
             f,
@@ -31,7 +37,14 @@ pub struct FullLabel<'a>(pub &'a Label);
 
 impl<'a> std::fmt::Display for FullLabel<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} {}", self.0.id.bright_yellow(), self.0)
+        write!(
+            f,
+            "{} {}",
+            self.0
+                .id
+                .if_supports_color(Stream::Stdout, |text| text.bright_yellow()),
+            self.0
+        )
     }
 }
 
@@ -50,10 +63,11 @@ impl std::fmt::Display for FullTask<'_> {
         write!(
             f,
             "ID: {}\nPriority: {}\nContent: {}\nDescription: {}",
-            task.id.bright_yellow(),
+            task.id
+                .if_supports_color(Stream::Stdout, |text| text.bright_yellow()),
             task.priority,
-            task.content.default_color(),
-            task.description.default_color()
+            task.content,
+            task.description,
         )?;
         if let Some(due) = &task.due {
             write!(
@@ -113,9 +127,10 @@ impl std::fmt::Display for TableTask<'_> {
             f,
             "{}{} {} {}",
             subtask_padding,
-            task.id.bright_yellow(),
+            task.id
+                .if_supports_color(Stream::Stdout, |text| text.bright_yellow()),
             task.priority,
-            task.content.default_color(),
+            task.content,
         )?;
         if let Some(due) = &task.due {
             write!(

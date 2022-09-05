@@ -4,7 +4,7 @@ use std::fmt::Display;
 use crate::api::tree::Treeable;
 use crate::api::{deserialize::deserialize_zero_to_none, serialize::todoist_rfc3339};
 use chrono::{DateTime, FixedOffset, Utc};
-use owo_colors::OwoColorize;
+use owo_colors::{OwoColorize, Stream};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -137,10 +137,22 @@ impl Display for Priority {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // The priority display is reversed as in the actual desktop client compared to the API.
         match self {
-            Priority::Normal => write!(f, "{}", "p4".default_color()),
-            Priority::High => write!(f, "{}", "p3".blue()),
-            Priority::VeryHigh => write!(f, "{}", "p2".yellow()),
-            Priority::Urgent => write!(f, "{}", "p1".red()),
+            Priority::Normal => write!(f, "p4"),
+            Priority::High => write!(
+                f,
+                "{}",
+                "p3".if_supports_color(Stream::Stdout, |text| text.blue())
+            ),
+            Priority::VeryHigh => write!(
+                f,
+                "{}",
+                "p2".if_supports_color(Stream::Stdout, |text| text.yellow())
+            ),
+            Priority::Urgent => write!(
+                f,
+                "{}",
+                "p1".if_supports_color(Stream::Stdout, |text| text.red())
+            ),
         }
     }
 }
@@ -194,18 +206,42 @@ pub struct DueDateFormatter<'a>(pub &'a DueDate, pub &'a DateTime<Utc>);
 impl<'a> Display for DueDateFormatter<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.0.recurring {
-            write!(f, "🔁 ")?;
+            write!(
+                f,
+                "{}",
+                "[REPEAT] ".if_supports_color(Stream::Stdout, |_| "🔁 ")
+            )?;
         }
         if let Some(exact) = &self.0.exact {
             if exact.datetime >= *self.1 {
-                write!(f, "{}", exact.bright_green())
+                write!(
+                    f,
+                    "{}",
+                    exact.if_supports_color(Stream::Stdout, |text| text.bright_green())
+                )
             } else {
-                write!(f, "{}", exact.bright_red())
+                write!(
+                    f,
+                    "{}",
+                    exact.if_supports_color(Stream::Stdout, |text| text.bright_red())
+                )
             }
         } else if self.0.date >= self.1.date().naive_utc() {
-            write!(f, "{}", self.0.human_readable.bright_green())
+            write!(
+                f,
+                "{}",
+                self.0
+                    .human_readable
+                    .if_supports_color(Stream::Stdout, |text| text.bright_green())
+            )
         } else {
-            write!(f, "{}", self.0.human_readable.bright_red())
+            write!(
+                f,
+                "{}",
+                self.0
+                    .human_readable
+                    .if_supports_color(Stream::Stdout, |text| text.bright_red())
+            )
         }
     }
 }

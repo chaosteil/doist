@@ -1,5 +1,5 @@
 use color_eyre::{eyre::WrapErr, Result};
-use owo_colors::OwoColorize;
+use owo_colors::{OwoColorize, Stream};
 
 use crate::{
     api::{self, rest::Gateway},
@@ -45,6 +45,9 @@ pub async fn close(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
 
 pub async fn complete(id: api::rest::TaskID, gw: &Gateway) -> Result<()> {
     gw.complete(id).await?;
-    println!("completed task {}", id.bright_red());
+    println!(
+        "completed task {}",
+        id.if_supports_color(Stream::Stdout, |text| text.bright_red())
+    );
     Ok(())
 }

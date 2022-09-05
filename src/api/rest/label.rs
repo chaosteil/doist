@@ -1,4 +1,4 @@
-use owo_colors::OwoColorize;
+use owo_colors::{OwoColorize, Stream};
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnError};
 
@@ -44,7 +44,9 @@ impl PartialOrd for Label {
 
 impl std::fmt::Display for Label {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        format!("@{}", self.name).bright_blue().fmt(f)
+        format!("@{}", self.name)
+            .if_supports_color(Stream::Stdout, |text| text.bright_blue())
+            .fmt(f)
     }
 }
 

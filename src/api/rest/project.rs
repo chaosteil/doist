@@ -1,6 +1,6 @@
 use crate::api::deserialize::deserialize_zero_to_none;
 use crate::api::{tree::Treeable, Color};
-use owo_colors::OwoColorize;
+use owo_colors::{OwoColorize, Stream};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnError};
@@ -65,8 +65,9 @@ impl std::fmt::Display for Project {
         write!(
             f,
             "{} {}",
-            self.id.bright_yellow(),
-            self.name.default_color()
+            self.id
+                .if_supports_color(Stream::Stdout, |text| text.bright_yellow()),
+            self.name
         )
     }
 }

@@ -29,7 +29,7 @@ indicatif = "0.16"
 json-patch = "0.2"
 lazy_static = "1.4.0"
 num-traits = "0.2"
-owo-colors = "3"
+owo-colors = { version = "3", features = ["supports-colors"] }
 reqwest = { version = "0.11" }
 serde = { version = "1", features = ["derive"] }
 serde-aux = "3"

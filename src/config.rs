@@ -1,6 +1,7 @@
 //! Describes everything related to configuration of the binary.
 use std::{fs, path::PathBuf};
 
+use chrono::{DateTime, Utc};
 use color_eyre::{eyre::eyre, Result};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -17,6 +18,9 @@ pub struct Config {
     /// Can override the API URL used by all commands. Mostly used for testing, but go crazy!
     #[serde(default = "default_url")]
     pub url: url::Url,
+    /// Override the current time for various display options in the CLI.
+    #[serde(default)]
+    pub override_time: Option<DateTime<Utc>>,
 }
 
 /// Returns the default URL to be used for calling the Todoist API.

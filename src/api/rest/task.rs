@@ -3,6 +3,7 @@ use std::fmt::Display;
 
 use crate::api::tree::Treeable;
 use crate::api::{deserialize::deserialize_zero_to_none, serialize::todoist_rfc3339};
+use chrono::{DateTime, FixedOffset, Utc};
 use owo_colors::OwoColorize;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
@@ -54,7 +55,7 @@ pub struct Task {
     pub assigner: Option<UserID>,
     /// Exact date when the task was created.
     #[serde(serialize_with = "todoist_rfc3339")]
-    pub created: chrono::DateTime<chrono::Utc>,
+    pub created: DateTime<Utc>,
 }
 
 impl Treeable for Task {
@@ -154,7 +155,7 @@ impl Default for Priority {
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub struct ExactTime {
     /// Exact DateTime for when the task is due.
-    pub datetime: chrono::DateTime<chrono::FixedOffset>,
+    pub datetime: DateTime<FixedOffset>,
     /// Timezone string or UTC offset. // TODO: currently will not interpret correctly if it's a UTC offset.
     pub timezone: String,
 }
@@ -186,21 +187,25 @@ pub struct DueDate {
     pub exact: Option<ExactTime>,
 }
 
-impl Display for DueDate {
+/// Formats a [`DueDate`] using the given [`DateTime`], by coloring the output based on if it's
+/// too late or too soon.
+pub struct DueDateFormatter<'a>(pub &'a DueDate, pub &'a DateTime<Utc>);
+
+impl<'a> Display for DueDateFormatter<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.recurring {
+        if self.0.recurring {
             write!(f, "🔁 ")?;
         }
-        if let Some(exact) = &self.exact {
-            if exact.datetime >= chrono::Utc::now() {
+        if let Some(exact) = &self.0.exact {
+            if exact.datetime >= *self.1 {
                 write!(f, "{}", exact.bright_green())
             } else {
                 write!(f, "{}", exact.bright_red())
             }
-        } else if self.date >= chrono::Utc::now().date().naive_utc() {
-            write!(f, "{}", self.human_readable.bright_green())
+        } else if self.0.date >= self.1.date().naive_utc() {
+            write!(f, "{}", self.0.human_readable.bright_green())
         } else {
-            write!(f, "{}", self.human_readable.bright_red())
+            write!(f, "{}", self.0.human_readable.bright_red())
         }
     }
 }
@@ -216,7 +221,7 @@ pub enum TaskDue {
     Date(String),
     /// Exact DateTime in UTC for the due date.
     #[serde(rename = "due_datetime", serialize_with = "todoist_rfc3339")]
-    DateTime(chrono::DateTime<chrono::Utc>),
+    DateTime(DateTime<Utc>),
 }
 /// Command used with [`super::Gateway::create`] to create a new Task.
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -295,7 +300,7 @@ impl Task {
             comment_count: 0,
             assignee: None,
             assigner: None,
-            created: chrono::Utc::now(),
+            created: Utc::now(),
         }
     }
 }

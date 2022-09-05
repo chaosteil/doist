@@ -125,12 +125,12 @@ impl Args {
                 Commands::Authenticated(command) => {
                     let gw = cfg.gateway()?;
                     match command {
-                        AuthCommands::Add(p) => add::add(p, &gw).await?,
-                        AuthCommands::List(p) => list::list(p, &gw).await?,
-                        AuthCommands::Edit(p) => edit::edit(p, &gw).await?,
-                        AuthCommands::Close(p) => close::close(p, &gw).await?,
-                        AuthCommands::View(p) => view::view(p, &gw).await?,
-                        AuthCommands::Comment(p) => comment::comment(p, &gw).await?,
+                        AuthCommands::Add(p) => add::add(p, &gw, &cfg).await?,
+                        AuthCommands::List(p) => list::list(p, &gw, &cfg).await?,
+                        AuthCommands::Edit(p) => edit::edit(p, &gw, &cfg).await?,
+                        AuthCommands::Close(p) => close::close(p, &gw, &cfg).await?,
+                        AuthCommands::View(p) => view::view(p, &gw, &cfg).await?,
+                        AuthCommands::Comment(p) => comment::comment(p, &gw, &cfg).await?,
                         AuthCommands::Projects(p) => match p {
                             ProjectCommands::List(p) => projects::list::list(p, &gw).await?,
                             ProjectCommands::View(p) => projects::view::view(p, &gw).await?,
@@ -156,7 +156,7 @@ impl Args {
                 }
             },
             None => {
-                list::list(self.params, &cfg.gateway()?).await?;
+                list::list(self.params, &cfg.gateway()?, &cfg).await?;
             }
         }
         Ok(())

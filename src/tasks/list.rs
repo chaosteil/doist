@@ -5,6 +5,7 @@ use crate::{
         rest::{Gateway, Project, Section, Task},
         tree::Tree,
     },
+    config::Config,
     interactive, labels,
     tasks::{close, edit, filter, state::State},
 };
@@ -30,13 +31,14 @@ pub struct Params {
 }
 
 /// List lists the tasks of the current user accessing the gateway with the given filter.
-pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
+pub async fn list(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
+    println!("LISTING");
     let state = if params.expand {
-        State::fetch_full_tree(Some(&params.filter.filter), gw).await
+        State::fetch_full_tree(Some(&params.filter.filter), gw, cfg).await
     } else {
-        State::fetch_tree(Some(&params.filter.filter), gw).await
+        State::fetch_tree(Some(&params.filter.filter), gw, cfg).await
     }?;
-    let state = filter_list(state, &params, gw).await?;
+    let state = filter_list(state, &params).await?;
     if params.nointeractive {
         list_tasks(&state.tasks, &state);
     } else {
@@ -49,14 +51,27 @@ pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
 }
 
 /// Show a list that's filtered down based on the params.
-async fn filter_list(state: State, params: &Params, gw: &Gateway) -> Result<State> {
-    let (projects, sections) = tokio::try_join!(gw.projects(), gw.sections())?;
+async fn filter_list<'a>(state: State<'a>, params: &'_ Params) -> Result<State<'a>> {
+    let projects = state
+        .projects
+        .values()
+        .map(ToOwned::to_owned)
+        .collect::<Vec<_>>();
+    let sections = state
+        .sections
+        .values()
+        .map(ToOwned::to_owned)
+        .collect::<Vec<_>>();
+    let labels = state
+        .labels
+        .values()
+        .map(ToOwned::to_owned)
+        .collect::<Vec<_>>();
     let project = params.project.optional(&projects)?;
     let section = params.section.optional(&sections)?;
     let labels = params
         .label
-        .labels(gw, labels::Selection::AllowEmpty)
-        .await?;
+        .labels(&labels, labels::Selection::AllowEmpty)?;
     let mut state = state;
     if let Some(p) = project {
         state = state.filter(|tree| tree.project_id == p.id);
@@ -92,7 +107,7 @@ enum TaskOptions {
 
 async fn select_task_option<'a, 'b>(
     task: &'a Tree<Task>,
-    state: &'a State,
+    state: &'a State<'_>,
     gw: &'b Gateway,
 ) -> Result<()> {
     println!("{}", state.full_task(task));
@@ -111,6 +126,7 @@ async fn select_task_option<'a, 'b>(
                     complete: false,
                 },
                 gw,
+                state.config,
             )
             .await?
         }
@@ -121,10 +137,11 @@ async fn select_task_option<'a, 'b>(
                     complete: true,
                 },
                 gw,
+                state.config,
             )
             .await?
         }
-        TaskOptions::Edit => edit_task(task, gw).await?,
+        TaskOptions::Edit => edit_task(task, gw, state.config).await?,
         TaskOptions::Quit => {}
     };
     Ok(())
@@ -141,7 +158,7 @@ enum EditOptions {
     Quit,
 }
 
-async fn edit_task(task: &Tree<Task>, gw: &Gateway) -> Result<()> {
+async fn edit_task(task: &Tree<Task>, gw: &Gateway, cfg: &Config) -> Result<()> {
     // edit::edit(edit::Params { id: task.task.id }, gw).await?,
     let result = match make_selection(EditOptions::VARIANTS)? {
         Some(index) => EditOptions::from_repr(index).unwrap(),
@@ -162,7 +179,7 @@ async fn edit_task(task: &Tree<Task>, gw: &Gateway) -> Result<()> {
                 + 1;
             let mut params = edit::Params::new(task.id);
             params.priority = Some(selection.try_into()?);
-            edit::edit(params, gw).await?;
+            edit::edit(params, gw, cfg).await?;
         }
         _ => {
             let text = dialoguer::Input::new()
@@ -183,7 +200,7 @@ async fn edit_task(task: &Tree<Task>, gw: &Gateway) -> Result<()> {
                 EditOptions::Priority => unreachable!(),
                 EditOptions::Quit => unreachable!(),
             };
-            edit::edit(params, gw).await?;
+            edit::edit(params, gw, cfg).await?;
         }
     };
     Ok(())

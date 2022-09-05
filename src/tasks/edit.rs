@@ -5,6 +5,7 @@ use crate::{
         self,
         rest::{Gateway, TaskDue, UpdateTask},
     },
+    config::Config,
     labels::{self, LabelSelect},
     tasks::{filter::TaskOrInteractive, Priority},
 };
@@ -41,12 +42,11 @@ impl Params {
     }
 }
 
-pub async fn edit(params: Params, gw: &Gateway) -> Result<()> {
+pub async fn edit(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
     let label_ids = {
         let labels = params
             .labels
-            .labels(gw, labels::Selection::AllowEmpty)
-            .await?;
+            .labels(&gw.labels().await?, labels::Selection::AllowEmpty)?;
         if labels.is_empty() {
             None
         } else {
@@ -63,5 +63,6 @@ pub async fn edit(params: Params, gw: &Gateway) -> Result<()> {
     if let Some(due) = params.due {
         update.due = Some(TaskDue::String(due))
     }
-    gw.update(params.task.task_id(gw).await?, &update).await
+    gw.update(params.task.task_id(gw, cfg).await?, &update)
+        .await
 }

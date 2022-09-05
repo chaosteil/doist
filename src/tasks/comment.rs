@@ -1,6 +1,9 @@
 use color_eyre::Result;
 
-use crate::api::rest::{CreateComment, FullComment, Gateway, ThreadID};
+use crate::{
+    api::rest::{CreateComment, FullComment, Gateway, ThreadID},
+    config::Config,
+};
 
 use super::filter::TaskOrInteractive;
 
@@ -13,8 +16,8 @@ pub struct Params {
 }
 
 /// Creates a new comment for a task.
-pub async fn comment(params: Params, gw: &Gateway) -> Result<()> {
-    let (id, _) = params.task.task(gw).await?;
+pub async fn comment(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
+    let (id, _) = params.task.task(gw, cfg).await?;
     let comment = gw
         .create_comment(&CreateComment {
             thread: ThreadID::Task { task_id: id },

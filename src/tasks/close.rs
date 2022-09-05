@@ -1,7 +1,10 @@
 use color_eyre::{eyre::WrapErr, Result};
 use owo_colors::OwoColorize;
 
-use crate::api::{self, rest::Gateway};
+use crate::{
+    api::{self, rest::Gateway},
+    config::Config,
+};
 
 use super::filter;
 
@@ -16,10 +19,10 @@ pub struct Params {
     pub complete: bool,
 }
 
-pub async fn close(params: Params, gw: &Gateway) -> Result<()> {
+pub async fn close(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
     let id = params
         .task
-        .task_id(gw)
+        .task_id(gw, cfg)
         .await
         .wrap_err("no task selected for closing")?;
     if params.complete {

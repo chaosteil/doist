@@ -147,6 +147,15 @@ doist view
 
 This accepts the same parameters as `doist list` for task selection.
 
+### Disable colors
+
+If you're not a fan of emojis or colors, you can disable all doist-induced
+colors by setting the environment variable `NO_COLOR`:
+
+```bash
+NO_COLOR=1 doist
+```
+
 ### Help
 
 Feel free to browse the help output for more help:

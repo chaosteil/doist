@@ -28,16 +28,32 @@ pub struct Params {
     /// match the filter.
     #[clap(short = 'e', long = "expand")]
     expand: bool,
+    /// Enables a continuous mode, so that after each operation more operations can be done until
+    /// the program is exited from.
+    #[clap(short = 't', long = "tui")]
+    continuous: bool,
 }
 
 /// List lists the tasks of the current user accessing the gateway with the given filter.
 pub async fn list(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
+    if params.continuous {
+        loop {
+            match list_action(&params, gw, cfg).await {
+                Ok(_) => {}
+                Err(e) => return Err(e),
+            }
+        }
+    }
+    list_action(&params, gw, cfg).await
+}
+
+async fn list_action(params: &Params, gw: &Gateway, cfg: &Config) -> Result<()> {
     let state = if params.expand {
         State::fetch_full_tree(Some(&params.filter.filter), gw, cfg).await
     } else {
         State::fetch_tree(Some(&params.filter.filter), gw, cfg).await
     }?;
-    let state = filter_list(state, &params).await?;
+    let state = filter_list(state, params).await?;
     if params.nointeractive {
         list_tasks(&state.tasks, &state);
     } else {

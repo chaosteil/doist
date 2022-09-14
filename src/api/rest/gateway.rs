@@ -98,7 +98,7 @@ impl Gateway {
         self.post("rest/v1/tasks", task)
             .await
             .wrap_err("unable to create task")?
-            .ok_or_else(|| eyre!("Unable to create task"))
+            .ok_or_else(|| eyre!("unable to create task"))
     }
 
     /// Updates a task with the data as specified in UpdateTask.
@@ -149,7 +149,7 @@ impl Gateway {
         self.post("rest/v1/comments", comment)
             .await
             .wrap_err("unable to create comment")?
-            .ok_or_else(|| eyre!("Unable to create comment"))
+            .ok_or_else(|| eyre!("unable to create comment"))
     }
 
     /// Returns details about a single project.
@@ -166,7 +166,7 @@ impl Gateway {
         self.post("rest/v1/projects", project)
             .await
             .wrap_err("unable to create project")?
-            .ok_or_else(|| eyre!("Unable to create project"))
+            .ok_or_else(|| eyre!("unable to create project"))
     }
 
     /// Deletes a project by calling the Todoist API.
@@ -190,7 +190,7 @@ impl Gateway {
         self.post("rest/v1/sections", section)
             .await
             .wrap_err("unable to create section")?
-            .ok_or_else(|| eyre!("Unable to create section"))
+            .ok_or_else(|| eyre!("unable to create section"))
     }
 
     /// Deletes a section by calling the Todoist API.
@@ -214,7 +214,7 @@ impl Gateway {
         self.post("rest/v1/labels", label)
             .await
             .wrap_err("unable to create label")?
-            .ok_or_else(|| eyre!("Unable to create label"))
+            .ok_or_else(|| eyre!("unable to create label"))
     }
 
     /// Deletes a label by calling the Todoist API.
@@ -285,16 +285,16 @@ async fn handle_req<R: DeserializeOwned>(req: RequestBuilder) -> Result<Option<R
         .timeout(Duration::from_secs(30))
         .send()
         .await
-        .wrap_err("Unable to send request")?;
+        .wrap_err("unable to send request")?;
     let status = resp.status();
     if status == StatusCode::NO_CONTENT {
         return Ok(None);
     }
-    let text = resp.text().await.wrap_err("Unable to read response")?;
+    let text = resp.text().await.wrap_err("unable to read response")?;
     if !status.is_success() {
         return Err(eyre!("Bad response from API: {} - {}", status, text));
     }
-    let result = serde_json::from_str(&text).wrap_err("Unable to parse API response")?;
+    let result = serde_json::from_str(&text).wrap_err("unable to parse API response")?;
     Ok(Some(result))
 }
 

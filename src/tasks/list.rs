@@ -28,9 +28,9 @@ pub struct Params {
     /// match the filter.
     #[clap(short = 'e', long = "expand")]
     expand: bool,
-    /// Enables a continuous mode, so that after each operation more operations can be done until
-    /// the program is exited from.
-    #[clap(short = 't', long = "tui")]
+    /// Enables a continuous super-interactive mode, so that after each operation more operations
+    /// can be done until the program is exited from.
+    #[clap(short = 'i', long = "interactive")]
     continuous: bool,
 }
 
@@ -39,15 +39,25 @@ pub async fn list(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
     if params.continuous {
         loop {
             match list_action(&params, gw, cfg).await {
+                Ok(ListAction::Cancel) => return Ok(()),
                 Ok(_) => {}
                 Err(e) => return Err(e),
             }
         }
     }
-    list_action(&params, gw, cfg).await
+    match list_action(&params, gw, cfg).await {
+        Ok(_) => Ok(()),
+        Err(e) => Err(e),
+    }
 }
 
-async fn list_action(params: &Params, gw: &Gateway, cfg: &Config) -> Result<()> {
+/// Describes the action the user made when calling [`list_action`].
+pub enum ListAction {
+    Action,
+    Cancel,
+}
+
+async fn list_action(params: &Params, gw: &Gateway, cfg: &Config) -> Result<ListAction> {
     let state = if params.expand {
         State::fetch_full_tree(Some(&params.filter.filter), gw, cfg).await
     } else {
@@ -59,10 +69,13 @@ async fn list_action(params: &Params, gw: &Gateway, cfg: &Config) -> Result<()> 
     } else {
         match state.select_task()? {
             Some(task) => select_task_option(task, &state, gw).await?,
-            None => println!("No selection was made"),
+            None => {
+                println!("No selection was made");
+                return Ok(ListAction::Cancel);
+            }
         }
     }
-    Ok(())
+    Ok(ListAction::Action)
 }
 
 /// Show a list that's filtered down based on the params.

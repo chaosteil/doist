@@ -72,6 +72,20 @@ doist list --filter "all"
 # Alternatively: `doist l -f all`
 ```
 
+### Interactive (continuous) mode
+
+To continue to use `doist list` with the currently applied filters after each
+action (so you can close multiple tasks one after the other for example), a
+super-interactive (continuous) mode is also available. This makes the experience
+closer to the official app.
+
+```bash
+doist list --interactive
+# Alternatively: `doist -i`
+```
+
+To close out of this mode, press `ESC` during the main list selection.
+
 ### Adding tasks
 
 A quick way to add a task is:

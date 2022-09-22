@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use color_eyre::Result;
+use color_eyre::{eyre::WrapErr, Result};
 
 use crate::{
     api::{
@@ -34,9 +34,16 @@ pub struct Params {
     section: interactive::Selection<Section>,
     #[clap(flatten)]
     labels: LabelSelect,
+    #[clap(short = 'i', long = "interactive")]
+    interactive: bool,
 }
 
 pub async fn add(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
+    let params = if params.interactive {
+        add_menu(params)?
+    } else {
+        params
+    };
     let (projects, sections) = tokio::try_join!(gw.projects(), gw.sections())?;
     let project = params.project.optional(&projects)?;
     let section = params.section.optional(&sections)?;
@@ -77,4 +84,22 @@ pub async fn add(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
     table.3 = labels.iter().collect();
     println!("created task: {}", table);
     Ok(())
+}
+
+// TODO: maybe not params? Params with default? think of project and section, due date selection
+// etc.
+fn add_menu(params: Params) -> Result<Params> {
+    let mut input = dialoguer::Input::new();
+    input
+        .with_prompt("Task name")
+        .with_initial_text(params.name)
+        .validate_with(|input: &String| -> Result<(), &str> {
+            if !input.is_empty() {
+                Ok(())
+            } else {
+                Err("empty task description")
+            }
+        });
+    let name: String = input.interact_text().wrap_err("No input made")?;
+    Ok(Params { name, ..params })
 }

@@ -34,16 +34,9 @@ pub struct Params {
     section: interactive::Selection<Section>,
     #[clap(flatten)]
     labels: LabelSelect,
-    #[clap(short = 'i', long = "interactive")]
-    interactive: bool,
 }
 
 pub async fn add(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
-    let params = if params.interactive {
-        add_menu(params)?
-    } else {
-        params
-    };
     let (projects, sections) = tokio::try_join!(gw.projects(), gw.sections())?;
     let project = params.project.optional(&projects)?;
     let section = params.section.optional(&sections)?;

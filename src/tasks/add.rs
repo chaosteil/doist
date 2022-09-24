@@ -88,11 +88,13 @@ pub async fn add(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
 
 // TODO: maybe not params? Params with default? think of project and section, due date selection
 // etc.
+// TODO: use create.rs?
 fn add_menu(params: Params) -> Result<Params> {
     let mut input = dialoguer::Input::new();
     input
         .with_prompt("Task name")
         .with_initial_text(params.name)
+        .allow_empty(false)
         .validate_with(|input: &String| -> Result<(), &str> {
             if !input.is_empty() {
                 Ok(())
@@ -101,5 +103,17 @@ fn add_menu(params: Params) -> Result<Params> {
             }
         });
     let name: String = input.interact_text().wrap_err("No input made")?;
-    Ok(Params { name, ..params })
+
+    let mut input = dialoguer::Input::new();
+    input
+        .with_prompt("Due date")
+        .allow_empty(true)
+        .with_initial_text(params.due.unwrap_or_default());
+    let due: String = input.interact_text().wrap_err("No input made")?;
+    let due = if due.is_empty() { None } else { Some(due) };
+    Ok(Params {
+        name,
+        due,
+        ..params
+    })
 }

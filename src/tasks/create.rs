@@ -1,8 +1,10 @@
 use color_eyre::{eyre::WrapErr, Result};
+use owo_colors::OwoColorize;
 
 use crate::{
-    api::rest::{CreateTask, Gateway},
+    api::rest::{CreateTask, Gateway, Priority, TaskDue},
     config::Config,
+    interactive,
 };
 
 #[derive(clap::Parser, Debug)]
@@ -25,20 +27,28 @@ pub async fn create(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
             }
         });
     create.content = input.interact_text().wrap_err("No input made")?;
+    let mut due: Option<String> = None;
 
     let items = vec![
-        "Task Name",
-        "Description",
-        "Priority",
-        "Project/Section",
-        "Labels",
-        "Done",
+        format!("{}", "Submit".bold().bright_blue()),
+        format!("{}: {}", "Task Name".bold(), create.content),
+        format!(
+            "{}: {}",
+            "Due".bold(),
+            due.as_ref().unwrap_or(&"".to_owned())
+        ),
+        format!(
+            "{}: {}",
+            "Description".bold(),
+            create.description.unwrap_or_default()
+        ),
+        format!(
+            "{}: {}",
+            "Priority".bold(),
+            create.priority.unwrap_or(Priority::Normal)
+        ),
     ];
-    let selection = dialoguer::Select::new()
-        .items(&items)
-        .default(items.len() - 1)
-        .interact()?;
-    println!("Selected item {:?}", selection);
+    let selection = interactive::select("Edit task fields or submit", &items)?;
     //
     // let mut create = CreateTask {
     //     content: params.name,
@@ -49,8 +59,8 @@ pub async fn create(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
     //     label_ids: labels.iter().map(|l| l.id).collect(),
     //     ..Default::default()
     // };
-    // if let Some(due) = params.due {
-    //     create.due = Some(TaskDue::String(due));
-    // }
+    if let Some(due) = due {
+        create.due = Some(TaskDue::String(due));
+    }
     Ok(())
 }

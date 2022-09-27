@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
-use color_eyre::{eyre::WrapErr, Result};
+use color_eyre::Result;
 
 use crate::{
     api::{
-        rest::{CreateTask, Gateway, Project, Section, TableTask, TaskDue},
+        rest::{CreateTask, Gateway, Label, Project, Section, TableTask, TaskDue},
         tree::Tree,
     },
     config::Config,
@@ -70,6 +70,17 @@ pub async fn add(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
     } else {
         Vec::new()
     };
+    create_task(create, project, section, &labels, gw, cfg).await
+}
+
+pub(super) async fn create_task(
+    create: CreateTask,
+    project: Option<&Project>,
+    section: Option<&Section>,
+    labels: &[Label],
+    gw: &Gateway,
+    cfg: &Config,
+) -> Result<()> {
     let task = Tree::new(gw.create(&create).await?);
     let mut table = TableTask::from_task(&task, cfg);
     table.1 = project;
@@ -77,36 +88,4 @@ pub async fn add(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
     table.3 = labels.iter().collect();
     println!("created task: {}", table);
     Ok(())
-}
-
-// TODO: maybe not params? Params with default? think of project and section, due date selection
-// etc.
-// TODO: use create.rs?
-fn add_menu(params: Params) -> Result<Params> {
-    let mut input = dialoguer::Input::new();
-    input
-        .with_prompt("Task name")
-        .with_initial_text(params.name)
-        .allow_empty(false)
-        .validate_with(|input: &String| -> Result<(), &str> {
-            if !input.is_empty() {
-                Ok(())
-            } else {
-                Err("empty task description")
-            }
-        });
-    let name: String = input.interact_text().wrap_err("No input made")?;
-
-    let mut input = dialoguer::Input::new();
-    input
-        .with_prompt("Due date")
-        .allow_empty(true)
-        .with_initial_text(params.due.unwrap_or_default());
-    let due: String = input.interact_text().wrap_err("No input made")?;
-    let due = if due.is_empty() { None } else { Some(due) };
-    Ok(Params {
-        name,
-        due,
-        ..params
-    })
 }

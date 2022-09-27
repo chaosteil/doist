@@ -39,7 +39,7 @@ enum AuthCommands {
     #[clap(alias = "a")]
     Add(add::Params),
     /// Creates a task interactively.
-    #[clap(alias = "i")]
+    #[clap(alias = "A")]
     Create(create::Params),
     /// Lists tasks. This is the default if no subcommand is specified.
     #[clap(alias = "l")]

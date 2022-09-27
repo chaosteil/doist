@@ -1,7 +1,7 @@
 use crate::{
     config::Config,
     labels, projects, sections,
-    tasks::{add, close, comment, edit, list, view},
+    tasks::{add, close, comment, create, edit, list, view},
 };
 use clap::{AppSettings, Parser, Subcommand};
 use color_eyre::Result;
@@ -38,6 +38,9 @@ enum AuthCommands {
     /// Adds a task.
     #[clap(alias = "a")]
     Add(add::Params),
+    /// Creates a task interactively.
+    #[clap(alias = "A")]
+    Create(create::Params),
     /// Lists tasks. This is the default if no subcommand is specified.
     #[clap(alias = "l")]
     List(list::Params),
@@ -126,6 +129,7 @@ impl Args {
                     let gw = cfg.gateway()?;
                     match command {
                         AuthCommands::Add(p) => add::add(p, &gw, &cfg).await?,
+                        AuthCommands::Create(p) => create::create(p, &gw, &cfg).await?,
                         AuthCommands::List(p) => list::list(p, &gw, &cfg).await?,
                         AuthCommands::Edit(p) => edit::edit(p, &gw, &cfg).await?,
                         AuthCommands::Close(p) => close::close(p, &gw, &cfg).await?,

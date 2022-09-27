@@ -4,7 +4,7 @@ use color_eyre::Result;
 
 use crate::{
     api::{
-        rest::{CreateTask, Gateway, Project, Section, TableTask, TaskDue},
+        rest::{CreateTask, Gateway, Label, Project, Section, TableTask, TaskDue},
         tree::Tree,
     },
     config::Config,
@@ -70,6 +70,17 @@ pub async fn add(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
     } else {
         Vec::new()
     };
+    create_task(create, project, section, &labels, gw, cfg).await
+}
+
+pub(super) async fn create_task(
+    create: CreateTask,
+    project: Option<&Project>,
+    section: Option<&Section>,
+    labels: &[Label],
+    gw: &Gateway,
+    cfg: &Config,
+) -> Result<()> {
     let task = Tree::new(gw.create(&create).await?);
     let mut table = TableTask::from_task(&task, cfg);
     table.1 = project;

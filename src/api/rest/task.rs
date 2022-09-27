@@ -125,11 +125,11 @@ impl PartialOrd for Task {
 pub enum Priority {
     /// p1 in the Todoist UI.
     Normal = 1,
-    /// p2 in the Todoist UI.
-    High = 2,
     /// p3 in the Todoist UI.
+    High = 2,
+    /// p2 in the Todoist UI.
     VeryHigh = 3,
-    /// p4 in the Todoist UI.
+    /// p1 in the Todoist UI.
     Urgent = 4,
 }
 

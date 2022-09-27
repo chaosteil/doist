@@ -3,7 +3,7 @@ use owo_colors::OwoColorize;
 use strum::EnumIter;
 
 use crate::{
-    api::rest::{CreateTask, Gateway, Priority, TaskDue},
+    api::rest::{CreateTask, Gateway, Priority, Project, ProjectID, TaskDue},
     config::Config,
     interactive,
 };
@@ -19,7 +19,8 @@ enum Selection {
     TaskName = 0,
     Due = 1,
     Description = 2,
-    Priority = 3,
+    Project = 3,
+    Priority = 4,
 }
 
 impl std::fmt::Display for Selection {
@@ -31,6 +32,7 @@ impl std::fmt::Display for Selection {
                 Selection::TaskName => "Task Name",
                 Selection::Due => "Due",
                 Selection::Description => "Description",
+                Selection::Project => "Project",
                 Selection::Priority => "Priority",
             }
         )
@@ -43,7 +45,8 @@ impl From<usize> for Selection {
             0 => Selection::TaskName,
             1 => Selection::Due,
             2 => Selection::Description,
-            3 => Selection::Priority,
+            3 => Selection::Project,
+            4 => Selection::Priority,
             _ => panic!("bad selection input"),
         }
     }
@@ -55,6 +58,7 @@ pub async fn create(_params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
         ..Default::default()
     };
 
+    let projects = gw.projects().await?;
     let mut due: Option<String> = None;
     loop {
         let mut items = vec![format!("{}", "Submit".bold().bright_blue())];
@@ -65,6 +69,17 @@ pub async fn create(_params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
                 (
                     Selection::Description,
                     create.description.clone().unwrap_or_default(),
+                ),
+                (
+                    Selection::Project,
+                    match create
+                        .project_id
+                        .as_ref()
+                        .and_then(|id| projects.iter().find(|p| p.id == *id))
+                    {
+                        Some(p) => p.name.clone(),
+                        None => "".to_string(),
+                    },
                 ),
                 (
                     Selection::Priority,
@@ -85,6 +100,7 @@ pub async fn create(_params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
             Selection::Description => {
                 create.description = input_optional("Description", create.description)?
             }
+            Selection::Project => create.project_id = input_project(&projects)?,
             Selection::Priority => create.priority = input_priority()?,
         }
     }
@@ -121,6 +137,13 @@ fn input_optional(prompt: &str, default: Option<String>) -> Result<Option<String
     match input.interact_text().wrap_err("No input made")?.as_str() {
         "" => Ok(None),
         s => Ok(Some(s.to_owned())),
+    }
+}
+
+fn input_project(projects: &[Project]) -> Result<Option<ProjectID>> {
+    match interactive::select("Select Project", projects)? {
+        Some(p) => Ok(Some(projects[p].id)),
+        None => Ok(None),
     }
 }
 

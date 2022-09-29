@@ -3,7 +3,7 @@ use owo_colors::OwoColorize;
 use strum::EnumIter;
 
 use crate::{
-    api::rest::{CreateTask, Gateway, Priority, Project, ProjectID, TaskDue},
+    api::rest::{CreateTask, Gateway, Priority, Project, ProjectID, Section, SectionID, TaskDue},
     config::Config,
     interactive,
 };
@@ -58,7 +58,7 @@ pub async fn create(_params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
         ..Default::default()
     };
 
-    let projects = gw.projects().await?;
+    let (projects, sections) = tokio::try_join!(gw.projects(), gw.sections())?;
     let mut due: Option<String> = None;
     loop {
         let mut items = vec![format!("{}", "Submit".bold().bright_blue())];
@@ -100,7 +100,9 @@ pub async fn create(_params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
             Selection::Description => {
                 create.description = input_optional("Description", create.description)?
             }
-            Selection::Project => create.project_id = input_project(&projects)?,
+            Selection::Project => {
+                create.project_id = input_project(&projects, &sections)?.map(|(p, _)| p)
+            }
             Selection::Priority => create.priority = input_priority()?,
         }
     }
@@ -140,11 +142,21 @@ fn input_optional(prompt: &str, default: Option<String>) -> Result<Option<String
     }
 }
 
-fn input_project(projects: &[Project]) -> Result<Option<ProjectID>> {
+fn input_project(
+    projects: &[Project],
+    sections: &[Section],
+) -> Result<Option<(ProjectID, Option<SectionID>)>> {
     match interactive::select("Select Project", projects)? {
-        Some(p) => Ok(Some(projects[p].id)),
+        Some(p) => Ok(Some((
+            projects[p].id,
+            input_section(projects[p].id, sections)?,
+        ))),
         None => Ok(None),
     }
+}
+
+fn input_section(project: ProjectID, sections: &[Section]) -> Result<Option<SectionID>> {
+    Ok(None)
 }
 
 fn input_priority() -> Result<Option<Priority>> {

@@ -1,3 +1,5 @@
+use std::iter;
+
 use color_eyre::{eyre::eyre, eyre::WrapErr, Result};
 use owo_colors::OwoColorize;
 use strum::EnumIter;
@@ -77,7 +79,14 @@ pub async fn create(_params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
                         .as_ref()
                         .and_then(|id| projects.iter().find(|p| p.id == *id))
                     {
-                        Some(p) => p.name.clone(),
+                        Some(p) => match create
+                            .section_id
+                            .as_ref()
+                            .and_then(|id| sections.iter().find(|s| s.id == *id))
+                        {
+                            Some(s) => format!("{}/{}", p, s),
+                            None => p.to_string(),
+                        },
                         None => "".to_string(),
                     },
                 ),
@@ -101,7 +110,10 @@ pub async fn create(_params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
                 create.description = input_optional("Description", create.description)?
             }
             Selection::Project => {
-                create.project_id = input_project(&projects, &sections)?.map(|(p, _)| p)
+                if let Some((p, s)) = input_project(&projects, &sections)? {
+                    create.project_id = Some(p);
+                    create.section_id = s;
+                };
             }
             Selection::Priority => create.priority = input_priority()?,
         }
@@ -156,7 +168,21 @@ fn input_project(
 }
 
 fn input_section(project: ProjectID, sections: &[Section]) -> Result<Option<SectionID>> {
-    Ok(None)
+    let sections: Vec<_> = sections
+        .iter()
+        .filter(|s| s.project_id == project)
+        .collect();
+    if sections.is_empty() {
+        return Ok(None);
+    }
+    let section_names = iter::once("None".bold().to_string())
+        .chain(sections.iter().map(|s| s.to_string()))
+        .collect::<Vec<_>>();
+    match interactive::select("Select Section", &section_names)? {
+        Some(0) => Ok(None),
+        Some(s) => Ok(Some(sections[s - 1].id)),
+        None => Ok(None),
+    }
 }
 
 fn input_priority() -> Result<Option<Priority>> {

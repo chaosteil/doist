@@ -1,9 +1,11 @@
+use std::iter;
+
 use color_eyre::{eyre::eyre, eyre::WrapErr, Result};
 use owo_colors::OwoColorize;
 use strum::EnumIter;
 
 use crate::{
-    api::rest::{CreateTask, Gateway, Priority, Project, ProjectID, TaskDue},
+    api::rest::{CreateTask, Gateway, Priority, Project, ProjectID, Section, SectionID, TaskDue},
     config::Config,
     interactive,
 };
@@ -58,7 +60,7 @@ pub async fn create(_params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
         ..Default::default()
     };
 
-    let projects = gw.projects().await?;
+    let (projects, sections) = tokio::try_join!(gw.projects(), gw.sections())?;
     let mut due: Option<String> = None;
     loop {
         let mut items = vec![format!("{}", "Submit".bold().bright_blue())];
@@ -77,7 +79,14 @@ pub async fn create(_params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
                         .as_ref()
                         .and_then(|id| projects.iter().find(|p| p.id == *id))
                     {
-                        Some(p) => p.name.clone(),
+                        Some(p) => match create
+                            .section_id
+                            .as_ref()
+                            .and_then(|id| sections.iter().find(|s| s.id == *id))
+                        {
+                            Some(s) => format!("{}/{}", p, s),
+                            None => p.to_string(),
+                        },
                         None => "".to_string(),
                     },
                 ),
@@ -100,7 +109,12 @@ pub async fn create(_params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
             Selection::Description => {
                 create.description = input_optional("Description", create.description)?
             }
-            Selection::Project => create.project_id = input_project(&projects)?,
+            Selection::Project => {
+                if let Some((p, s)) = input_project(&projects, &sections)? {
+                    create.project_id = Some(p);
+                    create.section_id = s;
+                };
+            }
             Selection::Priority => create.priority = input_priority()?,
         }
     }
@@ -140,9 +154,33 @@ fn input_optional(prompt: &str, default: Option<String>) -> Result<Option<String
     }
 }
 
-fn input_project(projects: &[Project]) -> Result<Option<ProjectID>> {
+fn input_project(
+    projects: &[Project],
+    sections: &[Section],
+) -> Result<Option<(ProjectID, Option<SectionID>)>> {
     match interactive::select("Select Project", projects)? {
-        Some(p) => Ok(Some(projects[p].id)),
+        Some(p) => Ok(Some((
+            projects[p].id,
+            input_section(projects[p].id, sections)?,
+        ))),
+        None => Ok(None),
+    }
+}
+
+fn input_section(project: ProjectID, sections: &[Section]) -> Result<Option<SectionID>> {
+    let sections: Vec<_> = sections
+        .iter()
+        .filter(|s| s.project_id == project)
+        .collect();
+    if sections.is_empty() {
+        return Ok(None);
+    }
+    let section_names = iter::once("None".bold().to_string())
+        .chain(sections.iter().map(|s| s.to_string()))
+        .collect::<Vec<_>>();
+    match interactive::select("Select Section", &section_names)? {
+        Some(0) => Ok(None),
+        Some(s) => Ok(Some(sections[s - 1].id)),
         None => Ok(None),
     }
 }

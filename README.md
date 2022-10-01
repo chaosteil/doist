@@ -98,6 +98,20 @@ doist add "Do the laundry" --desc "I always forget" --due "tomorrow"
 Only the task name is required, everything else will assume a default of
 *nothing*.
 
+### Interactive task creation
+
+Another way to fully interactively create tasks is:
+
+```bash
+doist create
+# Alternatively: `doist A`
+```
+
+Which will prompt you for the task name and then give you an interactive menu
+where you can fill in the details as necessary.
+
+### More about tasks
+
 It's also possible to provide the task with a priority:
 
 ```bash

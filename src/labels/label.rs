@@ -12,10 +12,10 @@ use crate::api::rest::LabelID;
 pub struct LabelSelect {
     /// Uses the label with the closest name, if possible. Does fuzzy matching for the name. Can
     /// be used multiple times to use more labels.
-    #[clap(short = 'L', long = "label")]
+    #[arg(short = 'L', long = "label")]
     label_names: Option<Vec<String>>,
     /// Uses the label with the given ID. Can be used multiple times to use more labels.
-    #[clap(long = "label_id")]
+    #[arg(long = "label_id")]
     label_ids: Option<Vec<LabelID>>,
 }
 

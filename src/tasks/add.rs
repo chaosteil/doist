@@ -20,13 +20,13 @@ pub struct Params {
     /// Set due with a human-readable text.
     ///
     /// Examples: "in two days" "tomorrow", "every 2 days from Monday"
-    #[clap(short = 'd', long = "due")]
+    #[arg(short = 'd', long = "due")]
     due: Option<String>,
     /// Description that has more details about the task.
-    #[clap(short = 'D', long = "desc")]
+    #[arg(short = 'D', long = "desc")]
     desc: Option<String>,
     /// Sets the priority on the task. The higher the priority the more urgent the task.
-    #[clap(value_enum, short = 'p', long = "priority")]
+    #[arg(value_enum, short = 'p', long = "priority")]
     priority: Option<Priority>,
     #[clap(flatten)]
     project: interactive::Selection<Project>,

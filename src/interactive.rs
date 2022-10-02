@@ -17,7 +17,10 @@ macro_rules! selection {
             fn from_arg_matches(matches: &clap::ArgMatches) -> Result<Self, clap::Error> {
                 let id = match matches.get_one::<String>($select_id).map(|i| i.to_owned()) {
                     Some(id) => Some(id.parse().map_err(|_| {
-                        clap::Error::raw(clap::ErrorKind::ValueValidation, "must be valid ID")
+                        clap::Error::raw(
+                            clap::error::ErrorKind::ValueValidation,
+                            "must be valid ID",
+                        )
                     })?),
                     None => None,
                 };
@@ -41,7 +44,10 @@ macro_rules! selection {
                 }
                 if let Some(id) = matches.get_one::<String>($select_id).map(|i| i.to_owned()) {
                     self.id = Some(id.parse().map_err(|_| {
-                        clap::Error::raw(clap::ErrorKind::ValueValidation, "must be valid ID")
+                        clap::Error::raw(
+                            clap::error::ErrorKind::ValueValidation,
+                            "must be valid ID",
+                        )
                     })?)
                 }
                 Ok(())
@@ -49,7 +55,7 @@ macro_rules! selection {
         }
 
         impl Args for Selection<$select_type> {
-            fn augment_args(cmd: clap::Command<'_>) -> clap::Command<'_> {
+            fn augment_args(cmd: clap::Command) -> clap::Command {
                 cmd.arg(
                     Arg::new($select_name)
                         .short($short)
@@ -65,7 +71,7 @@ macro_rules! selection {
                 )
             }
 
-            fn augment_args_for_update(cmd: clap::Command<'_>) -> clap::Command<'_> {
+            fn augment_args_for_update(cmd: clap::Command) -> clap::Command {
                 Self::augment_args(cmd)
             }
         }

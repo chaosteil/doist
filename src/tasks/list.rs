@@ -16,7 +16,7 @@ pub struct Params {
     #[clap(flatten)]
     filter: filter::Filter,
     /// Disables interactive mode and simply displays the list.
-    #[clap(short = 'n', long = "nointeractive")]
+    #[arg(short = 'n', long = "nointeractive")]
     nointeractive: bool,
     #[clap(flatten)]
     project: interactive::Selection<Project>,
@@ -26,11 +26,11 @@ pub struct Params {
     label: labels::LabelSelect,
     /// Expands to show all parents of tasks that are in the filter, even if the parent doesn't
     /// match the filter.
-    #[clap(short = 'e', long = "expand")]
+    #[arg(short = 'e', long = "expand")]
     expand: bool,
     /// Enables a continuous super-interactive mode, so that after each operation more operations
     /// can be done until the program is exited from.
-    #[clap(short = 'i', long = "interactive")]
+    #[arg(short = 'i', long = "interactive")]
     continuous: bool,
 }
 

@@ -12,7 +12,7 @@ const DEFAULT_FILTER: &str = "(today | overdue)";
 #[derive(clap::Parser, Debug)]
 pub struct Filter {
     /// When selecting tasks, this will specify a filter query to run against the Todoist API to narrow down possibilities.
-    #[clap(short='f', long="filter", default_value_t=String::from(DEFAULT_FILTER))]
+    #[arg(short='f', long="filter", default_value_t=String::from(DEFAULT_FILTER))]
     pub filter: String,
 }
 

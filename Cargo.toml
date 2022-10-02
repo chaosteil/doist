@@ -19,7 +19,7 @@ name = "doist"
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
 chrono-tz = { version = "0.6", features = ["serde"] }
-clap = { version = "3", features = ["derive"] }
+clap = { version = "4", features = ["derive", "wrap_help"] }
 color-eyre = "0.6"
 config = { version = "0.13", features = ["toml"] }
 dialoguer = { version = "0.10.2", features = ["fuzzy-select"] }

@@ -15,15 +15,15 @@ pub struct Params {
     #[clap(flatten)]
     pub task: TaskOrInteractive,
     /// Name of a task
-    #[clap(short = 'n', long = "name")]
+    #[arg(short = 'n', long = "name")]
     pub name: Option<String>,
-    #[clap(short = 'd', long = "due")]
+    #[arg(short = 'd', long = "due")]
     pub due: Option<String>,
     /// Description of a task.
-    #[clap(short = 'D', long = "desc")]
+    #[arg(short = 'D', long = "desc")]
     pub desc: Option<String>,
     /// Sets the priority on the task. The lower the priority the more urgent the task.
-    #[clap(value_enum, short = 'p', long = "priority")]
+    #[arg(value_enum, short = 'p', long = "priority")]
     pub priority: Option<Priority>,
     #[clap(flatten)]
     pub labels: LabelSelect,

@@ -15,7 +15,7 @@ pub struct Params {
     /// Complete will completely close a task, even if it's recurring.
     /// Since the REST API does not support completely closing tasks, this will change the due date
     /// of the task to "today" and then close it.
-    #[clap(short = 'c', long = "complete")]
+    #[arg(short = 'c', long = "complete")]
     pub complete: bool,
 }
 

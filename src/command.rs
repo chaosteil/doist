@@ -3,17 +3,17 @@ use crate::{
     labels, projects, sections,
     tasks::{add, close, comment, create, edit, list, view},
 };
-use clap::{AppSettings, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 use color_eyre::Result;
 
 /// Args are the main entry point struct of the CLI app.
 #[derive(Parser, Debug)]
-#[clap(author, version, about)]
-#[clap(global_setting(AppSettings::ArgsNegateSubcommands))]
+#[command(author, version, about)]
+#[command(args_conflicts_with_subcommands = true)]
 pub struct Args {
-    #[clap(subcommand)]
+    #[command(subcommand)]
     command: Option<Commands>,
-    #[clap(flatten)]
+    #[command(flatten)]
     params: list::Params,
 }
 
@@ -29,88 +29,88 @@ enum Commands {
     },
     /// Authenticated commands are commands that require a token to be set up via the Auth command
     /// before executing.
-    #[clap(flatten)]
+    #[command(flatten)]
     Authenticated(AuthCommands),
 }
 
 #[derive(Subcommand, Debug)]
 enum AuthCommands {
     /// Adds a task.
-    #[clap(alias = "a")]
+    #[command(alias = "a")]
     Add(add::Params),
     /// Creates a task interactively.
-    #[clap(alias = "A")]
+    #[command(alias = "A")]
     Create(create::Params),
     /// Lists tasks. This is the default if no subcommand is specified.
-    #[clap(alias = "l")]
+    #[command(alias = "l")]
     List(list::Params),
     /// Edits a task.
-    #[clap(alias = "e")]
+    #[command(alias = "e")]
     Edit(edit::Params),
     /// Closes a task.
-    #[clap(alias = "c")]
+    #[command(alias = "c")]
     Close(close::Params),
     /// View details of a single task.
-    #[clap(alias = "v")]
+    #[command(alias = "v")]
     View(view::Params),
     /// Add a comment on a task.
-    #[clap(alias = "C")]
+    #[command(alias = "C")]
     Comment(comment::Params),
 
     /// Manages projects.
-    #[clap(subcommand, alias = "p")]
+    #[command(subcommand, alias = "p")]
     Projects(ProjectCommands),
     /// Manages labels.
-    #[clap(subcommand, alias = "l")]
+    #[command(subcommand, alias = "lbl")]
     Labels(LabelCommands),
 }
 
 #[derive(Subcommand, Debug)]
 enum ProjectCommands {
     /// Lists all current projects
-    #[clap(alias = "l")]
+    #[command(alias = "l")]
     List(projects::list::Params),
     /// View details of a single project.
-    #[clap(alias = "v")]
+    #[command(alias = "v")]
     View(projects::view::Params),
     /// Add a comment on a project.
-    #[clap(alias = "C")]
+    #[command(alias = "C")]
     Comment(projects::comment::Params),
     /// Adds (creates) a new project.
-    #[clap(alias = "a")]
+    #[command(alias = "a")]
     Add(projects::add::Params),
     /// Deletes a project
-    #[clap(alias = "d")]
+    #[command(alias = "d")]
     Delete(projects::delete::Params),
 
     /// Manages sections.
-    #[clap(subcommand, alias = "s")]
+    #[command(subcommand, alias = "s")]
     Sections(SectionCommands),
 }
 
 #[derive(Subcommand, Debug)]
 enum LabelCommands {
     /// Lists all current labels.
-    #[clap(alias = "l")]
+    #[command(alias = "l")]
     List(labels::list::Params),
     /// Adds (creates) a new label.
-    #[clap(alias = "a")]
+    #[command(alias = "a")]
     Add(labels::add::Params),
     /// Deletes a label.
-    #[clap(alias = "d")]
+    #[command(alias = "d")]
     Delete(labels::delete::Params),
 }
 
 #[derive(Subcommand, Debug)]
 enum SectionCommands {
     /// Lists all current sections of the project.
-    #[clap(alias = "l")]
+    #[command(alias = "l")]
     List(sections::list::Params),
     /// Adds (creates) a new section in a project.
-    #[clap(alias = "a")]
+    #[command(alias = "a")]
     Add(sections::add::Params),
     /// Deletes a section in a project.
-    #[clap(alias = "d")]
+    #[command(alias = "d")]
     Delete(sections::delete::Params),
 }
 
@@ -164,5 +164,15 @@ impl Args {
             }
         }
         Ok(())
+    }
+}
+#[cfg(test)]
+mod test {
+    use crate::Args;
+
+    #[test]
+    fn verify_cli() {
+        use clap::CommandFactory;
+        Args::command().debug_assert()
     }
 }

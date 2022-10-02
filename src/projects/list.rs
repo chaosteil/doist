@@ -6,7 +6,7 @@ use color_eyre::{eyre::eyre, Result};
 #[derive(clap::Parser, Debug)]
 pub struct Params {
     /// If specified, will only show projects whose tasks are passing this filter.
-    #[clap(short = 'f', long = "filter")]
+    #[arg(short = 'f', long = "filter")]
     pub filter: Option<String>,
 }
 

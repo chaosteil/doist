@@ -3,15 +3,15 @@ use color_eyre::eyre::eyre;
 use serde::{Deserialize, Serialize};
 
 /// Maps priority from arguments to API priorities.
-#[derive(clap::ArgEnum, Debug, Copy, Clone, Deserialize, Serialize)]
+#[derive(clap::ValueEnum, Debug, Copy, Clone, Deserialize, Serialize)]
 pub enum Priority {
-    #[clap(name = "1")]
+    #[value(name = "1")]
     Urgent,
-    #[clap(name = "2")]
+    #[value(name = "2")]
     VeryHigh,
-    #[clap(name = "3")]
+    #[value(name = "3")]
     High,
-    #[clap(name = "4")]
+    #[value(name = "4")]
     Normal,
 }
 

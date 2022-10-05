@@ -83,11 +83,12 @@ impl<'a> State<'a> {
         Ok(result.map(|index| items[index]))
     }
 
+    // TODO: clean this up perhaps
     pub async fn select_or_create_task(&'a self, gw: &'_ Gateway) -> Result<TaskCreation> {
         let items = self.tasks.flat_tree();
         let result = interactive::select(
             "Select task",
-            &[format!("{} {}", ">".blue(), "Create Task".bold())]
+            &[format!("{} {}", ">".green(), "Create Task".bold())]
                 .into_iter()
                 .chain(items.iter().map(|t| self.table_task(t).to_string()))
                 .collect::<Vec<_>>(),

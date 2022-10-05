@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use color_eyre::{eyre::eyre, eyre::WrapErr, Result};
+use owo_colors::OwoColorize;
 
 use crate::{
     api::{
@@ -14,6 +15,8 @@ use crate::{
     interactive,
 };
 
+use super::create;
+
 /// State is a helper to fully construct a tasks state for display.
 pub struct State<'a> {
     pub tasks: Vec<Tree<Task>>,
@@ -21,6 +24,13 @@ pub struct State<'a> {
     pub sections: HashMap<SectionID, Section>,
     pub labels: HashMap<LabelID, Label>,
     pub config: &'a Config,
+}
+
+// TaskCreation is used for the more complex fully interactive task creation.
+pub enum TaskCreation<'a> {
+    Create,
+    Select(&'a Tree<Task>),
+    None,
 }
 
 impl<'a> State<'a> {
@@ -71,6 +81,25 @@ impl<'a> State<'a> {
             &items.iter().map(|t| self.table_task(t)).collect::<Vec<_>>(),
         )?;
         Ok(result.map(|index| items[index]))
+    }
+
+    pub async fn select_or_create_task(&'a self, gw: &'_ Gateway) -> Result<TaskCreation> {
+        let items = self.tasks.flat_tree();
+        let result = interactive::select(
+            "Select task",
+            &[format!("{} {}", ">".blue(), "Create Task".bold())]
+                .into_iter()
+                .chain(items.iter().map(|t| self.table_task(t).to_string()))
+                .collect::<Vec<_>>(),
+        )?;
+        match result {
+            Some(0) => {
+                create::create(create::Params {}, gw, self.config).await?;
+                Ok(TaskCreation::Create)
+            }
+            Some(index) => Ok(TaskCreation::Select(items[index - 1])),
+            None => Ok(TaskCreation::None),
+        }
     }
 
     pub fn filter<F>(self, filter: F) -> State<'a>

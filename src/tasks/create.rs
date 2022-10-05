@@ -101,7 +101,10 @@ pub async fn create(_params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
         let selection = match interactive::select("Edit task fields or submit", &items)? {
             Some(0) => break,
             Some(s) => Selection::from(s - 1),
-            None => return Err(eyre!("No selection made")),
+            None => {
+                println!("No selection was made");
+                return Ok(());
+            }
         };
         match selection {
             Selection::TaskName => create.content = input_content(&create.content)?,

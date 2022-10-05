@@ -11,6 +11,8 @@ use crate::{
 };
 use strum::{Display, EnumVariantNames, FromRepr, VariantNames};
 
+use super::state::TaskCreation;
+
 #[derive(clap::Parser, Debug)]
 pub struct Params {
     #[clap(flatten)]
@@ -36,9 +38,9 @@ pub struct Params {
 
 /// List lists the tasks of the current user accessing the gateway with the given filter.
 pub async fn list(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
-    if params.continuous {
+    if params.continuous && !params.nointeractive {
         loop {
-            match list_action(&params, gw, cfg).await {
+            match list_interactive_action(&params, gw, cfg).await {
                 Ok(ListAction::Cancel) => return Ok(()),
                 Ok(_) => {}
                 Err(e) => return Err(e),
@@ -51,13 +53,7 @@ pub async fn list(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
     }
 }
 
-/// Describes the action the user made when calling [`list_action`].
-pub enum ListAction {
-    Action,
-    Cancel,
-}
-
-async fn list_action(params: &Params, gw: &Gateway, cfg: &Config) -> Result<ListAction> {
+async fn list_action(params: &Params, gw: &Gateway, cfg: &Config) -> Result<()> {
     let state = if params.expand {
         State::fetch_full_tree(Some(&params.filter.filter), gw, cfg).await
     } else {
@@ -71,11 +67,41 @@ async fn list_action(params: &Params, gw: &Gateway, cfg: &Config) -> Result<List
             Some(task) => select_task_option(task, &state, gw).await?,
             None => {
                 println!("No selection was made");
-                return Ok(ListAction::Cancel);
             }
         }
     }
-    Ok(ListAction::Action)
+    Ok(())
+}
+
+/// Describes the action the user made when calling [`list_action`].
+pub enum ListAction {
+    Action,
+    Cancel,
+}
+
+async fn list_interactive_action(
+    params: &Params,
+    gw: &Gateway,
+    cfg: &Config,
+) -> Result<ListAction> {
+    let state = if params.expand {
+        State::fetch_full_tree(Some(&params.filter.filter), gw, cfg).await
+    } else {
+        State::fetch_tree(Some(&params.filter.filter), gw, cfg).await
+    }?;
+
+    let state = filter_list(state, params).await?;
+    match state.select_or_create_task(gw).await? {
+        TaskCreation::Create => Ok(ListAction::Action),
+        TaskCreation::Select(task) => {
+            select_task_option(task, &state, gw).await?;
+            Ok(ListAction::Action)
+        }
+        TaskCreation::None => {
+            println!("No selection was made");
+            Ok(ListAction::Cancel)
+        }
+    }
 }
 
 /// Show a list that's filtered down based on the params.

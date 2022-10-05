@@ -1,6 +1,6 @@
 use std::iter;
 
-use color_eyre::{eyre::eyre, eyre::WrapErr, Result};
+use color_eyre::{eyre::WrapErr, Result};
 use owo_colors::OwoColorize;
 use strum::EnumIter;
 

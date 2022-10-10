@@ -1,5 +1,3 @@
-use color_eyre::{eyre::WrapErr, Result};
-
 use crate::{
     api::{
         rest::{Gateway, Project, Section, Task},
@@ -7,11 +5,13 @@ use crate::{
     },
     config::Config,
     interactive, labels,
-    tasks::{close, edit, filter, state::State},
+    tasks::{
+        close, edit, filter,
+        state::{State, TaskMenu},
+    },
 };
+use color_eyre::{eyre::WrapErr, Result};
 use strum::{Display, EnumVariantNames, FromRepr, VariantNames};
-
-use super::state::TaskCreation;
 
 #[derive(clap::Parser, Debug)]
 pub struct Params {
@@ -39,13 +39,7 @@ pub struct Params {
 /// List lists the tasks of the current user accessing the gateway with the given filter.
 pub async fn list(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
     if params.continuous && !params.nointeractive {
-        loop {
-            match list_interactive_action(&params, gw, cfg).await {
-                Ok(ListAction::Cancel) => return Ok(()),
-                Ok(_) => {}
-                Err(e) => return Err(e),
-            }
-        }
+        return list_interactive(params, gw, cfg).await;
     }
     match list_action(&params, gw, cfg).await {
         Ok(_) => Ok(()),
@@ -73,7 +67,17 @@ async fn list_action(params: &Params, gw: &Gateway, cfg: &Config) -> Result<()> 
     Ok(())
 }
 
-/// Describes the action the user made when calling [`list_action`].
+async fn list_interactive(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
+    loop {
+        match list_interactive_action(&params, gw, cfg).await {
+            Ok(ListAction::Cancel) => return Ok(()),
+            Ok(_) => {}
+            Err(e) => return Err(e),
+        }
+    }
+}
+
+/// Describes the action the user made when calling [`list_interactive_action`].
 pub enum ListAction {
     Action,
     Cancel,
@@ -92,12 +96,12 @@ async fn list_interactive_action(
 
     let state = filter_list(state, params).await?;
     match state.select_or_create_task(gw).await? {
-        TaskCreation::Create => Ok(ListAction::Action),
-        TaskCreation::Select(task) => {
+        TaskMenu::Create => Ok(ListAction::Action),
+        TaskMenu::Select(task) => {
             select_task_option(task, &state, gw).await?;
             Ok(ListAction::Action)
         }
-        TaskCreation::None => {
+        TaskMenu::None => {
             println!("No selection was made");
             Ok(ListAction::Cancel)
         }

@@ -26,8 +26,8 @@ pub struct State<'a> {
     pub config: &'a Config,
 }
 
-// TaskCreation is used for the more complex fully interactive task creation.
-pub enum TaskCreation<'a> {
+// TaskMenu is used for the more complex fully interactive task creation.
+pub enum TaskMenu<'a> {
     Create,
     Select(&'a Tree<Task>),
     None,
@@ -84,7 +84,7 @@ impl<'a> State<'a> {
     }
 
     // TODO: clean this up perhaps
-    pub async fn select_or_create_task(&'a self, gw: &'_ Gateway) -> Result<TaskCreation> {
+    pub async fn select_or_create_task(&'a self, gw: &'_ Gateway) -> Result<TaskMenu> {
         let items = self.tasks.flat_tree();
         let result = interactive::select(
             "Select task",
@@ -96,10 +96,10 @@ impl<'a> State<'a> {
         match result {
             Some(0) => {
                 create::create(create::Params {}, gw, self.config).await?;
-                Ok(TaskCreation::Create)
+                Ok(TaskMenu::Create)
             }
-            Some(index) => Ok(TaskCreation::Select(items[index - 1])),
-            None => Ok(TaskCreation::None),
+            Some(index) => Ok(TaskMenu::Select(items[index - 1])),
+            None => Ok(TaskMenu::None),
         }
     }
 

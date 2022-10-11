@@ -13,6 +13,8 @@ use crate::{
 use color_eyre::{eyre::WrapErr, Result};
 use strum::{Display, EnumVariantNames, FromRepr, VariantNames};
 
+use super::create;
+
 #[derive(clap::Parser, Debug)]
 pub struct Params {
     #[clap(flatten)]
@@ -95,8 +97,15 @@ async fn list_interactive_action(
     }?;
 
     let state = filter_list(state, params).await?;
-    match state.select_or_create_task(gw).await? {
-        TaskMenu::Create => Ok(ListAction::Action),
+    match state.select_or_menu()? {
+        TaskMenu::Menu => {
+            match interactive::select("Select Action:", &["Create Task..."])? {
+                Some(0) => create::create(create::Params {}, gw, cfg).await?,
+                Some(_) => unreachable!(),
+                None => {}
+            };
+            Ok(ListAction::Action)
+        }
         TaskMenu::Select(task) => {
             select_task_option(task, &state, gw).await?;
             Ok(ListAction::Action)

@@ -15,8 +15,6 @@ use crate::{
     interactive,
 };
 
-use super::create;
-
 /// State is a helper to fully construct a tasks state for display.
 pub struct State<'a> {
     pub tasks: Vec<Tree<Task>>,
@@ -28,7 +26,7 @@ pub struct State<'a> {
 
 // TaskMenu is used for the more complex fully interactive task creation.
 pub enum TaskMenu<'a> {
-    Create,
+    Menu,
     Select(&'a Tree<Task>),
     None,
 }
@@ -83,21 +81,17 @@ impl<'a> State<'a> {
         Ok(result.map(|index| items[index]))
     }
 
-    // TODO: clean this up perhaps
-    pub async fn select_or_create_task(&'a self, gw: &'_ Gateway) -> Result<TaskMenu> {
+    pub fn select_or_menu(&'a self) -> Result<TaskMenu> {
         let items = self.tasks.flat_tree();
         let result = interactive::select(
             "Select task",
-            &[format!("{} {}", ">".green(), "Create Task".bold())]
+            &[format!("{} {}", ">".green(), "Action...".bold())]
                 .into_iter()
                 .chain(items.iter().map(|t| self.table_task(t).to_string()))
                 .collect::<Vec<_>>(),
         )?;
         match result {
-            Some(0) => {
-                create::create(create::Params {}, gw, self.config).await?;
-                Ok(TaskMenu::Create)
-            }
+            Some(0) => Ok(TaskMenu::Menu),
             Some(index) => Ok(TaskMenu::Select(items[index - 1])),
             None => Ok(TaskMenu::None),
         }

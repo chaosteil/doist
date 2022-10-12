@@ -1,8 +1,12 @@
 use clap::{Arg, ArgAction, Args, FromArgMatches};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
+use owo_colors::OwoColorize;
+use std::iter;
 
-use crate::api::rest::{Label, LabelID, Project, ProjectID, Section, SectionID, Task, TaskID};
+use crate::api::rest::{
+    Label, LabelID, Priority, Project, ProjectID, Section, SectionID, Task, TaskID,
+};
 use color_eyre::{eyre::eyre, eyre::WrapErr, Result};
 
 #[derive(Debug, Default)]
@@ -228,4 +232,76 @@ mod test {
         assert_eq!(fuzz_select(&select, "w").unwrap().0, 2);
         assert!(fuzz_select(&select, "what").is_err());
     }
+}
+
+pub fn input_content(content: &str) -> Result<String> {
+    let mut input = dialoguer::Input::new();
+    input
+        .with_prompt("Task Name")
+        .allow_empty(false)
+        .validate_with(|input: &String| -> Result<(), &str> {
+            if !input.is_empty() {
+                Ok(())
+            } else {
+                Err("empty task description")
+            }
+        });
+    if !content.is_empty() {
+        input.with_initial_text(content.to_owned());
+    }
+    input.interact_text().wrap_err("No input made")
+}
+
+pub fn input_optional(prompt: &str, default: Option<String>) -> Result<Option<String>> {
+    let mut input = dialoguer::Input::<'_, String>::new();
+    input.with_prompt(prompt).allow_empty(true);
+    if let Some(d) = default {
+        input.with_initial_text(d);
+    }
+    match input.interact_text().wrap_err("No input made")?.as_str() {
+        "" => Ok(None),
+        s => Ok(Some(s.to_owned())),
+    }
+}
+
+pub fn input_project(
+    projects: &[Project],
+    sections: &[Section],
+) -> Result<Option<(ProjectID, Option<SectionID>)>> {
+    match select("Select Project", projects)? {
+        Some(p) => Ok(Some((
+            projects[p].id,
+            input_section(projects[p].id, sections)?,
+        ))),
+        None => Ok(None),
+    }
+}
+
+pub fn input_section(project: ProjectID, sections: &[Section]) -> Result<Option<SectionID>> {
+    let sections: Vec<_> = sections
+        .iter()
+        .filter(|s| s.project_id == project)
+        .collect();
+    if sections.is_empty() {
+        return Ok(None);
+    }
+    let section_names = iter::once("None".bold().to_string())
+        .chain(sections.iter().map(|s| s.to_string()))
+        .collect::<Vec<_>>();
+    match select("Select Section", &section_names)? {
+        Some(0) => Ok(None),
+        Some(s) => Ok(Some(sections[s - 1].id)),
+        None => Ok(None),
+    }
+}
+
+pub fn input_priority() -> Result<Option<Priority>> {
+    let items = [
+        Priority::Normal,
+        Priority::High,
+        Priority::VeryHigh,
+        Priority::Urgent,
+    ];
+    let selection = select("Priority", &items)?;
+    Ok(selection.map(|s| items[s]))
 }

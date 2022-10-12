@@ -1,11 +1,9 @@
-use std::iter;
-
-use color_eyre::{eyre::WrapErr, Result};
+use color_eyre::Result;
 use owo_colors::OwoColorize;
 use strum::EnumIter;
 
 use crate::{
-    api::rest::{CreateTask, Gateway, Priority, Project, ProjectID, Section, SectionID, TaskDue},
+    api::rest::{CreateTask, Gateway, TaskDue},
     config::Config,
     interactive,
 };
@@ -56,7 +54,7 @@ impl From<usize> for Selection {
 
 pub async fn create(_params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
     let mut create = CreateTask {
-        content: input_content("")?,
+        content: interactive::input_content("")?,
         ..Default::default()
     };
 
@@ -107,94 +105,22 @@ pub async fn create(_params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
             }
         };
         match selection {
-            Selection::TaskName => create.content = input_content(&create.content)?,
-            Selection::Due => due = input_optional("Due", due)?,
+            Selection::TaskName => create.content = interactive::input_content(&create.content)?,
+            Selection::Due => due = interactive::input_optional("Due", due)?,
             Selection::Description => {
-                create.description = input_optional("Description", create.description)?
+                create.description = interactive::input_optional("Description", create.description)?
             }
             Selection::Project => {
-                if let Some((p, s)) = input_project(&projects, &sections)? {
+                if let Some((p, s)) = interactive::input_project(&projects, &sections)? {
                     create.project_id = Some(p);
                     create.section_id = s;
                 };
             }
-            Selection::Priority => create.priority = input_priority()?,
+            Selection::Priority => create.priority = interactive::input_priority()?,
         }
     }
     if let Some(due) = due {
         create.due = Some(TaskDue::String(due));
     }
     create_task(create, None, None, &[], gw, cfg).await
-}
-
-fn input_content(content: &str) -> Result<String> {
-    let mut input = dialoguer::Input::new();
-    input
-        .with_prompt("Task Name")
-        .allow_empty(false)
-        .validate_with(|input: &String| -> Result<(), &str> {
-            if !input.is_empty() {
-                Ok(())
-            } else {
-                Err("empty task description")
-            }
-        });
-    if !content.is_empty() {
-        input.with_initial_text(content.to_owned());
-    }
-    input.interact_text().wrap_err("No input made")
-}
-
-fn input_optional(prompt: &str, default: Option<String>) -> Result<Option<String>> {
-    let mut input = dialoguer::Input::<'_, String>::new();
-    input.with_prompt(prompt).allow_empty(true);
-    if let Some(d) = default {
-        input.with_initial_text(d);
-    }
-    match input.interact_text().wrap_err("No input made")?.as_str() {
-        "" => Ok(None),
-        s => Ok(Some(s.to_owned())),
-    }
-}
-
-fn input_project(
-    projects: &[Project],
-    sections: &[Section],
-) -> Result<Option<(ProjectID, Option<SectionID>)>> {
-    match interactive::select("Select Project", projects)? {
-        Some(p) => Ok(Some((
-            projects[p].id,
-            input_section(projects[p].id, sections)?,
-        ))),
-        None => Ok(None),
-    }
-}
-
-fn input_section(project: ProjectID, sections: &[Section]) -> Result<Option<SectionID>> {
-    let sections: Vec<_> = sections
-        .iter()
-        .filter(|s| s.project_id == project)
-        .collect();
-    if sections.is_empty() {
-        return Ok(None);
-    }
-    let section_names = iter::once("None".bold().to_string())
-        .chain(sections.iter().map(|s| s.to_string()))
-        .collect::<Vec<_>>();
-    match interactive::select("Select Section", &section_names)? {
-        Some(0) => Ok(None),
-        Some(s) => Ok(Some(sections[s - 1].id)),
-        None => Ok(None),
-    }
-}
-
-fn input_priority() -> Result<Option<Priority>> {
-    let items = [
-        Priority::Normal,
-        Priority::High,
-        Priority::VeryHigh,
-        Priority::Urgent,
-    ];
-    let selection = interactive::select("Priority", &items)?;
-    Ok(selection.map(|s| items[s]))
 }

@@ -1,3 +1,5 @@
+use std::ops::Not;
+
 use crate::{
     api::{
         rest::{Gateway, Project, Section, Task},
@@ -11,6 +13,7 @@ use crate::{
     },
 };
 use color_eyre::{eyre::WrapErr, Result};
+use owo_colors::OwoColorize;
 use strum::{Display, EnumVariantNames, FromRepr, VariantNames};
 
 use super::create;
@@ -70,8 +73,9 @@ async fn list_action(params: &Params, gw: &Gateway, cfg: &Config) -> Result<()> 
 }
 
 async fn list_interactive(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
+    let mut params = params;
     loop {
-        match list_interactive_action(&params, gw, cfg).await {
+        match list_interactive_action(&mut params, gw, cfg).await {
             Ok(ListAction::Cancel) => return Ok(()),
             Ok(_) => {}
             Err(e) => return Err(e),
@@ -86,21 +90,40 @@ pub enum ListAction {
 }
 
 async fn list_interactive_action(
-    params: &Params,
+    params: &mut Params,
     gw: &Gateway,
     cfg: &Config,
 ) -> Result<ListAction> {
+    let filter = params.filter.filter.to_owned();
     let state = if params.expand {
-        State::fetch_full_tree(Some(&params.filter.filter), gw, cfg).await
+        State::fetch_full_tree(Some(&filter), gw, cfg).await
     } else {
-        State::fetch_tree(Some(&params.filter.filter), gw, cfg).await
+        State::fetch_tree(Some(&filter), gw, cfg).await
     }?;
 
     let state = filter_list(state, params).await?;
     match state.select_or_menu()? {
         TaskMenu::Menu => {
-            match interactive::select("Select Action:", &["Create Task..."])? {
+            match interactive::select(
+                "Select Action:",
+                &[
+                    "Create Task...",
+                    &format!(
+                        "Set Filter{}...",
+                        filter
+                            .is_empty()
+                            .not()
+                            .then(|| format!(" ({})", filter.yellow()))
+                            .unwrap_or_default()
+                    ),
+                ],
+            )? {
                 Some(0) => create::create(create::Params {}, gw, cfg).await?,
+                Some(1) => {
+                    let filter = filter.is_empty().not().then_some(filter);
+                    params.filter.filter =
+                        interactive::input_optional("Filter", filter)?.unwrap_or_default();
+                }
                 Some(_) => unreachable!(),
                 None => {}
             };

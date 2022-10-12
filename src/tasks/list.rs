@@ -120,7 +120,7 @@ async fn list_interactive_action(
             )? {
                 Some(0) => create::create(create::Params {}, gw, cfg).await?,
                 Some(1) => {
-                    let filter = filter.is_empty().not().then(|| filter);
+                    let filter = filter.is_empty().not().then_some(filter);
                     params.filter.filter =
                         interactive::input_optional("Filter", filter)?.unwrap_or_default();
                 }

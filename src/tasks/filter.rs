@@ -7,7 +7,7 @@ use crate::{
 
 use super::state::State;
 
-const DEFAULT_FILTER: &str = "(today | overdue)";
+pub const DEFAULT_FILTER: &str = "(today | overdue)";
 
 #[derive(clap::Parser, Debug)]
 pub struct Filter {

@@ -116,14 +116,21 @@ async fn list_interactive_action(
                             .then(|| format!(" ({})", filter.yellow()))
                             .unwrap_or_default()
                     ),
+                    "| Show All Tasks",
+                    "| Inbox",
+                    "| Upcoming",
                 ],
             )? {
+                // TODO change this once we have async closures and can iterate over a Vec<(str, async Fn)>
                 Some(0) => create::create(create::Params {}, gw, cfg).await?,
                 Some(1) => {
                     let filter = filter.is_empty().not().then_some(filter);
                     params.filter.filter =
                         interactive::input_optional("Filter", filter)?.unwrap_or_default();
                 }
+                Some(2) => params.filter.filter = "all".to_owned(),
+                Some(3) => params.filter.filter = "#inbox".to_owned(),
+                Some(4) => params.filter.filter = filter::DEFAULT_FILTER.to_owned(),
                 Some(_) => unreachable!(),
                 None => {}
             };

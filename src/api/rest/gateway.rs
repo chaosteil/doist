@@ -6,8 +6,11 @@ use color_eyre::{
     Result,
 };
 use lazy_static::lazy_static;
-use reqwest::{Client, RequestBuilder, StatusCode};
+use reqwest::{Client, StatusCode};
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware, RequestBuilder};
+use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use serde::{de::DeserializeOwned, Serialize};
+use uuid::Uuid;
 
 use super::{
     Comment, CreateComment, CreateLabel, CreateProject, CreateSection, CreateTask, Label, LabelID,
@@ -16,7 +19,7 @@ use super::{
 
 /// Makes network calls to the Todoist API and returns structs that can then be worked with.
 pub struct Gateway {
-    client: Client,
+    client: ClientWithMiddleware,
     token: String,
     url: url::Url,
 }
@@ -34,8 +37,12 @@ impl Gateway {
     /// * `token` - the API token used for network calls.
     /// * `url` - the base URL to call. See [`struct@TODOIST_API_URL`]
     pub fn new(token: &str, url: &url::Url) -> Gateway {
+        let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
+        let client = ClientBuilder::new(Client::new())
+            .with(RetryTransientMiddleware::new_with_policy(retry_policy))
+            .build();
         Gateway {
-            client: Client::new(),
+            client,
             token: token.to_string(),
             url: url.clone(),
         }
@@ -250,12 +257,14 @@ impl Gateway {
         path: &str,
         content: &T,
     ) -> Result<Option<R>> {
+        let uuid = Uuid::new_v4();
         handle_req(
             self.client
                 .post(self.url.join(path)?)
                 .bearer_auth(&self.token)
                 .body(serde_json::to_string(&content)?)
-                .header(reqwest::header::CONTENT_TYPE, "application/json"),
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .header("X-Request-Id", uuid.to_string()),
         )
         .await
     }

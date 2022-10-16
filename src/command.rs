@@ -36,81 +36,81 @@ enum Commands {
 #[derive(Subcommand, Debug)]
 enum AuthCommands {
     /// Adds a task.
-    #[command(alias = "a")]
+    #[command(visible_alias = "a")]
     Add(add::Params),
     /// Creates a task interactively.
-    #[command(alias = "A")]
+    #[command(visible_alias = "A")]
     Create(create::Params),
     /// Lists tasks. This is the default if no subcommand is specified.
-    #[command(alias = "l")]
+    #[command(visible_alias = "l")]
     List(list::Params),
     /// Edits a task.
-    #[command(alias = "e")]
+    #[command(visible_alias = "e")]
     Edit(edit::Params),
     /// Closes a task.
-    #[command(alias = "c")]
+    #[command(visible_alias = "c")]
     Close(close::Params),
     /// View details of a single task.
-    #[command(alias = "v")]
+    #[command(visible_alias = "v")]
     View(view::Params),
     /// Add a comment on a task.
-    #[command(alias = "C")]
+    #[command(visible_alias = "C")]
     Comment(comment::Params),
 
     /// Manages projects.
-    #[command(subcommand, alias = "p")]
+    #[command(subcommand, visible_alias = "p")]
     Projects(ProjectCommands),
     /// Manages labels.
-    #[command(subcommand, alias = "lbl")]
+    #[command(subcommand, visible_alias = "lbl")]
     Labels(LabelCommands),
 }
 
 #[derive(Subcommand, Debug)]
 enum ProjectCommands {
     /// Lists all current projects
-    #[command(alias = "l")]
+    #[command(visible_alias = "l")]
     List(projects::list::Params),
     /// View details of a single project.
-    #[command(alias = "v")]
+    #[command(visible_alias = "v")]
     View(projects::view::Params),
     /// Add a comment on a project.
-    #[command(alias = "C")]
+    #[command(visible_alias = "C")]
     Comment(projects::comment::Params),
     /// Adds (creates) a new project.
-    #[command(alias = "a")]
+    #[command(visible_alias = "a")]
     Add(projects::add::Params),
     /// Deletes a project
-    #[command(alias = "d")]
+    #[command(visible_alias = "d")]
     Delete(projects::delete::Params),
 
     /// Manages sections.
-    #[command(subcommand, alias = "s")]
+    #[command(subcommand, visible_alias = "s")]
     Sections(SectionCommands),
 }
 
 #[derive(Subcommand, Debug)]
 enum LabelCommands {
     /// Lists all current labels.
-    #[command(alias = "l")]
+    #[command(visible_alias = "l")]
     List(labels::list::Params),
     /// Adds (creates) a new label.
-    #[command(alias = "a")]
+    #[command(visible_alias = "a")]
     Add(labels::add::Params),
     /// Deletes a label.
-    #[command(alias = "d")]
+    #[command(visible_alias = "d")]
     Delete(labels::delete::Params),
 }
 
 #[derive(Subcommand, Debug)]
 enum SectionCommands {
     /// Lists all current sections of the project.
-    #[command(alias = "l")]
+    #[command(visible_alias = "l")]
     List(sections::list::Params),
     /// Adds (creates) a new section in a project.
-    #[command(alias = "a")]
+    #[command(visible_alias = "a")]
     Add(sections::add::Params),
     /// Deletes a section in a project.
-    #[command(alias = "d")]
+    #[command(visible_alias = "d")]
     Delete(sections::delete::Params),
 }
 

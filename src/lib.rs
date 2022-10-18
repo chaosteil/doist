@@ -20,4 +20,4 @@ mod sections;
 mod tasks;
 
 #[doc(hidden)]
-pub use command::Args;
+pub use command::Arguments;

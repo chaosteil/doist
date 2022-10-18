@@ -3,14 +3,14 @@ use crate::{
     labels, projects, sections,
     tasks::{add, close, comment, create, edit, list, view},
 };
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 use color_eyre::Result;
 
 /// Args are the main entry point struct of the CLI app.
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
 #[command(args_conflicts_with_subcommands = true)]
-pub struct Args {
+pub struct Arguments {
     #[command(subcommand)]
     command: Option<Commands>,
     #[command(flatten)]
@@ -58,16 +58,25 @@ enum AuthCommands {
     Comment(comment::Params),
 
     /// Manages projects.
-    #[command(subcommand, visible_alias = "p")]
-    Projects(ProjectCommands),
+    #[command(visible_alias = "p")]
+    Projects(ProjectArgs),
     /// Manages labels.
     #[command(subcommand, visible_alias = "lbl")]
     Labels(LabelCommands),
 }
 
+#[derive(Args, Debug)]
+#[command(args_conflicts_with_subcommands = true)]
+struct ProjectArgs {
+    #[command(subcommand)]
+    command: Option<ProjectCommands>,
+    #[command(flatten)]
+    params: projects::list::Params,
+}
+
 #[derive(Subcommand, Debug)]
 enum ProjectCommands {
-    /// Lists all current projects
+    /// Lists all current projects. This is the default view.
     #[command(visible_alias = "l")]
     List(projects::list::Params),
     /// View details of a single project.
@@ -114,7 +123,7 @@ enum SectionCommands {
     Delete(sections::delete::Params),
 }
 
-impl Args {
+impl Arguments {
     /// Runs the CLI app.
     pub async fn exec(self) -> Result<()> {
         let mut cfg = Config::load()?;
@@ -135,21 +144,28 @@ impl Args {
                         AuthCommands::Close(p) => close::close(p, &gw, &cfg).await?,
                         AuthCommands::View(p) => view::view(p, &gw, &cfg).await?,
                         AuthCommands::Comment(p) => comment::comment(p, &gw, &cfg).await?,
-                        AuthCommands::Projects(p) => match p {
-                            ProjectCommands::List(p) => projects::list::list(p, &gw).await?,
-                            ProjectCommands::View(p) => projects::view::view(p, &gw).await?,
-                            ProjectCommands::Comment(p) => {
-                                projects::comment::comment(p, &gw).await?
-                            }
-                            ProjectCommands::Add(p) => projects::add::add(p, &gw).await?,
-                            ProjectCommands::Delete(p) => projects::delete::delete(p, &gw).await?,
-                            ProjectCommands::Sections(s) => match s {
-                                SectionCommands::List(p) => sections::list::list(p, &gw).await?,
-                                SectionCommands::Add(p) => sections::add::add(p, &gw).await?,
-                                SectionCommands::Delete(p) => {
-                                    sections::delete::delete(p, &gw).await?
+                        AuthCommands::Projects(p) => match p.command {
+                            Some(p) => match p {
+                                ProjectCommands::List(p) => projects::list::list(p, &gw).await?,
+                                ProjectCommands::View(p) => projects::view::view(p, &gw).await?,
+                                ProjectCommands::Comment(p) => {
+                                    projects::comment::comment(p, &gw).await?
                                 }
+                                ProjectCommands::Add(p) => projects::add::add(p, &gw).await?,
+                                ProjectCommands::Delete(p) => {
+                                    projects::delete::delete(p, &gw).await?
+                                }
+                                ProjectCommands::Sections(s) => match s {
+                                    SectionCommands::List(p) => {
+                                        sections::list::list(p, &gw).await?
+                                    }
+                                    SectionCommands::Add(p) => sections::add::add(p, &gw).await?,
+                                    SectionCommands::Delete(p) => {
+                                        sections::delete::delete(p, &gw).await?
+                                    }
+                                },
                             },
+                            None => projects::list::list(p.params, &gw).await?,
                         },
                         AuthCommands::Labels(p) => match p {
                             LabelCommands::List(p) => labels::list::list(p, &gw).await?,
@@ -168,11 +184,11 @@ impl Args {
 }
 #[cfg(test)]
 mod test {
-    use crate::Args;
+    use crate::Arguments;
 
     #[test]
     fn verify_cli() {
         use clap::CommandFactory;
-        Args::command().debug_assert()
+        Arguments::command().debug_assert()
     }
 }

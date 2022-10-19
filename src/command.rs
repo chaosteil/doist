@@ -61,8 +61,8 @@ enum AuthCommands {
     #[command(visible_alias = "p")]
     Projects(ProjectArgs),
     /// Manages labels.
-    #[command(subcommand, visible_alias = "lbl")]
-    Labels(LabelCommands),
+    #[command(visible_alias = "lbl")]
+    Labels(LabelArgs),
 }
 
 #[derive(Args, Debug)]
@@ -95,6 +95,15 @@ enum ProjectCommands {
     /// Manages sections.
     #[command(subcommand, visible_alias = "s")]
     Sections(SectionCommands),
+}
+
+#[derive(Args, Debug)]
+#[command(args_conflicts_with_subcommands = true)]
+struct LabelArgs {
+    #[command(subcommand)]
+    command: Option<LabelCommands>,
+    #[command(flatten)]
+    params: labels::list::Params,
 }
 
 #[derive(Subcommand, Debug)]
@@ -167,10 +176,13 @@ impl Arguments {
                             },
                             None => projects::list::list(p.params, &gw).await?,
                         },
-                        AuthCommands::Labels(p) => match p {
-                            LabelCommands::List(p) => labels::list::list(p, &gw).await?,
-                            LabelCommands::Add(p) => labels::add::add(p, &gw).await?,
-                            LabelCommands::Delete(p) => labels::delete::delete(p, &gw).await?,
+                        AuthCommands::Labels(p) => match p.command {
+                            Some(p) => match p {
+                                LabelCommands::List(p) => labels::list::list(p, &gw).await?,
+                                LabelCommands::Add(p) => labels::add::add(p, &gw).await?,
+                                LabelCommands::Delete(p) => labels::delete::delete(p, &gw).await?,
+                            },
+                            None => labels::list::list(p.params, &gw).await?,
                         },
                     }
                 }

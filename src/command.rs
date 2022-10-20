@@ -93,8 +93,8 @@ enum ProjectCommands {
     Delete(projects::delete::Params),
 
     /// Manages sections.
-    #[command(subcommand, visible_alias = "s")]
-    Sections(SectionCommands),
+    #[command(visible_alias = "s")]
+    Sections(SectionArgs),
 }
 
 #[derive(Args, Debug)]
@@ -117,6 +117,15 @@ enum LabelCommands {
     /// Deletes a label.
     #[command(visible_alias = "d")]
     Delete(labels::delete::Params),
+}
+
+#[derive(Args, Debug)]
+#[command(args_conflicts_with_subcommands = true)]
+struct SectionArgs {
+    #[command(subcommand)]
+    command: Option<SectionCommands>,
+    #[command(flatten)]
+    params: sections::list::Params,
 }
 
 #[derive(Subcommand, Debug)]
@@ -164,14 +173,19 @@ impl Arguments {
                                 ProjectCommands::Delete(p) => {
                                     projects::delete::delete(p, &gw).await?
                                 }
-                                ProjectCommands::Sections(s) => match s {
-                                    SectionCommands::List(p) => {
-                                        sections::list::list(p, &gw).await?
-                                    }
-                                    SectionCommands::Add(p) => sections::add::add(p, &gw).await?,
-                                    SectionCommands::Delete(p) => {
-                                        sections::delete::delete(p, &gw).await?
-                                    }
+                                ProjectCommands::Sections(s) => match s.command {
+                                    Some(s) => match s {
+                                        SectionCommands::List(p) => {
+                                            sections::list::list(p, &gw).await?
+                                        }
+                                        SectionCommands::Add(p) => {
+                                            sections::add::add(p, &gw).await?
+                                        }
+                                        SectionCommands::Delete(p) => {
+                                            sections::delete::delete(p, &gw).await?
+                                        }
+                                    },
+                                    None => sections::list::list(s.params, &gw).await?,
                                 },
                             },
                             None => projects::list::list(p.params, &gw).await?,

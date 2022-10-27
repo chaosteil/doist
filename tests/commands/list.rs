@@ -1,41 +1,16 @@
 use super::setup::Tool;
 use assert_cmd::prelude::*;
 use color_eyre::Result;
+use predicates::prelude::*;
 use wiremock::{matchers::*, Mock, ResponseTemplate};
 
 #[tokio::test]
 async fn list() -> Result<()> {
-    struct Test {
-        args: Vec<&'static str>,
-        fetch_tasks: u64,
-        fetch_labels: u64,
-        fetch_projects: u64,
-        fetch_sections: u64,
-    }
-    let tests = vec![
-        Test {
-            args: vec!["list", "--nointeractive"],
-            fetch_tasks: 1,
-            fetch_labels: 1,
-            fetch_projects: 1,
-            fetch_sections: 1,
-        },
-        Test {
-            args: vec!["--nointeractive"],
-            fetch_tasks: 1,
-            fetch_labels: 1,
-            fetch_projects: 1,
-            fetch_sections: 1,
-        },
-        Test {
-            args: vec!["l", "--nointeractive"],
-            fetch_tasks: 1,
-            fetch_labels: 1,
-            fetch_projects: 1,
-            fetch_sections: 1,
-        },
-    ];
-    for test in tests {
+    for test in &[
+        vec!["list", "--nointeractive"],
+        vec!["l", "--nointeractive"],
+        vec!["--nointeractive"],
+    ] {
         let cmd = Tool::init().await?;
 
         Mock::given(method("GET"))
@@ -43,7 +18,7 @@ async fn list() -> Result<()> {
             .respond_with(
                 ResponseTemplate::new(200).set_body_raw(super::fixtures::TASKS, "application/json"),
             )
-            .up_to_n_times(test.fetch_tasks)
+            .up_to_n_times(1)
             .mount(&cmd.mock)
             .await;
         Mock::given(method("GET"))
@@ -52,7 +27,7 @@ async fn list() -> Result<()> {
                 ResponseTemplate::new(200)
                     .set_body_raw(super::fixtures::LABELS, "application/json"),
             )
-            .up_to_n_times(test.fetch_labels)
+            .up_to_n_times(1)
             .mount(&cmd.mock)
             .await;
         Mock::given(method("GET"))
@@ -61,7 +36,7 @@ async fn list() -> Result<()> {
                 ResponseTemplate::new(200)
                     .set_body_raw(super::fixtures::PROJECTS, "application/json"),
             )
-            .up_to_n_times(test.fetch_projects)
+            .up_to_n_times(1)
             .mount(&cmd.mock)
             .await;
         Mock::given(method("GET"))
@@ -70,15 +45,19 @@ async fn list() -> Result<()> {
                 ResponseTemplate::new(200)
                     .set_body_raw(super::fixtures::SECTIONS, "application/json"),
             )
-            .up_to_n_times(test.fetch_sections)
+            .up_to_n_times(1)
             .mount(&cmd.mock)
             .await;
 
         let mut command = cmd.cmd()?;
-        for arg in test.args {
+        for arg in test {
             command.arg(arg);
         }
-        command.env("RUST_BACKTRACE", "1").assert().success();
+        command
+            .env("RUST_BACKTRACE", "1")
+            .assert()
+            .success()
+            .stdout(predicate::eq(super::fixtures::TASK_OUTPUT));
         cmd.mock.verify().await;
     }
 

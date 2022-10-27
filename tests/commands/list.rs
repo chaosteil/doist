@@ -63,3 +63,63 @@ async fn list() -> Result<()> {
 
     Ok(())
 }
+
+#[tokio::test]
+async fn expand() -> Result<()> {
+    let cmd = Tool::init().await?;
+
+    Mock::given(method("GET"))
+        .and(path("/rest/v1/tasks"))
+        .and(query_param("filter", "all"))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_raw(super::fixtures::TASKS, "application/json"),
+        )
+        .up_to_n_times(1)
+        .mount(&cmd.mock)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/rest/v1/tasks"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_raw(super::fixtures::TASKS_PARTIAL, "application/json"),
+        )
+        .up_to_n_times(1)
+        .mount(&cmd.mock)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/rest/v1/labels"))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_raw(super::fixtures::LABELS, "application/json"),
+        )
+        .up_to_n_times(1)
+        .mount(&cmd.mock)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/rest/v1/projects"))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_raw(super::fixtures::PROJECTS, "application/json"),
+        )
+        .up_to_n_times(1)
+        .mount(&cmd.mock)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/rest/v1/sections"))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_raw(super::fixtures::SECTIONS, "application/json"),
+        )
+        .up_to_n_times(1)
+        .mount(&cmd.mock)
+        .await;
+
+    let mut command = cmd.cmd()?;
+    command
+        .arg("-e")
+        .arg("--nointeractive")
+        .env("RUST_BACKTRACE", "1")
+        .assert()
+        .success()
+        .stdout(predicate::eq(super::fixtures::TASK_EXPAND_OUTPUT));
+    cmd.mock.verify().await;
+
+    Ok(())
+}

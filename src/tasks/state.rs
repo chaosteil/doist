@@ -56,13 +56,12 @@ impl<'a> State<'a> {
         gw: &'_ Gateway,
         cfg: &'a Config,
     ) -> Result<State<'a>> {
-        let (mut state, all_tasks) =
-            tokio::try_join!(Self::fetch_tree(filter, gw, cfg), gw.tasks(Some("all")))?;
-        let all_tasks = Tree::from_items(all_tasks).wrap_err("tasks do not form clean tree")?;
-        let tasks = all_tasks.keep_trees(&state.tasks.iter().map(|t| t.id).collect::<Vec<_>>());
-
-        state.tasks = tasks;
-        Ok(state)
+        let (mut full_state, tasks) =
+            tokio::try_join!(Self::fetch_tree(Some("all"), gw, cfg), gw.tasks(filter))?;
+        full_state.tasks = full_state
+            .tasks
+            .keep_trees(&tasks.iter().map(|t| t.id).collect::<Vec<_>>());
+        Ok(full_state)
     }
 
     pub fn task(&self, id: TaskID) -> Option<&Tree<Task>> {

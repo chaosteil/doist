@@ -1,8 +1,8 @@
+use super::mocks;
 use super::setup::Tool;
 use assert_cmd::prelude::*;
 use color_eyre::Result;
 use predicates::prelude::*;
-use wiremock::{matchers::*, Mock, ResponseTemplate};
 
 #[tokio::test]
 async fn list() -> Result<()> {
@@ -13,41 +13,10 @@ async fn list() -> Result<()> {
     ] {
         let cmd = Tool::init().await?;
 
-        Mock::given(method("GET"))
-            .and(path("/rest/v1/tasks"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_raw(super::fixtures::TASKS, "application/json"),
-            )
-            .up_to_n_times(1)
-            .mount(&cmd.mock)
-            .await;
-        Mock::given(method("GET"))
-            .and(path("/rest/v1/labels"))
-            .respond_with(
-                ResponseTemplate::new(200)
-                    .set_body_raw(super::fixtures::LABELS, "application/json"),
-            )
-            .up_to_n_times(1)
-            .mount(&cmd.mock)
-            .await;
-        Mock::given(method("GET"))
-            .and(path("/rest/v1/projects"))
-            .respond_with(
-                ResponseTemplate::new(200)
-                    .set_body_raw(super::fixtures::PROJECTS, "application/json"),
-            )
-            .up_to_n_times(1)
-            .mount(&cmd.mock)
-            .await;
-        Mock::given(method("GET"))
-            .and(path("/rest/v1/sections"))
-            .respond_with(
-                ResponseTemplate::new(200)
-                    .set_body_raw(super::fixtures::SECTIONS, "application/json"),
-            )
-            .up_to_n_times(1)
-            .mount(&cmd.mock)
-            .await;
+        mocks::mock_tasks(&cmd, 1).await;
+        mocks::mock_labels(&cmd, 1).await;
+        mocks::mock_projects(&cmd, 1).await;
+        mocks::mock_sections(&cmd, 1).await;
 
         let mut command = cmd.cmd()?;
         for arg in test {
@@ -68,48 +37,11 @@ async fn list() -> Result<()> {
 async fn expand() -> Result<()> {
     let cmd = Tool::init().await?;
 
-    Mock::given(method("GET"))
-        .and(path("/rest/v1/tasks"))
-        .and(query_param("filter", "all"))
-        .respond_with(
-            ResponseTemplate::new(200).set_body_raw(super::fixtures::TASKS, "application/json"),
-        )
-        .up_to_n_times(1)
-        .mount(&cmd.mock)
-        .await;
-    Mock::given(method("GET"))
-        .and(path("/rest/v1/tasks"))
-        .respond_with(
-            ResponseTemplate::new(200)
-                .set_body_raw(super::fixtures::TASKS_PARTIAL, "application/json"),
-        )
-        .up_to_n_times(1)
-        .mount(&cmd.mock)
-        .await;
-    Mock::given(method("GET"))
-        .and(path("/rest/v1/labels"))
-        .respond_with(
-            ResponseTemplate::new(200).set_body_raw(super::fixtures::LABELS, "application/json"),
-        )
-        .up_to_n_times(1)
-        .mount(&cmd.mock)
-        .await;
-    Mock::given(method("GET"))
-        .and(path("/rest/v1/projects"))
-        .respond_with(
-            ResponseTemplate::new(200).set_body_raw(super::fixtures::PROJECTS, "application/json"),
-        )
-        .up_to_n_times(1)
-        .mount(&cmd.mock)
-        .await;
-    Mock::given(method("GET"))
-        .and(path("/rest/v1/sections"))
-        .respond_with(
-            ResponseTemplate::new(200).set_body_raw(super::fixtures::SECTIONS, "application/json"),
-        )
-        .up_to_n_times(1)
-        .mount(&cmd.mock)
-        .await;
+    mocks::mock_tasks(&cmd, 1).await;
+    mocks::mock_tasks_partial(&cmd, 1).await;
+    mocks::mock_labels(&cmd, 1).await;
+    mocks::mock_projects(&cmd, 1).await;
+    mocks::mock_sections(&cmd, 1).await;
 
     let mut command = cmd.cmd()?;
     command

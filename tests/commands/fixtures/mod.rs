@@ -6,3 +6,5 @@ pub const TASKS: &str = include_str!("./tasks.json");
 pub const TASKS_PARTIAL: &str = include_str!("./tasks_partial.json");
 pub const TASK_OUTPUT: &str = include_str!("./task_output");
 pub const TASK_EXPAND_OUTPUT: &str = include_str!("./task_expand_output");
+pub const PROJECTS_OUTPUT: &str = include_str!("./projects_output");
+pub const LABELS_OUTPUT: &str = include_str!("./labels_output");

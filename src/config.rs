@@ -1,5 +1,8 @@
 //! Describes everything related to configuration of the binary.
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use chrono::{DateTime, Utc};
 use color_eyre::{eyre::eyre, Result};
@@ -21,6 +24,10 @@ pub struct Config {
     /// Override the current time for various display options in the CLI.
     #[serde(default)]
     pub override_time: Option<DateTime<Utc>>,
+
+    /// Sets a particular config location prefix. Mostly used for testing.
+    #[serde(skip)]
+    prefix: Option<PathBuf>,
 }
 
 /// Returns the default URL to be used for calling the Todoist API.
@@ -56,8 +63,10 @@ const XDG_PREFIX: &str = "doist";
 
 impl Config {
     /// Returns the name of the directories that are used for the configuration.
-    fn config_dir() -> Result<xdg::BaseDirectories, xdg::BaseDirectoriesError> {
-        xdg::BaseDirectories::with_prefix(XDG_PREFIX)
+    fn config_dir(
+        prefix: Option<&Path>,
+    ) -> Result<xdg::BaseDirectories, xdg::BaseDirectoriesError> {
+        xdg::BaseDirectories::with_prefix(prefix.and_then(|p| p.to_str()).unwrap_or(XDG_PREFIX))
     }
 
     /// Load configuration from storage, if it exists.
@@ -65,7 +74,23 @@ impl Config {
     /// Tries to load configuration from storage, but If configuration does not exist, it will
     /// initialize a default configuration.
     pub fn load() -> Result<Config, ConfigError> {
-        let file = Self::config_dir()?.get_config_file(CONFIG_FILE);
+        let file = Self::config_dir(None)?;
+        Self::load_from(file)
+    }
+
+    /// Load configuration from storage specified in another place, if it exists.
+    ///
+    /// Tries to load configuration from storage, but If configuration does not exist, it will
+    /// initialize a default configuration.
+    pub fn load_prefix(path: &Path) -> Result<Config, ConfigError> {
+        let file = Self::config_dir(Some(path))?;
+        let mut cfg = Self::load_from(file)?;
+        cfg.prefix = Some(path.to_owned());
+        Ok(cfg)
+    }
+
+    fn load_from(dir: xdg::BaseDirectories) -> Result<Config, ConfigError> {
+        let file = dir.get_config_file(CONFIG_FILE);
         let data = match fs::read_to_string(&file) {
             Ok(d) => d,
             Err(io) => match io.kind() {
@@ -79,7 +104,7 @@ impl Config {
 
     /// Saves the current configuration to storage.
     pub fn save(&self) -> Result<(), ConfigError> {
-        let dir = Self::config_dir()?;
+        let dir = Self::config_dir(self.prefix.as_deref())?;
         let file = dir
             .place_config_file(CONFIG_FILE)
             .map_err(|io| ConfigError::File {

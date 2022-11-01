@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::{
     config::Config,
     labels, projects, sections,
@@ -9,8 +11,11 @@ use color_eyre::Result;
 /// Args are the main entry point struct of the CLI app.
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
-#[command(args_conflicts_with_subcommands = true)]
 pub struct Arguments {
+    /// Overrides the config directory location.
+    #[arg(long = "config_prefix")]
+    config_prefix: Option<PathBuf>,
+
     #[command(subcommand)]
     command: Option<Commands>,
     #[command(flatten)]
@@ -144,7 +149,10 @@ enum SectionCommands {
 impl Arguments {
     /// Runs the CLI app.
     pub async fn exec(self) -> Result<()> {
-        let mut cfg = Config::load()?;
+        let mut cfg = match self.config_prefix {
+            Some(p) => Config::load_prefix(&p),
+            None => Config::load(),
+        }?;
         match self.command {
             Some(command) => match command {
                 Commands::Auth { token } => {

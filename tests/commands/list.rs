@@ -23,7 +23,6 @@ async fn list() -> Result<()> {
             command.arg(arg);
         }
         command
-            .env("RUST_BACKTRACE", "1")
             .assert()
             .success()
             .stdout(predicate::eq(super::fixtures::TASK_OUTPUT));
@@ -47,7 +46,6 @@ async fn expand() -> Result<()> {
     command
         .arg("-e")
         .arg("--nointeractive")
-        .env("RUST_BACKTRACE", "1")
         .assert()
         .success()
         .stdout(predicate::eq(super::fixtures::TASK_EXPAND_OUTPUT));

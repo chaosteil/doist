@@ -21,7 +21,6 @@ async fn list() -> Result<()> {
             command.arg(arg);
         }
         command
-            .env("RUST_BACKTRACE", "1")
             .assert()
             .success()
             .stdout(predicate::eq(super::fixtures::LABELS_OUTPUT));

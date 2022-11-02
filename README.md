@@ -17,10 +17,24 @@ more as we go along.
 
 ## Installation
 
-Currently it's installed only via cargo install from source:
+### Install from crates.io
+
+Currently it's installed only via cargo install:
 
 ```bash
+# Install Rust first: https://www.rust-lang.org/tools/install
 cargo install doist
+# Binary now available in $HOME/.cargo/bin/doist
+```
+
+### Build from source
+
+```bash
+# Install Rust first: https://www.rust-lang.org/tools/install
+git clone git@github.com:chaosteil/doist
+cd doist
+cargo build --release
+./target/release/doist
 ```
 
 More options coming eventually.

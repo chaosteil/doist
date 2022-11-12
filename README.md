@@ -8,7 +8,7 @@ An unofficial [Todoist](https://todoist.com/) API CLI client written in Rust.
 ## About
 
 <p align="center">
-  <img width="600" src="https://raw.githubusercontent.com/chaosteil/doist/main/doist.svg">
+  <img width="1200" src="https://raw.githubusercontent.com/chaosteil/doist/main/vhs/doist.gif">
 </p>
 
 This is an unofficial Todoist CLI that focuses on being easy to use. It is

@@ -7,7 +7,7 @@ pub type LabelID = String;
 
 /// Label is a tag associated with a Task. Marked with `@name` in the UI.
 ///
-/// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v1/#labels).
+/// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v2/#labels).
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 pub struct Label {

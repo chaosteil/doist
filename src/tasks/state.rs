@@ -41,6 +41,7 @@ impl<'a> State<'a> {
             tokio::try_join!(gw.tasks(filter), gw.projects(), gw.sections(), gw.labels())?;
         let projects = projects.into_iter().map(|p| (p.id.clone(), p)).collect();
         let sections = sections.into_iter().map(|s| (s.id.clone(), s)).collect();
+        // We save by name so it works with the shared labels concept of todoist
         let labels = labels.into_iter().map(|l| (l.name.clone(), l)).collect();
         let tasks = Tree::from_items(filtered_tasks).wrap_err("tasks do not form clean tree")?;
         Ok(State {

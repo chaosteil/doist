@@ -773,7 +773,7 @@ mod test {
         Comment {
             id: id.to_string(),
             thread: tid,
-            posted: Utc::now(),
+            posted_at: Utc::now(),
             content: content.to_string(),
             attachment: None,
         }

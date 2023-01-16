@@ -18,7 +18,7 @@ pub type UserID = String;
 
 /// Task describes a Task from the Todoist API.
 ///
-/// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v1/#tasks).
+/// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v2/#tasks).
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 pub struct Task {
     /// Unique ID of a Task.
@@ -47,6 +47,8 @@ pub struct Task {
     pub url: Url,
     /// How many comments are written for this Task.
     pub comment_count: usize,
+    /// Who this task is assigned to.
+    pub creator_id: UserID,
     /// Who this task is assigned to.
     pub assignee_id: Option<UserID>,
     /// Who assigned this task to the [`Task::assignee`]
@@ -332,6 +334,7 @@ impl Task {
             due: None,
             url: "http://localhost".to_string().parse().unwrap(),
             comment_count: 0,
+            creator_id: "0".to_string(),
             assignee_id: None,
             assigner_id: None,
             created_at: Utc::now(),

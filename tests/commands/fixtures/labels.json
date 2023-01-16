@@ -3,14 +3,14 @@
 		"id": "1999991",
 		"name": "one",
 		"order": 1,
-		"color": 41,
+		"color": "blue",
 		"is_favorite": false
 	},
 	{
 		"id": "1999992",
 		"name": "two",
 		"order": 2,
-		"color": 47,
+		"color": "blue",
 		"is_favorite": false
 	}
 ]

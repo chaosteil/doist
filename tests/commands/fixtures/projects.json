@@ -3,10 +3,12 @@
 		"id": "1000001",
 		"color": "berry_red",
 		"name": "Inbox",
+		"order": 0,
 		"comment_count": 0,
 		"is_shared": false,
 		"is_favorite": false,
 		"is_inbox_project": true,
+		"is_team_inbox": false,
 		"url": "https://todoist.com/showProject?id=1000001",
 		"view_style": "list"
 	},
@@ -19,6 +21,7 @@
 		"is_shared": false,
 		"is_favorite": true,
 		"is_inbox_project": false,
+		"is_team_inbox": false,
 		"url": "https://todoist.com/showProject?id=1000002",
 		"view_style": "list"
 	},
@@ -32,6 +35,7 @@
 		"is_shared": false,
 		"is_favorite": false,
 		"is_inbox_project": false,
+		"is_team_inbox": false,
 		"url": "https://todoist.com/showProject?id=1000003",
 		"view_style": "list"
 	},
@@ -45,6 +49,7 @@
 		"is_shared": false,
 		"is_favorite": false,
 		"is_inbox_project": false,
+		"is_team_inbox": false,
 		"url": "https://todoist.com/showProject?id=1000004",
 		"view_style": "list"
 	},
@@ -57,6 +62,7 @@
 		"is_shared": false,
 		"is_favorite": false,
 		"is_inbox_project": false,
+		"is_team_inbox": false,
 		"url": "https://todoist.com/showProject?id=1000005",
 		"view_style": "list"
 	},
@@ -69,6 +75,7 @@
 		"is_shared": false,
 		"is_favorite": false,
 		"is_inbox_project": false,
+		"is_team_inbox": false,
 		"url": "https://todoist.com/showProject?id=1000006",
 		"view_style": "list"
 	}

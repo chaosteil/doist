@@ -6,7 +6,7 @@ pub async fn mock_tasks(tool: &Tool, times: u64) {
     mock_http(
         tool,
         "GET",
-        "/rest/v1/tasks",
+        "/rest/v2/tasks",
         200,
         super::fixtures::TASKS,
         times,
@@ -18,7 +18,7 @@ pub async fn mock_tasks_partial(tool: &Tool, times: u64) {
     mock_http(
         tool,
         "GET",
-        "/rest/v1/tasks",
+        "/rest/v2/tasks",
         200,
         super::fixtures::TASKS_PARTIAL,
         times,
@@ -30,7 +30,7 @@ pub async fn mock_labels(tool: &Tool, times: u64) {
     mock_http(
         tool,
         "GET",
-        "/rest/v1/labels",
+        "/rest/v2/labels",
         200,
         super::fixtures::LABELS,
         times,
@@ -42,7 +42,7 @@ pub async fn mock_projects(tool: &Tool, times: u64) {
     mock_http(
         tool,
         "GET",
-        "/rest/v1/projects",
+        "/rest/v2/projects",
         200,
         super::fixtures::PROJECTS,
         times,
@@ -54,7 +54,7 @@ pub async fn mock_sections(tool: &Tool, times: u64) {
     mock_http(
         tool,
         "GET",
-        "/rest/v1/sections",
+        "/rest/v2/sections",
         200,
         super::fixtures::SECTIONS,
         times,

@@ -188,6 +188,8 @@ async fn filter_list<'a>(state: State<'a>, params: &'_ Params) -> Result<State<'
 }
 
 fn list_tasks<'a>(tasks: &'a [Tree<Task>], state: &'a State) {
+    let mut tasks = tasks.to_vec();
+    tasks.sort();
     for task in tasks.iter() {
         println!("{}", state.table_task(task));
         list_tasks(&task.subitems, state);

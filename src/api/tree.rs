@@ -26,7 +26,7 @@ pub trait Treeable: std::fmt::Debug + std::cmp::Ord {
 }
 
 /// Tree is a representation of Items as a tree.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Tree<T: Treeable> {
     /// The item of this Tree leaf.
     pub item: T,

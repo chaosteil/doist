@@ -12,9 +12,9 @@ use serde_repr::{Deserialize_repr, Serialize_repr};
 use super::{LabelID, ProjectID, SectionID};
 
 /// TaskID describes the unique ID of a [`Task`].
-pub type TaskID = u64;
+pub type TaskID = String;
 /// UserID is the unique ID of a User.
-pub type UserID = u64;
+pub type UserID = String;
 
 /// Task describes a Task from the Todoist API.
 ///
@@ -26,16 +26,15 @@ pub struct Task {
     /// Shows which [`super::Project`] the Task belongs to.
     pub project_id: ProjectID,
     /// Set if the Task is also in a subsection of a Project.
-    #[serde(deserialize_with = "deserialize_zero_to_none")]
     pub section_id: Option<SectionID>,
     /// The main content of the Task, also known as Task name.
     pub content: String,
     /// Description is the description found under the content.
     pub description: String,
     /// Completed is set if this task was completed.
-    pub completed: bool,
+    pub is_completed: bool,
     /// All associated [`super::Label`]s to this Task.
-    pub label_ids: Vec<LabelID>,
+    pub labels: Vec<String>,
     /// If set, this Task is a subtask of another.
     pub parent_id: Option<TaskID>,
     /// Order the order within the subtasks of a Task.
@@ -49,24 +48,23 @@ pub struct Task {
     /// How many comments are written for this Task.
     pub comment_count: usize,
     /// Who this task is assigned to.
-    pub assignee: Option<UserID>,
+    pub assignee_id: Option<UserID>,
     /// Who assigned this task to the [`Task::assignee`]
-    #[serde(deserialize_with = "deserialize_zero_to_none")]
-    pub assigner: Option<UserID>,
+    pub assigner_id: Option<UserID>,
     /// Exact date when the task was created.
     #[serde(serialize_with = "todoist_rfc3339")]
-    pub created: DateTime<Utc>,
+    pub created_at: DateTime<Utc>,
 }
 
 impl Treeable for Task {
     type ID = TaskID;
 
     fn id(&self) -> TaskID {
-        self.id
+        self.id.clone()
     }
 
     fn parent_id(&self) -> Option<TaskID> {
-        self.parent_id
+        self.parent_id.clone()
     }
 
     fn reset_parent(&mut self) {
@@ -189,11 +187,11 @@ impl Display for ExactTime {
 pub struct DueDate {
     /// Human-redable form of the due date.
     #[serde(rename = "string")]
-    pub human_readable: String,
+    pub string: String,
     /// The date on which the Task is due.
     pub date: chrono::NaiveDate,
     /// Lets us know if it is recurring (reopens after close).
-    pub recurring: bool,
+    pub is_recurring: bool,
     /// If set, this shows the exact time the task is due.
     #[serde(flatten)]
     pub exact: Option<ExactTime>,
@@ -205,7 +203,7 @@ pub struct DueDateFormatter<'a>(pub &'a DueDate, pub &'a DateTime<Utc>);
 
 impl<'a> Display for DueDateFormatter<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.0.recurring {
+        if self.0.is_recurring {
             write!(
                 f,
                 "{}",
@@ -231,7 +229,7 @@ impl<'a> Display for DueDateFormatter<'a> {
                 f,
                 "{}",
                 self.0
-                    .human_readable
+                    .string
                     .if_supports_color(Stream::Stdout, |text| text.bright_green())
             )
         } else {
@@ -239,7 +237,7 @@ impl<'a> Display for DueDateFormatter<'a> {
                 f,
                 "{}",
                 self.0
-                    .human_readable
+                    .string
                     .if_supports_color(Stream::Stdout, |text| text.bright_red())
             )
         }
@@ -319,24 +317,24 @@ pub struct UpdateTask {
 impl Task {
     /// This is initializer is used for tests, as in general the tool relies on the API and not
     /// local state.
-    pub fn new(id: TaskID, content: &str) -> Task {
+    pub fn new(id: &str, content: &str) -> Task {
         Task {
-            id,
-            project_id: 0,
+            id: id.to_string(),
+            project_id: "".to_string(),
             section_id: None,
             content: content.to_string(),
             description: String::new(),
-            completed: false,
-            label_ids: Vec::new(),
+            is_completed: false,
+            labels: Vec::new(),
             parent_id: None,
             order: 0,
             priority: Priority::default(),
             due: None,
             url: "http://localhost".to_string().parse().unwrap(),
             comment_count: 0,
-            assignee: None,
-            assigner: None,
-            created: Utc::now(),
+            assignee_id: None,
+            assigner_id: None,
+            created_at: Utc::now(),
         }
     }
 }

@@ -212,9 +212,9 @@ pub trait TreeFlattenExt<T: Treeable> {
     /// its own indexable item. Useful for user selection lists.
     fn flat_tree(&self) -> Vec<&Tree<T>>;
     /// Finds a particular Tree item within the whole vector of Trees.
-    fn find(&self, id: T::ID) -> Option<&Tree<T>>;
+    fn find(&self, id: &T::ID) -> Option<&Tree<T>>;
     /// Finds a particular Tree item within the whole vector of Trees, mutably.
-    fn find_mut(&mut self, id: T::ID) -> Option<&mut Tree<T>>;
+    fn find_mut(&mut self, id: &T::ID) -> Option<&mut Tree<T>>;
     /// Uses the filter to keep only a subset of tasks of the current tree, but respects to keep
     /// parents.
     fn keep_trees(self, filter_items: &[T::ID]) -> Self
@@ -227,7 +227,7 @@ impl<T: Treeable> TreeFlattenExt<T> for Vec<Tree<T>> {
         self.iter().flat_map(Tree::flatten).collect()
     }
 
-    fn find(&self, id: T::ID) -> Option<&Tree<T>> {
+    fn find(&self, id: &T::ID) -> Option<&Tree<T>> {
         for item in self {
             if let Some(item) = item.find(&id) {
                 return Some(item);
@@ -236,7 +236,7 @@ impl<T: Treeable> TreeFlattenExt<T> for Vec<Tree<T>> {
         None
     }
 
-    fn find_mut(&mut self, id: T::ID) -> Option<&mut Tree<T>> {
+    fn find_mut(&mut self, id: &T::ID) -> Option<&mut Tree<T>> {
         for item in self {
             if let Some(item) = item.find_mut(&id) {
                 return Some(item);
@@ -286,9 +286,9 @@ mod tests {
     #[test]
     fn test_tree_no_subitems() {
         let tasks = vec![
-            Task::new(1, "one"),
-            Task::new(2, "two"),
-            Task::new(3, "three"),
+            Task::new("1", "one"),
+            Task::new("2", "two"),
+            Task::new("3", "three"),
         ];
         let trees = Tree::from_items(tasks).unwrap();
         assert_eq!(trees.len(), 3);
@@ -297,22 +297,25 @@ mod tests {
     #[test]
     fn test_tree_some_subtasks() {
         let tasks = vec![
-            Task::new(1, "one"),
-            Task::new(2, "two"),
-            Task::new(3, "three"),
+            Task::new("1", "one"),
+            Task::new("2", "two"),
+            Task::new("3", "three"),
             Task {
-                parent_id: Some(1),
-                ..Task::new(4, "four")
+                parent_id: Some("1".to_string()),
+                ..Task::new("4", "four")
             },
         ];
         let trees = Tree::from_items(tasks).unwrap();
         assert_eq!(trees.len(), 3);
-        let task = trees.iter().filter(|t| t.item.id == 1).collect::<Vec<_>>();
+        let task = trees
+            .iter()
+            .filter(|t| t.item.id == "1")
+            .collect::<Vec<_>>();
         assert_eq!(task.len(), 1);
         let task = task[0];
         assert_eq!(task.subitems.len(), 1);
-        assert_eq!(task.subitems[0].item.id, 4);
-        for task in trees.into_iter().filter(|t| t.item.id != 1) {
+        assert_eq!(task.subitems[0].item.id, "4");
+        for task in trees.into_iter().filter(|t| t.item.id != "1") {
             assert_eq!(task.subitems.len(), 0);
         }
     }
@@ -320,29 +323,29 @@ mod tests {
     #[test]
     fn task_tree_complex_subtasks() {
         let tasks = vec![
-            Task::new(1, "one"),
+            Task::new("1", "one"),
             Task {
-                parent_id: Some(1),
-                ..Task::new(2, "two")
+                parent_id: Some("1".to_string()),
+                ..Task::new("2", "two")
             },
             Task {
-                parent_id: Some(2),
-                ..Task::new(3, "three")
+                parent_id: Some("2".to_string()),
+                ..Task::new("3", "three")
             },
             Task {
-                parent_id: Some(3),
-                ..Task::new(4, "four")
+                parent_id: Some("3".to_string()),
+                ..Task::new("4", "four")
             },
         ];
         let trees = Tree::from_items(tasks).unwrap();
         assert_eq!(trees.len(), 1);
-        assert_eq!(trees[0].item.id, 1);
+        assert_eq!(trees[0].item.id, "1");
         assert_eq!(trees[0].depth, 0);
-        assert_eq!(trees[0].subitems[0].item.id, 2);
+        assert_eq!(trees[0].subitems[0].item.id, "2");
         assert_eq!(trees[0].subitems[0].depth, 1);
-        assert_eq!(trees[0].subitems[0].subitems[0].item.id, 3);
+        assert_eq!(trees[0].subitems[0].subitems[0].item.id, "3");
         assert_eq!(trees[0].subitems[0].subitems[0].depth, 2);
-        assert_eq!(trees[0].subitems[0].subitems[0].subitems[0].item.id, 4);
+        assert_eq!(trees[0].subitems[0].subitems[0].subitems[0].item.id, "4");
         assert_eq!(trees[0].subitems[0].subitems[0].subitems[0].depth, 3);
     }
 
@@ -350,18 +353,18 @@ mod tests {
     fn task_tree_no_parent() {
         let tasks = vec![
             Task {
-                parent_id: Some(1),
-                ..Task::new(2, "two")
+                parent_id: Some("1".to_string()),
+                ..Task::new("2", "two")
             },
             Task {
-                parent_id: Some(2),
-                ..Task::new(3, "three")
+                parent_id: Some("2".to_string()),
+                ..Task::new("3", "three")
             },
         ];
         let trees = Tree::from_items(tasks).unwrap();
         assert_eq!(trees.len(), 1);
         assert_eq!(trees[0].item.parent_id, None);
-        assert_eq!(trees[0].subitems[0].item.id, 3);
+        assert_eq!(trees[0].subitems[0].item.id, "3");
     }
 
     #[test]
@@ -369,32 +372,32 @@ mod tests {
         let tasks = vec![
             Task {
                 parent_id: None,
-                ..Task::new(1, "one")
+                ..Task::new("1", "one")
             },
             Task {
-                parent_id: Some(1),
-                ..Task::new(2, "two")
+                parent_id: Some("1".to_string()),
+                ..Task::new("2", "two")
             },
             Task {
-                parent_id: Some(2),
-                ..Task::new(3, "three")
-            },
-            Task {
-                parent_id: None,
-                ..Task::new(4, "four")
+                parent_id: Some("2".to_string()),
+                ..Task::new("3", "three")
             },
             Task {
                 parent_id: None,
-                ..Task::new(5, "five")
+                ..Task::new("4", "four")
+            },
+            Task {
+                parent_id: None,
+                ..Task::new("5", "five")
             },
         ];
         let trees = Tree::from_items(tasks).unwrap();
-        let trees = trees.keep_trees(&[3, 4]);
+        let trees = trees.keep_trees(&["3".to_string(), "4".to_string()]);
         assert_eq!(trees.len(), 2);
-        assert_eq!(trees[0].item.id, 1);
+        assert_eq!(trees[0].item.id, "1");
         assert_eq!(trees[0].item.parent_id, None);
-        assert_eq!(trees[0].subitems[0].item.id, 2);
-        assert_eq!(trees[0].subitems[0].subitems[0].item.id, 3);
-        assert_eq!(trees[1].item.id, 4);
+        assert_eq!(trees[0].subitems[0].item.id, "2");
+        assert_eq!(trees[0].subitems[0].subitems[0].item.id, "3");
+        assert_eq!(trees[1].item.id, "4");
     }
 }

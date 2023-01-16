@@ -6,9 +6,9 @@ use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DefaultOnError};
 
 /// ProjectID is the unique ID of a [`Project`]
-pub type ProjectID = u64;
+pub type ProjectID = String;
 /// ProjectSyncID is an identifier to mark between copies of shared projects.
-pub type ProjectSyncID = u64;
+pub type ProjectSyncID = String;
 
 /// Project as described by the Todoist API.
 ///
@@ -28,18 +28,17 @@ pub struct Project {
     #[serde_as(deserialize_as = "DefaultOnError")]
     pub color: Color,
     /// Whether the project is shared with someone else.
-    pub shared: bool,
+    pub is_shared: bool,
     /// Project order under the same parent.
     pub order: Option<usize>,
     /// This marks the project as the initial Inbox project if it exists.
-    pub inbox_project: Option<bool>,
+    pub is_inbox_project: Option<bool>,
     /// This markes the project as a TeamInbox project if it exists.
-    pub team_inbox: Option<bool>,
+    pub is_team_inbox: Option<bool>,
     /// Identifier to match between different copies of shared projects.
-    #[serde(deserialize_with = "deserialize_zero_to_none")]
     pub sync_id: Option<ProjectSyncID>,
     /// Toggle to mark this project as a favorite.
-    pub favorite: bool,
+    pub is_favorite: bool,
     /// URL to the Todoist UI.
     pub url: Url,
 }
@@ -48,11 +47,11 @@ impl Treeable for Project {
     type ID = ProjectID;
 
     fn id(&self) -> ProjectID {
-        self.id
+        self.id.clone()
     }
 
     fn parent_id(&self) -> Option<ProjectID> {
-        self.parent_id
+        self.parent_id.clone()
     }
 
     fn reset_parent(&mut self) {
@@ -92,19 +91,19 @@ pub struct CreateProject {
 impl Project {
     /// This is initializer is used for tests, as in general the tool relies on the API and not
     /// local state.
-    pub fn new(id: ProjectID, name: &str) -> Project {
+    pub fn new(id: &str, name: &str) -> Project {
         Project {
-            id,
+            id: id.to_string(),
             name: name.to_string(),
             parent_id: None,
             comment_count: 0,
             color: crate::api::Color::Unknown,
-            shared: false,
+            is_shared: false,
             order: None,
-            inbox_project: None,
-            team_inbox: None,
+            is_inbox_project: None,
+            is_team_inbox: None,
             sync_id: None,
-            favorite: false,
+            is_favorite: false,
             url: "http://localhost".to_string().parse().unwrap(),
         }
     }

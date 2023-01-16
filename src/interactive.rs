@@ -168,7 +168,7 @@ impl FuzzSelect for Project {
     type ID = ProjectID;
 
     fn id(&self) -> ProjectID {
-        self.id
+        self.id.clone()
     }
     fn name(&self) -> &str {
         &self.name
@@ -179,7 +179,7 @@ impl FuzzSelect for Section {
     type ID = SectionID;
 
     fn id(&self) -> SectionID {
-        self.id
+        self.id.clone()
     }
     fn name(&self) -> &str {
         &self.name
@@ -190,7 +190,7 @@ impl FuzzSelect for Label {
     type ID = LabelID;
 
     fn id(&self) -> LabelID {
-        self.id
+        self.id.clone()
     }
     fn name(&self) -> &str {
         &self.name
@@ -201,7 +201,7 @@ impl FuzzSelect for Task {
     type ID = TaskID;
 
     fn id(&self) -> TaskID {
-        self.id
+        self.id.clone()
     }
     fn name(&self) -> &str {
         &self.content
@@ -270,17 +270,17 @@ pub fn input_project(
 ) -> Result<Option<(ProjectID, Option<SectionID>)>> {
     match select("Select Project", projects)? {
         Some(p) => Ok(Some((
-            projects[p].id,
-            input_section(projects[p].id, sections)?,
+            projects[p].id.clone(),
+            input_section(&projects[p].id, sections)?,
         ))),
         None => Ok(None),
     }
 }
 
-pub fn input_section(project: ProjectID, sections: &[Section]) -> Result<Option<SectionID>> {
+pub fn input_section(project: &ProjectID, sections: &[Section]) -> Result<Option<SectionID>> {
     let sections: Vec<_> = sections
         .iter()
-        .filter(|s| s.project_id == project)
+        .filter(|s| s.project_id == *project)
         .collect();
     if sections.is_empty() {
         return Ok(None);
@@ -290,7 +290,7 @@ pub fn input_section(project: ProjectID, sections: &[Section]) -> Result<Option<
         .collect::<Vec<_>>();
     match select("Select Section", &section_names)? {
         Some(0) => Ok(None),
-        Some(s) => Ok(Some(sections[s - 1].id)),
+        Some(s) => Ok(Some(sections[s - 1].id.clone())),
         None => Ok(None),
     }
 }

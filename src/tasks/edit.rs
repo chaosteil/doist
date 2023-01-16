@@ -63,6 +63,6 @@ pub async fn edit(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
     if let Some(due) = params.due {
         update.due = Some(TaskDue::String(due))
     }
-    gw.update(params.task.task_id(gw, cfg).await?, &update)
+    gw.update(&params.task.task_id(gw, cfg).await?, &update)
         .await
 }

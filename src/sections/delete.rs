@@ -14,7 +14,7 @@ pub struct Params {
 pub async fn delete(params: Params, gw: &Gateway) -> Result<()> {
     let sections = gw.sections().await?;
     let section = params.section.mandatory(&sections)?;
-    gw.delete_section(section.id).await?;
+    gw.delete_section(&section.id).await?;
     println!("deleted section: {}", &section);
     Ok(())
 }

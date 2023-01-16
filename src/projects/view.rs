@@ -17,7 +17,7 @@ pub async fn view(params: Params, gw: &Gateway) -> Result<()> {
     // TODO: no refetch here
     let state = State::fetch_tree(gw).await?;
     let tree = state
-        .project(project.id)
+        .project(&project.id)
         .ok_or_else(|| eyre!("full project list contained invalid data"))?;
     println!("Project: {}", &tree.item);
     if !tree.subitems.is_empty() {
@@ -26,7 +26,7 @@ pub async fn view(params: Params, gw: &Gateway) -> Result<()> {
             println!("{}", project.item)
         }
     }
-    let sections = state.sections(project.id);
+    let sections = state.sections(&project.id);
     if !sections.is_empty() {
         println!("Sections:");
         for section in sections {
@@ -34,7 +34,7 @@ pub async fn view(params: Params, gw: &Gateway) -> Result<()> {
         }
     }
     if project.comment_count > 0 {
-        let comments = gw.project_comments(project.id).await?;
+        let comments = gw.project_comments(&project.id).await?;
         comments::list(&comments)
     }
     Ok(())

@@ -5,7 +5,7 @@ use serde_with::{serde_as, DefaultOnError};
 use crate::api::Color;
 
 /// LabelID specifies the unique ID of a [`Label`].
-pub type LabelID = usize;
+pub type LabelID = String;
 
 /// Label is a tag associated with a Task. Marked with `@name` in the UI.
 ///
@@ -23,7 +23,7 @@ pub struct Label {
     /// The order among labels if we were to sort them.
     pub order: isize,
     /// Toggle for marking a label as a favorite.
-    pub favorite: bool,
+    pub is_favorite: bool,
 }
 
 impl Ord for Label {
@@ -70,13 +70,13 @@ pub struct CreateLabel {
 impl Label {
     /// This is initializer is used for tests, as in general the tool relies on the API and not
     /// local state.
-    pub fn new(id: LabelID, name: &str) -> Label {
+    pub fn new(id: &str, name: &str) -> Label {
         Label {
-            id,
+            id: id.to_string(),
             name: name.to_string(),
             color: crate::api::Color::Unknown,
             order: 0,
-            favorite: false,
+            is_favorite: false,
         }
     }
 }

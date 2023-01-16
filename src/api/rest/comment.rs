@@ -5,10 +5,10 @@ use crate::api::serialize::todoist_rfc3339;
 use super::{ProjectID, TaskID};
 
 /// CommentID describes the unique ID of a [`Comment`].
-pub type CommentID = u64;
+pub type CommentID = String;
 
 /// ThreadID is the ID of the location where the comment is posted.
-#[derive(Debug, Serialize, Deserialize, Copy, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 pub enum ThreadID {
     /// The ID of the project this comment is attached to.

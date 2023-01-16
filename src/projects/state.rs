@@ -21,7 +21,7 @@ impl State {
     pub async fn fetch_tree(gw: &Gateway) -> Result<State> {
         let (projects, sections) = tokio::try_join!(gw.projects(), gw.sections())?;
         let projects = Tree::from_items(projects).wrap_err("projects do not form a clean tree")?;
-        let sections = sections.into_iter().map(|s| (s.id, s)).collect();
+        let sections = sections.into_iter().map(|s| (s.id.clone(), s)).collect();
         Ok(State { projects, sections })
     }
 
@@ -37,15 +37,15 @@ impl State {
         Ok(result.map(|index| items[index]))
     }
 
-    pub fn project(&self, id: ProjectID) -> Option<&Tree<Project>> {
+    pub fn project(&self, id: &ProjectID) -> Option<&Tree<Project>> {
         self.projects.find(id)
     }
 
-    pub fn sections(&self, id: ProjectID) -> Vec<&Section> {
+    pub fn sections(&self, id: &ProjectID) -> Vec<&Section> {
         self.sections
             .iter()
             .filter_map(|s| {
-                if s.1.project_id == id {
+                if s.1.project_id == *id {
                     Some(s.1)
                 } else {
                     None

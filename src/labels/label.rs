@@ -33,7 +33,7 @@ impl LabelSelect {
         let label_ids = self.label_ids.clone().unwrap_or_default();
         let mut all_labels = labels
             .iter()
-            .map(|l| (l.id, l.to_owned()))
+            .map(|l| (l.id.clone(), l.to_owned()))
             .collect::<HashMap<_, _>>();
         let label_list = all_labels
             .values()

@@ -6,8 +6,8 @@ use owo_colors::OwoColorize;
 use crate::{
     api::{
         rest::{
-            FullTask, Gateway, Label, LabelID, Project, ProjectID, Section, SectionID, TableTask,
-            Task, TaskID,
+            FullTask, Gateway, Label, Project, ProjectID, Section, SectionID, TableTask, Task,
+            TaskID,
         },
         tree::{Tree, TreeFlattenExt},
     },
@@ -20,7 +20,7 @@ pub struct State<'a> {
     pub tasks: Vec<Tree<Task>>,
     pub projects: HashMap<ProjectID, Project>,
     pub sections: HashMap<SectionID, Section>,
-    pub labels: HashMap<LabelID, Label>,
+    pub labels: HashMap<String, Label>,
     pub config: &'a Config,
 }
 
@@ -40,8 +40,8 @@ impl<'a> State<'a> {
         let (filtered_tasks, projects, sections, labels) =
             tokio::try_join!(gw.tasks(filter), gw.projects(), gw.sections(), gw.labels())?;
         let projects = projects.into_iter().map(|p| (p.id.clone(), p)).collect();
-        let sections = sections.into_iter().map(|p| (p.id.clone(), p)).collect();
-        let labels = labels.into_iter().map(|p| (p.id.clone(), p)).collect();
+        let sections = sections.into_iter().map(|s| (s.id.clone(), s)).collect();
+        let labels = labels.into_iter().map(|l| (l.name.clone(), l)).collect();
         let tasks = Tree::from_items(filtered_tasks).wrap_err("tasks do not form clean tree")?;
         Ok(State {
             tasks,
@@ -123,7 +123,7 @@ impl<'a> State<'a> {
     fn labels<'s>(&'s self, task: &'s Tree<Task>) -> Vec<&'s Label> {
         task.labels
             .iter()
-            .map(|l| self.labels.get(l).unwrap())
+            .filter_map(|l| self.labels.get(l))
             .collect()
     }
 

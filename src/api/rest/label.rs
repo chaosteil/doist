@@ -82,7 +82,7 @@ impl Label {
 mod test {
     #[test]
     fn succeeds_with_bad_color() {
-        let label = r#"{"id":123,"name":"hello","color":7,"order":0,"favorite":false}"#;
+        let label = r#"{"id":"123","name":"hello","color":"wow","order":0,"is_favorite":false}"#;
         assert!(serde_json::from_str::<'_, super::Label>(label).is_ok());
     }
 }

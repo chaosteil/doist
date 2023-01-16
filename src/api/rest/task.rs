@@ -33,7 +33,7 @@ pub struct Task {
     pub description: String,
     /// Completed is set if this task was completed.
     pub is_completed: bool,
-    /// All associated [`super::Label`]s to this Task.
+    /// All associated [`super::Label`]s to this Task. Just label names are used here.
     pub labels: Vec<String>,
     /// If set, this Task is a subtask of another.
     pub parent_id: Option<TaskID>,

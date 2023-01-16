@@ -11,7 +11,7 @@ pub type ProjectSyncID = String;
 
 /// Project as described by the Todoist API.
 ///
-/// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v1/#projects).
+/// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v2/#projects).
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone)]
 pub struct Project {
@@ -28,17 +28,35 @@ pub struct Project {
     /// Whether the project is shared with someone else.
     pub is_shared: bool,
     /// Project order under the same parent.
-    pub order: Option<usize>,
+    pub order: usize,
     /// This marks the project as the initial Inbox project if it exists.
-    pub is_inbox_project: Option<bool>,
+    pub is_inbox_project: bool,
     /// This markes the project as a TeamInbox project if it exists.
-    pub is_team_inbox: Option<bool>,
-    /// Identifier to match between different copies of shared projects.
-    pub sync_id: Option<ProjectSyncID>,
+    pub is_team_inbox: bool,
     /// Toggle to mark this project as a favorite.
     pub is_favorite: bool,
     /// URL to the Todoist UI.
     pub url: Url,
+    /// View style to show in todoist clients.
+    pub view_style: ViewStyle,
+}
+
+/// ViewStyle for viewing of the project in different clients.
+///
+/// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v2/#projects).
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum ViewStyle {
+    /// Project as list view (default).
+    List,
+    /// Project as board view.
+    Board,
+}
+
+impl Default for ViewStyle {
+    fn default() -> Self {
+        Self::List
+    }
 }
 
 impl Treeable for Project {
@@ -97,12 +115,12 @@ impl Project {
             comment_count: 0,
             color: "".to_string(),
             is_shared: false,
-            order: None,
-            is_inbox_project: None,
-            is_team_inbox: None,
-            sync_id: None,
+            order: 0,
+            is_inbox_project: false,
+            is_team_inbox: false,
             is_favorite: false,
             url: "http://localhost".to_string().parse().unwrap(),
+            view_style: Default::default(),
         }
     }
 }

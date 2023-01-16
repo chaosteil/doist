@@ -1,64 +1,75 @@
 [
 	{
 		"id": "1000001",
-		"color": 48,
+		"color": "berry_red",
 		"name": "Inbox",
 		"comment_count": 0,
 		"is_shared": false,
 		"is_favorite": false,
-		"inbox_project": true,
-		"url": "https://todoist.com/showProject?id=1000001"
+		"is_inbox_project": true,
+		"url": "https://todoist.com/showProject?id=1000001",
+		"view_style": "list"
 	},
 	{
 		"id": "1000002",
 		"order": 2,
-		"color": 41,
+		"color": "berry_red",
 		"name": "Project One",
 		"comment_count": 0,
 		"is_shared": false,
 		"is_favorite": true,
-		"url": "https://todoist.com/showProject?id=1000002"
+		"is_inbox_project": false,
+		"url": "https://todoist.com/showProject?id=1000002",
+		"view_style": "list"
 	},
 	{
 		"id": "1000003",
 		"parent_id": "1000002",
 		"order": 0,
-		"color": 36,
+		"color": "berry_red",
 		"name": "Project Two",
 		"comment_count": 0,
 		"is_shared": false,
 		"is_favorite": false,
-		"url": "https://todoist.com/showProject?id=1000003"
+		"is_inbox_project": false,
+		"url": "https://todoist.com/showProject?id=1000003",
+		"view_style": "list"
 	},
 	{
 		"id": "1000004",
 		"parent_id": "1000002",
 		"order": 1,
-		"color": 31,
+		"color": "berry_red",
 		"name": "Project Three",
 		"comment_count": 2,
 		"is_shared": false,
 		"is_favorite": false,
-		"url": "https://todoist.com/showProject?id=1000004"
+		"is_inbox_project": false,
+		"url": "https://todoist.com/showProject?id=1000004",
+		"view_style": "list"
 	},
 	{
 		"id": "1000005",
 		"order": 3,
-		"color": 48,
+		"color": "berry_red",
 		"name": "Project Four",
 		"comment_count": 0,
 		"is_shared": false,
 		"is_favorite": false,
-		"url": "https://todoist.com/showProject?id=1000005"
+		"is_inbox_project": false,
+		"url": "https://todoist.com/showProject?id=1000005",
+		"view_style": "list"
 	},
 	{
 		"id": "1000006",
 		"order": 4,
-		"color": 30,
+		"color": "berry_red",
 		"name": "Project Five",
 		"comment_count": 0,
 		"is_shared": false,
 		"is_favorite": false,
-		"url": "https://todoist.com/showProject?id=1000006"
+		"is_inbox_project": false,
+		"url": "https://todoist.com/showProject?id=1000006",
+		"view_style": "list"
 	}
 ]

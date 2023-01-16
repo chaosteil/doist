@@ -1,8 +1,8 @@
-use crate::api::{tree::Treeable, Color};
+use crate::api::tree::Treeable;
 use owo_colors::{OwoColorize, Stream};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, DefaultOnError};
+use serde_with::serde_as;
 
 /// ProjectID is the unique ID of a [`Project`]
 pub type ProjectID = String;
@@ -24,8 +24,7 @@ pub struct Project {
     /// How many project comments.
     pub comment_count: usize,
     /// Color as used by the Todoist UI.
-    #[serde_as(deserialize_as = "DefaultOnError")]
-    pub color: Color,
+    pub color: String,
     /// Whether the project is shared with someone else.
     pub is_shared: bool,
     /// Project order under the same parent.
@@ -80,7 +79,7 @@ pub struct CreateProject {
     pub parent_id: Option<ProjectID>,
     /// Color of the project icon.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub color: Option<Color>,
+    pub color: Option<String>,
     /// Mark as favorite or not.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub favorite: Option<bool>,
@@ -96,7 +95,7 @@ impl Project {
             name: name.to_string(),
             parent_id: None,
             comment_count: 0,
-            color: crate::api::Color::Unknown,
+            color: "".to_string(),
             is_shared: false,
             order: None,
             is_inbox_project: None,

@@ -1,8 +1,6 @@
 use owo_colors::{OwoColorize, Stream};
 use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, DefaultOnError};
-
-use crate::api::Color;
+use serde_with::serde_as;
 
 /// LabelID specifies the unique ID of a [`Label`].
 pub type LabelID = String;
@@ -18,8 +16,7 @@ pub struct Label {
     /// Name of the label. Written as `@name` in the UI.
     pub name: String,
     /// The display color of the label as given from the API.
-    #[serde_as(deserialize_as = "DefaultOnError")]
-    pub color: Color,
+    pub color: String,
     /// The order among labels if we were to sort them.
     pub order: isize,
     /// Toggle for marking a label as a favorite.
@@ -60,7 +57,7 @@ pub struct CreateLabel {
     pub order: Option<isize>,
     /// Color of the label icon.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub color: Option<Color>,
+    pub color: Option<String>,
     /// Mark as favorite or not.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub favorite: Option<bool>,
@@ -74,7 +71,7 @@ impl Label {
         Label {
             id: id.to_string(),
             name: name.to_string(),
-            color: crate::api::Color::Unknown,
+            color: "".to_string(),
             order: 0,
             is_favorite: false,
         }

@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use crate::api::Color;
 use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_aux::prelude::*;
@@ -175,7 +174,7 @@ pub struct Project {
     pub id: ProjectID,
     pub legacy_id: Option<ProjectID>,
     pub name: String,
-    pub color: Color,
+    pub color: String,
     pub parent_id: Option<ProjectID>,
     pub legacy_parent_id: Option<ProjectID>,
     pub child_order: Order,
@@ -318,7 +317,7 @@ pub type LabelID = u64;
 pub struct Label {
     pub id: LabelID,
     pub name: String,
-    pub color: Color,
+    pub color: String,
     pub item_order: Order,
     #[serde(deserialize_with = "deserialize_bool_from_anything")]
     pub is_deleted: bool,
@@ -333,7 +332,7 @@ pub struct Filter {
     pub id: FilterID,
     pub name: String,
     pub query: String,
-    pub color: Color,
+    pub color: String,
     pub item_order: Order,
     #[serde(deserialize_with = "deserialize_bool_from_anything")]
     pub is_deleted: bool,

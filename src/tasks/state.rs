@@ -6,8 +6,8 @@ use owo_colors::OwoColorize;
 use crate::{
     api::{
         rest::{
-            FullTask, Gateway, Label, LabelID, Project, ProjectID, Section, SectionID, TableTask,
-            Task, TaskID,
+            FullTask, Gateway, Label, Project, ProjectID, Section, SectionID, TableTask, Task,
+            TaskID,
         },
         tree::{Tree, TreeFlattenExt},
     },
@@ -20,7 +20,7 @@ pub struct State<'a> {
     pub tasks: Vec<Tree<Task>>,
     pub projects: HashMap<ProjectID, Project>,
     pub sections: HashMap<SectionID, Section>,
-    pub labels: HashMap<LabelID, Label>,
+    pub labels: HashMap<String, Label>,
     pub config: &'a Config,
 }
 
@@ -39,9 +39,10 @@ impl<'a> State<'a> {
     ) -> Result<State<'a>> {
         let (filtered_tasks, projects, sections, labels) =
             tokio::try_join!(gw.tasks(filter), gw.projects(), gw.sections(), gw.labels())?;
-        let projects = projects.into_iter().map(|p| (p.id, p)).collect();
-        let sections = sections.into_iter().map(|p| (p.id, p)).collect();
-        let labels = labels.into_iter().map(|p| (p.id, p)).collect();
+        let projects = projects.into_iter().map(|p| (p.id.clone(), p)).collect();
+        let sections = sections.into_iter().map(|s| (s.id.clone(), s)).collect();
+        // We save by name so it works with the shared labels concept of todoist
+        let labels = labels.into_iter().map(|l| (l.name.clone(), l)).collect();
         let tasks = Tree::from_items(filtered_tasks).wrap_err("tasks do not form clean tree")?;
         Ok(State {
             tasks,
@@ -60,11 +61,11 @@ impl<'a> State<'a> {
             tokio::try_join!(Self::fetch_tree(Some("all"), gw, cfg), gw.tasks(filter))?;
         full_state.tasks = full_state
             .tasks
-            .keep_trees(&tasks.iter().map(|t| t.id).collect::<Vec<_>>());
+            .keep_trees(&tasks.iter().map(|t| t.id.clone()).collect::<Vec<_>>());
         Ok(full_state)
     }
 
-    pub fn task(&self, id: TaskID) -> Option<&Tree<Task>> {
+    pub fn task(&self, id: &TaskID) -> Option<&Tree<Task>> {
         self.tasks.find(id)
     }
 
@@ -121,9 +122,9 @@ impl<'a> State<'a> {
     }
 
     fn labels<'s>(&'s self, task: &'s Tree<Task>) -> Vec<&'s Label> {
-        task.label_ids
+        task.labels
             .iter()
-            .map(|l| self.labels.get(l).unwrap())
+            .filter_map(|l| self.labels.get(l))
             .collect()
     }
 

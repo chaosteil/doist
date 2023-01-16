@@ -47,9 +47,9 @@ pub async fn add(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
         content: params.name,
         description: params.desc,
         priority: params.priority.map(|p| p.into()),
-        project_id: project.map(|p| p.id),
-        section_id: section.map(|s| s.id),
-        label_ids: labels.iter().map(|l| l.id).collect(),
+        project_id: project.map(|p| p.id.clone()),
+        section_id: section.map(|s| s.id.clone()),
+        label_ids: labels.iter().map(|l| l.id.clone()).collect(),
         ..Default::default()
     };
     if let Some(due) = params.due {
@@ -60,7 +60,7 @@ pub async fn add(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
             .labels()
             .await?
             .into_iter()
-            .map(|label| (label.id, label))
+            .map(|label| (label.id.clone(), label))
             .collect();
         create
             .label_ids

@@ -20,7 +20,7 @@ pub async fn comment(params: Params, gw: &Gateway) -> Result<()> {
     let comment = gw
         .create_comment(&CreateComment {
             thread: ThreadID::Project {
-                project_id: project.id,
+                project_id: project.id.clone(),
             },
             content: params.content,
         })

@@ -17,7 +17,7 @@ impl std::fmt::Display for FullComment<'_> {
                 .id
                 .if_supports_color(Stream::Stdout, |text| text.bright_yellow())
         )?;
-        writeln!(f, "Posted: {}", comment.posted)?;
+        writeln!(f, "Posted: {}", comment.posted_at)?;
         writeln!(
             f,
             "Attachment: {}",

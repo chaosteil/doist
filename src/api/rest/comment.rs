@@ -5,10 +5,10 @@ use crate::api::serialize::todoist_rfc3339;
 use super::{ProjectID, TaskID};
 
 /// CommentID describes the unique ID of a [`Comment`].
-pub type CommentID = u64;
+pub type CommentID = String;
 
 /// ThreadID is the ID of the location where the comment is posted.
-#[derive(Debug, Serialize, Deserialize, Copy, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 pub enum ThreadID {
     /// The ID of the project this comment is attached to.
@@ -25,7 +25,7 @@ pub enum ThreadID {
 
 /// Comment describes a Comment from the Todoist API.
 ///
-/// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v1/#comments)
+/// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v2/#comments)
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Comment {
     /// The unique ID of a comment.
@@ -35,7 +35,7 @@ pub struct Comment {
     pub thread: ThreadID,
     /// The date when the comment was posted.
     #[serde(serialize_with = "todoist_rfc3339")]
-    pub posted: chrono::DateTime<chrono::Utc>,
+    pub posted_at: chrono::DateTime<chrono::Utc>,
     /// Contains the comment text with markdown.
     pub content: String,
     /// Optional attachment file description.

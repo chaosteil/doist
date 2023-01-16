@@ -47,11 +47,11 @@ impl TaskOrInteractive {
         cfg: &'a Config,
     ) -> Result<(TaskID, State<'a>)> {
         let state = State::fetch_tree(Some(&self.filter.filter), gw, cfg).await?;
-        let id = match self.id {
-            Some(id) => id,
+        let id = match &self.id {
+            Some(id) => id.clone(),
             None => state
                 .select_task()?
-                .map(|t| t.id)
+                .map(|t| t.id.clone())
                 .ok_or_else(|| eyre!("no task selected"))?,
         };
         Ok((id, state))

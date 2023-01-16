@@ -171,23 +171,25 @@ async fn filter_list<'a>(state: State<'a>, params: &'_ Params) -> Result<State<'
         .labels(&labels, labels::Selection::AllowEmpty)?;
     let mut state = state;
     if let Some(p) = project {
-        state = state.filter(|tree| tree.project_id == p.id);
+        state = state.filter(|tree| tree.project_id == *p.id);
     }
     if let Some(s) = section {
-        state = state.filter(|tree| tree.section_id == Some(s.id));
+        state = state.filter(|tree| tree.section_id.as_ref() == Some(&s.id));
     }
     if !labels.is_empty() {
         state = state.filter(|tree| {
             labels
                 .iter()
-                .map(|l| l.id)
-                .any(|l| tree.label_ids.contains(&l))
+                .map(|l| l.id.clone())
+                .any(|l| tree.labels.contains(&l))
         });
     }
     Ok(state)
 }
 
 fn list_tasks<'a>(tasks: &'a [Tree<Task>], state: &'a State) {
+    let mut tasks = tasks.to_vec();
+    tasks.sort();
     for task in tasks.iter() {
         println!("{}", state.table_task(task));
         list_tasks(&task.subitems, state);
@@ -219,7 +221,7 @@ async fn select_task_option<'a, 'b>(
         TaskOptions::Close => {
             close::close(
                 close::Params {
-                    task: task.id.into(),
+                    task: task.id.clone().into(),
                     complete: false,
                 },
                 gw,
@@ -230,7 +232,7 @@ async fn select_task_option<'a, 'b>(
         TaskOptions::Complete => {
             close::close(
                 close::Params {
-                    task: task.id.into(),
+                    task: task.id.clone().into(),
                     complete: true,
                 },
                 gw,
@@ -274,7 +276,7 @@ async fn edit_task(task: &Tree<Task>, gw: &Gateway, cfg: &Config) -> Result<()> 
                 .interact()
                 .wrap_err("Bad user input")?
                 + 1;
-            let mut params = edit::Params::new(task.id);
+            let mut params = edit::Params::new(task.id.clone());
             params.priority = Some(selection.try_into()?);
             edit::edit(params, gw, cfg).await?;
         }
@@ -283,7 +285,7 @@ async fn edit_task(task: &Tree<Task>, gw: &Gateway, cfg: &Config) -> Result<()> 
                 .with_prompt("New value")
                 .interact_text()
                 .wrap_err("Bad user input")?;
-            let mut params = edit::Params::new(task.id);
+            let mut params = edit::Params::new(task.id.clone());
             match result {
                 EditOptions::Name => {
                     params.name = Some(text);

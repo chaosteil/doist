@@ -66,7 +66,7 @@ impl State {
     pub fn save(&self) -> color_eyre::Result<()> {
         let state = xdg::BaseDirectories::with_prefix("doist")?.place_state_file("state.json")?;
         let data = serde_json::to_string(self)?;
-        fs::write(&state, &data)?;
+        fs::write(state, data)?;
         Ok(())
     }
 
@@ -81,7 +81,7 @@ impl State {
         ];
         let res = client
             .post("https://api.todoist.com/sync/v8/sync")
-            .bearer_auth(&auth_token)
+            .bearer_auth(auth_token)
             .form(&params)
             .send()
             .await?

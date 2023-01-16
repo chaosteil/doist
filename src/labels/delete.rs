@@ -17,7 +17,7 @@ pub async fn delete(params: Params, gw: &Gateway) -> Result<()> {
         return Err(eyre!("no labels selected"));
     }
     for label in labels {
-        gw.delete_label(label.id).await?;
+        gw.delete_label(&label.id).await?;
         println!("deleted label: {}", &label);
     }
     Ok(())

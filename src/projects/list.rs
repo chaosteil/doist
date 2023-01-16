@@ -35,7 +35,7 @@ fn filtered_projects<'a>(
     tasks: &'_ [Task],
 ) -> Result<Vec<(&'a Project, usize)>> {
     let hm = tasks.iter().fold(HashMap::<_, usize>::new(), |mut hm, t| {
-        *hm.entry(t.project_id).or_default() += 1;
+        *hm.entry(&t.project_id).or_default() += 1;
         hm
     });
     let projects = projects
@@ -48,31 +48,31 @@ fn filtered_projects<'a>(
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::api::rest::{Project, ProjectID, Task, TaskID};
+    use crate::api::rest::{Project, Task};
 
     #[tokio::test]
     async fn filter_projects() {
         let ps = vec![
-            Project::new(1, "one"),
-            Project::new(2, "two"),
-            Project::new(3, "three"),
+            Project::new("1", "one"),
+            Project::new("2", "two"),
+            Project::new("3", "three"),
         ];
         let ts = vec![
-            create_task(1, 1, "one"),
-            create_task(2, 1, "two"),
-            create_task(3, 2, "three"),
+            create_task("1", "1", "one"),
+            create_task("2", "1", "two"),
+            create_task("3", "2", "three"),
         ];
         let projects = filtered_projects(&ps, &ts).unwrap();
         assert_eq!(projects.len(), 2);
-        assert_eq!(projects[0].0.id, 1);
+        assert_eq!(projects[0].0.id, "1");
         assert_eq!(projects[0].1, 2);
-        assert_eq!(projects[1].0.id, 2);
+        assert_eq!(projects[1].0.id, "2");
         assert_eq!(projects[1].1, 1);
     }
 
-    fn create_task(id: TaskID, project_id: ProjectID, content: &str) -> Task {
+    fn create_task(id: &str, project_id: &str, content: &str) -> Task {
         let mut task = crate::api::rest::Task::new(id, content);
-        task.project_id = project_id;
+        task.project_id = project_id.to_string();
         task
     }
 }

@@ -13,7 +13,7 @@ pub struct Params {
 pub async fn delete(params: Params, gw: &Gateway) -> Result<()> {
     let projects = gw.projects().await?;
     let project = params.project.mandatory(&projects)?;
-    gw.delete_project(project.id).await?;
+    gw.delete_project(&project.id).await?;
     println!("deleted project: {}", &project);
     Ok(())
 }

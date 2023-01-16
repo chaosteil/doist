@@ -4,11 +4,11 @@ use serde::{Deserialize, Serialize};
 use super::ProjectID;
 
 /// SectionID is the unique ID of a [`Section`].
-pub type SectionID = usize;
+pub type SectionID = String;
 
 /// Section describes a subsection of a [`super::Project`].
 ///
-/// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v1/#sections).
+/// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v2/#sections).
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 pub struct Section {
     /// The unique ID of this section.
@@ -65,10 +65,10 @@ pub struct CreateSection {
 impl Section {
     /// This is initializer is used for tests, as in general the tool relies on the API and not
     /// local state.
-    pub fn new(id: SectionID, project_id: ProjectID, name: &str) -> Section {
+    pub fn new(id: &str, project_id: &str, name: &str) -> Section {
         Section {
-            id,
-            project_id,
+            id: id.to_string(),
+            project_id: project_id.to_string(),
             name: name.to_string(),
             order: 0,
         }

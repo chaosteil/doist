@@ -2,9 +2,5 @@
 pub mod rest;
 pub mod tree;
 
-mod color;
-mod deserialize;
 mod serialize;
 mod sync;
-
-pub use color::*;

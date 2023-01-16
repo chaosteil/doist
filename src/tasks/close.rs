@@ -26,12 +26,12 @@ pub async fn close(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
         .await
         .wrap_err("no task selected for closing")?;
     if params.complete {
-        return complete(id, gw).await;
+        return complete(&id, gw).await;
     }
-    gw.close(id).await?;
-    println!("closed task {}", id.bright_red());
-    let task = gw.task(id).await?;
-    if !task.completed {
+    gw.close(&id).await?;
+    println!("closed task {}", id.clone().bright_red());
+    let task = gw.task(&id).await?;
+    if !task.is_completed {
         if let Some(due) = task.due {
             if let Some(exact) = due.exact {
                 println!("next due date: {}", exact.datetime);
@@ -43,7 +43,7 @@ pub async fn close(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
     Ok(())
 }
 
-pub async fn complete(id: api::rest::TaskID, gw: &Gateway) -> Result<()> {
+pub async fn complete(id: &api::rest::TaskID, gw: &Gateway) -> Result<()> {
     gw.complete(id).await?;
     println!(
         "completed task {}",

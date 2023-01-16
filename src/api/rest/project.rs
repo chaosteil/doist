@@ -1,4 +1,3 @@
-use crate::api::deserialize::deserialize_zero_to_none;
 use crate::api::{tree::Treeable, Color};
 use owo_colors::{OwoColorize, Stream};
 use reqwest::Url;

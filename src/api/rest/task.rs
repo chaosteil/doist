@@ -1,8 +1,8 @@
 use core::fmt;
 use std::fmt::Display;
 
+use crate::api::serialize::todoist_rfc3339;
 use crate::api::tree::Treeable;
-use crate::api::{deserialize::deserialize_zero_to_none, serialize::todoist_rfc3339};
 use chrono::{DateTime, FixedOffset, Utc};
 use owo_colors::{OwoColorize, Stream};
 use reqwest::Url;
@@ -224,7 +224,7 @@ impl<'a> Display for DueDateFormatter<'a> {
                     exact.if_supports_color(Stream::Stdout, |text| text.bright_red())
                 )
             }
-        } else if self.0.date >= self.1.date().naive_utc() {
+        } else if self.0.date >= self.1.date_naive() {
             write!(
                 f,
                 "{}",

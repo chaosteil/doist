@@ -112,7 +112,7 @@ impl Config {
                 io,
             })?;
         let data = toml::to_string(self)?;
-        fs::write(&file, &data).map_err(|io| ConfigError::File { file, io })?;
+        fs::write(&file, data).map_err(|io| ConfigError::File { file, io })?;
         Ok(())
     }
 

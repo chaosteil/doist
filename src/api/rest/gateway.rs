@@ -315,7 +315,7 @@ mod test {
     };
 
     use super::*;
-    use crate::api::rest::{CommentID, ProjectID, Task, TaskID, ThreadID};
+    use crate::api::rest::{Task, ThreadID};
     use color_eyre::Result;
 
     #[tokio::test]

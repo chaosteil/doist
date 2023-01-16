@@ -229,7 +229,7 @@ impl<T: Treeable> TreeFlattenExt<T> for Vec<Tree<T>> {
 
     fn find(&self, id: &T::ID) -> Option<&Tree<T>> {
         for item in self {
-            if let Some(item) = item.find(&id) {
+            if let Some(item) = item.find(id) {
                 return Some(item);
             }
         }
@@ -238,7 +238,7 @@ impl<T: Treeable> TreeFlattenExt<T> for Vec<Tree<T>> {
 
     fn find_mut(&mut self, id: &T::ID) -> Option<&mut Tree<T>> {
         for item in self {
-            if let Some(item) = item.find_mut(&id) {
+            if let Some(item) = item.find_mut(id) {
                 return Some(item);
             }
         }

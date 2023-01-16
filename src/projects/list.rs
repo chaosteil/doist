@@ -48,7 +48,7 @@ fn filtered_projects<'a>(
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::api::rest::{Project, ProjectID, Task, TaskID};
+    use crate::api::rest::{Project, Task};
 
     #[tokio::test]
     async fn filter_projects() {

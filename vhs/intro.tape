@@ -1,10 +1,15 @@
 Output doist.gif
 # Require doist
-Set Theme {"name":"Monokai Vivid","black":"#121212","red":"#fa2934","green":"#98e123","yellow":"#fff30a","blue":"#0443ff","magenta":"#f800f8","cyan":"#01b6ed","white":"#ffffff","brightBlack":"#838383","brightRed":"#f6669d","brightGreen":"#b1e05f","brightYellow":"#fff26d","brightBlue":"#0443ff","brightMagenta":"#f200f6","brightCyan":"#51ceff","brightWhite":"#ffffff","background":"#121212","foreground":"#f9f9f9"}
-# Set Shell zsh
+Set Theme "Monokai Pro"
+Set Shell bash
 Set FontSize 32
 Set Width 1200
 Set Height 600
+
+Hide
+Type 'alias doist="./run_doist_fixtures.sh"'
+Enter
+Show
 
 Type "doist add 'do the laundry' -d tomorrow"
 Sleep 500ms

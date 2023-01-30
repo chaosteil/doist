@@ -5,14 +5,13 @@ import socketserver
 
 PORT = 3000
 
-PREFIX = "../tests/commands/fixtures/"
+PREFIX = "data/"
 
 def json_read(filename):
     with open(PREFIX+filename, 'r') as f:
         return json.load(f)
 
 tasks = json_read("tasks.json")
-tasks_partial = json_read("tasks_partial.json")
 labels = json_read("labels.json")
 projects = json_read("projects.json")
 sections = json_read("sections.json")
@@ -20,7 +19,7 @@ sections = json_read("sections.json")
 url_map = {
     "/rest/v2/tasks": {
         "/": tasks,
-        "?filter=%28today+%7C+overdue%29": tasks_partial,
+        "?filter=%28today+%7C+overdue%29": tasks,
     },
     "/rest/v2/labels": {
         "/": labels,
@@ -32,6 +31,19 @@ url_map = {
         "/": sections,
     },
 }
+
+def content(t, target):
+    t = t.copy()
+    t["content"] = target
+    return t
+
+response = {
+    "do the laundry": tasks[0],
+    "work out": tasks[1],
+    "buy flowers": tasks[2],
+    "eat a snack": tasks[3],
+}
+
 
 for k, v in url_map.items():
     items = v["/"]
@@ -54,6 +66,17 @@ class HTTPHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
     def do_POST(self):
         print("POST", self.path)
+        length = int(self.headers.get('content-length'))
+        field_data = json.loads(str(self.rfile.read(length), "UTF-8"))
+        if field_data and field_data.get("content"):
+            content = field_data.get("content")
+            if response.get(content):
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(json.dumps(response[field_data["content"]]).encode())
+                return
+            elif content == "be lazy":
+                tasks[1]["content"] = content
         self.send_response(204)
         self.end_headers()
 

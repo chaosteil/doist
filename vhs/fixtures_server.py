@@ -20,6 +20,7 @@ url_map = {
     "/rest/v2/tasks": {
         "/": tasks,
         "?filter=%28today+%7C+overdue%29": tasks,
+        "/7000003": tasks[3]
     },
     "/rest/v2/labels": {
         "/": labels,
@@ -32,10 +33,6 @@ url_map = {
     },
 }
 
-def content(t, target):
-    t = t.copy()
-    t["content"] = target
-    return t
 
 response = {
     "do the laundry": tasks[0],
@@ -44,11 +41,19 @@ response = {
     "eat a snack": tasks[3],
 }
 
-
 for k, v in url_map.items():
     items = v["/"]
     for item in items:
         v["/"+item["id"]] = item
+
+
+def filter_completed():
+    for k, v in url_map["/rest/v2/tasks"].items():
+        if not isinstance(v, list):
+            continue
+        url_map["/rest/v2/tasks"][k] = \
+            list(filter(lambda t: t["is_completed"] == False, tasks))
+
 
 class HTTPHandler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
@@ -68,6 +73,7 @@ class HTTPHandler(http.server.BaseHTTPRequestHandler):
         print("POST", self.path)
         length = int(self.headers.get('content-length'))
         field_data = json.loads(str(self.rfile.read(length), "UTF-8"))
+
         if field_data and field_data.get("content"):
             content = field_data.get("content")
             if response.get(content):
@@ -77,6 +83,11 @@ class HTTPHandler(http.server.BaseHTTPRequestHandler):
                 return
             elif content == "be lazy":
                 tasks[1]["content"] = content
+
+        if self.path.endswith("/7000003/close"):
+            tasks[3]["is_completed"] = True
+            filter_completed()
+
         self.send_response(204)
         self.end_headers()
 

@@ -41,8 +41,6 @@ Enter
 Sleep 4s
 Down
 Sleep 1s
-Down
-Sleep 1s
 Enter
 Sleep 2s
 Down

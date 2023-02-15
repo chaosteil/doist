@@ -36,7 +36,7 @@ async fn list() -> Result<()> {
 async fn expand() -> Result<()> {
     let cmd = Tool::init().await?;
 
-    mocks::mock_tasks(&cmd, 1).await;
+    mocks::mock_tasks_all(&cmd, 1).await;
     mocks::mock_tasks_partial(&cmd, 1).await;
     mocks::mock_labels(&cmd, 1).await;
     mocks::mock_projects(&cmd, 1).await;

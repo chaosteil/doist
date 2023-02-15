@@ -28,7 +28,7 @@ pub struct Project {
     /// Whether the project is shared with someone else.
     pub is_shared: bool,
     /// Project order under the same parent.
-    pub order: usize,
+    pub order: isize,
     /// This marks the project as the initial Inbox project if it exists.
     pub is_inbox_project: bool,
     /// This markes the project as a TeamInbox project if it exists.

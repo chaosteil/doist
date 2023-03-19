@@ -12,27 +12,38 @@ use thiserror::Error;
 use crate::api::rest::{Gateway, TODOIST_API_URL};
 
 /// Stores configuration used by the application.
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Default)]
 pub struct Config {
     /// The auth token that will be used to work with the Todoist API.
     /// The API Token can be found in the [Todoist settings](https://todoist.com/app/settings/integrations).
     #[serde(default)]
     pub token: Option<String>,
+    /// Sets the different filter when using the filter without any options. Uses the value of
+    /// `DEFAULT_FILTER` if none specifed.
+    #[serde(default = "default_filter")]
+    pub default_filter: String,
     /// Can override the API URL used by all commands. Mostly used for testing, but go crazy!
     #[serde(default = "default_url")]
-    pub url: url::Url,
+    pub url: Option<url::Url>,
     /// Override the current time for various display options in the CLI.
     #[serde(default)]
     pub override_time: Option<DateTime<Utc>>,
 
     /// Sets a particular config location prefix. Mostly used for testing.
     #[serde(skip)]
-    prefix: Option<PathBuf>,
+    pub prefix: Option<PathBuf>,
 }
 
 /// Returns the default URL to be used for calling the Todoist API.
-fn default_url() -> url::Url {
-    TODOIST_API_URL.clone()
+fn default_url() -> Option<url::Url> {
+    Some(TODOIST_API_URL.clone())
+}
+
+/// Default filter when no config override is done.
+const DEFAULT_FILTER: &str = "(today | overdue)";
+
+fn default_filter() -> String {
+    DEFAULT_FILTER.to_string()
 }
 
 ///! Describes errors that occur when loading from configuration storage.
@@ -122,6 +133,9 @@ impl Config {
         let token = self.token.as_deref().ok_or_else(|| {
             eyre!("No token in config specified. Use `doist auth` to register your token.")
         })?;
-        Ok(Gateway::new(token, &self.url))
+        Ok(Gateway::new(
+            token,
+            &self.url.clone().unwrap_or_else(|| default_url().unwrap()),
+        ))
     }
 }

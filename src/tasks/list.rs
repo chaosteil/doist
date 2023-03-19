@@ -54,9 +54,9 @@ pub async fn list(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
 
 async fn list_action(params: &Params, gw: &Gateway, cfg: &Config) -> Result<()> {
     let state = if params.expand {
-        State::fetch_full_tree(Some(&params.filter.filter), gw, cfg).await
+        State::fetch_full_tree(Some(&params.filter.select(cfg)), gw, cfg).await
     } else {
-        State::fetch_tree(Some(&params.filter.filter), gw, cfg).await
+        State::fetch_tree(Some(&params.filter.select(cfg)), gw, cfg).await
     }?;
     let state = filter_list(state, params).await?;
     if params.nointeractive {
@@ -94,7 +94,7 @@ async fn list_interactive_action(
     gw: &Gateway,
     cfg: &Config,
 ) -> Result<ListAction> {
-    let filter = params.filter.filter.to_owned();
+    let filter = params.filter.select(cfg);
     let state = if params.expand {
         State::fetch_full_tree(Some(&filter), gw, cfg).await
     } else {
@@ -119,18 +119,21 @@ async fn list_interactive_action(
                     "| Show All Tasks",
                     "| Inbox",
                     "| Upcoming",
+                    "| Default Filter",
                 ],
             )? {
                 // TODO change this once we have async closures and can iterate over a Vec<(str, async Fn)>
                 Some(0) => create::create(create::Params {}, gw, cfg).await?,
                 Some(1) => {
                     let filter = filter.is_empty().not().then_some(filter);
-                    params.filter.filter =
-                        interactive::input_optional("Filter", filter)?.unwrap_or_default();
+                    params.filter.set_filter(Some(
+                        &interactive::input_optional("Filter", filter)?.unwrap_or_default(),
+                    ));
                 }
-                Some(2) => params.filter.filter = "all".to_owned(),
-                Some(3) => params.filter.filter = "#inbox".to_owned(),
-                Some(4) => params.filter.filter = filter::DEFAULT_FILTER.to_owned(),
+                Some(2) => params.filter.set_filter(Some("all")),
+                Some(3) => params.filter.set_filter(Some("#inbox")),
+                Some(4) => params.filter.set_filter(Some(&cfg.default_filter)),
+                Some(5) => params.filter.set_filter(Some("(today | overdue)")),
                 Some(_) => unreachable!(),
                 None => {}
             };

@@ -120,10 +120,13 @@ impl PartialOrd for Task {
 /// Priority as is given from the Todoist API.
 ///
 /// 1 for Normal up to 4 for Urgent.
-#[derive(Debug, Copy, Clone, Serialize_repr, Deserialize_repr, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    Default, Debug, Copy, Clone, Serialize_repr, Deserialize_repr, PartialEq, Eq, PartialOrd, Ord,
+)]
 #[repr(u8)]
 pub enum Priority {
     /// p1 in the Todoist UI.
+    #[default]
     Normal = 1,
     /// p3 in the Todoist UI.
     High = 2,
@@ -154,12 +157,6 @@ impl Display for Priority {
                 "p1".if_supports_color(Stream::Stdout, |text| text.red())
             ),
         }
-    }
-}
-
-impl Default for Priority {
-    fn default() -> Self {
-        Priority::Normal
     }
 }
 

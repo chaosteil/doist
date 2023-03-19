@@ -194,19 +194,14 @@ pub struct Project {
 
 pub type ItemID = u64;
 
-#[derive(Debug, serde_repr::Serialize_repr, serde_repr::Deserialize_repr)]
+#[derive(Default, Debug, serde_repr::Serialize_repr, serde_repr::Deserialize_repr)]
 #[repr(u8)]
 pub enum Priority {
+    #[default]
     Natural = 1,
     High,
     Urgent,
     VeryUrgent,
-}
-
-impl Default for Priority {
-    fn default() -> Self {
-        Priority::Natural
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -271,18 +266,13 @@ pub struct ProjectNote {
     pub reactions: HashMap<String, Vec<UserID>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Default, Debug, Serialize, Deserialize)]
 pub enum UploadState {
+    #[default]
     Unknown,
     Pending,
     Completed,
     // TODO: more?
-}
-
-impl Default for UploadState {
-    fn default() -> Self {
-        UploadState::Unknown
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -342,33 +332,24 @@ pub struct Filter {
 
 pub type ReminderID = u64;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Default, Debug, Serialize, Deserialize)]
 pub enum Service {
+    #[default]
     Unknown,
     Email,
     Mobile,
     Push,
 }
 
-impl Default for Service {
-    fn default() -> Self {
-        Service::Unknown
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Default, Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ReminderType {
+    #[default]
     Unknown,
     #[serde(rename = "relative")]
-    Relative {
-        due: DueDate,
-        mm_offset: i32,
-    },
+    Relative { due: DueDate, mm_offset: i32 },
     #[serde(rename = "absolute")]
-    Absolute {
-        due: DueDate,
-    },
+    Absolute { due: DueDate },
     #[serde(rename = "location")]
     Location {
         name: String,
@@ -376,12 +357,6 @@ pub enum ReminderType {
         loc_long: String,
         radius: i32,
     },
-}
-
-impl Default for ReminderType {
-    fn default() -> Self {
-        ReminderType::Unknown
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]

@@ -189,6 +189,8 @@ doist view
 
 This accepts the same parameters as `doist list` for task selection.
 
+#### Configuration setup
+
 ### Disable colors
 
 If you're not a fan of emojis or colors, you can disable all doist-induced
@@ -197,6 +199,18 @@ colors by setting the environment variable `NO_COLOR`:
 ```bash
 NO_COLOR=1 doist
 ```
+
+### Custom default filter
+
+If you don't like the default filter of `(today | upcoming)`, you can set a
+different default filter in the `~/.config/doist/config.toml` like this:
+
+```toml
+default_filter="all"
+``````
+
+See the [Todoist article on filtering](https://todoist.com/help/articles/introduction-to-filters)
+for more information.
 
 ### Help
 

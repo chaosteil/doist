@@ -17,37 +17,37 @@ categories = ["command-line-utilities"]
 name = "doist"
 
 [dependencies]
-chrono = { version = "0.4.23", features = ["serde"] }
-chrono-tz = { version = "0.8.1", features = ["serde"] }
-clap = { version = "4.1.1", features = ["derive", "wrap_help"] }
+chrono = { version = "0.4.26", features = ["serde"] }
+chrono-tz = { version = "0.8.3", features = ["serde"] }
+clap = { version = "4.3.10", features = ["derive", "wrap_help"] }
 color-eyre = "0.6.2"
 config = { version = "0.13.3", features = ["toml"] }
-dialoguer = { version = "0.10.3", features = ["fuzzy-select"] }
-dirs = "4.0.0"
+dialoguer = { version = "0.10.4", features = ["fuzzy-select"] }
+dirs = "5.0.1"
 fuzzy-matcher = "0.3.7"
-indicatif = "0.17.3"
-json-patch = "0.3.0"
+indicatif = "0.17.5"
+json-patch = "1.0.0"
 lazy_static = "1.4.0"
 num-traits = "0.2.15"
 owo-colors = { version = "3.5.0", features = ["supports-colors"] }
-reqwest = "0.11.13"
-reqwest-middleware = "0.2.0"
-reqwest-retry = "0.2.1"
-serde = { version = "1.0.152", features = ["derive"] }
-serde-aux = "4.1.2"
-serde_json = "1.0.91"
-serde_repr = "0.1.10"
-serde_with = "2.2.0"
-strum = { version = "0.24.1", features = ["derive"] }
-thiserror = "1.0.38"
-tokio = { version = "1.24.1", features = ["macros", "rt", "rt-multi-thread"] }
-toml = "0.5.10"
-url = { version = "2.3.1", features = ["serde"] }
-uuid = { version = "1.2.2", features = ["v4", "fast-rng", "macro-diagnostics"] }
-xdg = "2.4.1"
+reqwest = "0.11.18"
+reqwest-middleware = "0.2.2"
+reqwest-retry = "0.2.2"
+serde = { version = "1.0.166", features = ["derive"] }
+serde-aux = "4.2.0"
+serde_json = "1.0.100"
+serde_repr = "0.1.13"
+serde_with = "3.0.0"
+strum = { version = "0.25.0", features = ["derive"] }
+thiserror = "1.0.41"
+tokio = { version = "1.29.1", features = ["macros", "rt", "rt-multi-thread"] }
+toml = "0.7.5"
+url = { version = "2.4.0", features = ["serde"] }
+uuid = { version = "1.4.0", features = ["v4", "fast-rng", "macro-diagnostics"] }
+xdg = "2.5.0"
 
 [dev-dependencies]
-assert_cmd = "2.0.8"
-assert_fs = "1.0.10"
-predicates = "2.1.5"
-wiremock = "0.5.17"
+assert_cmd = "2.0.11"
+assert_fs = "1.0.13"
+predicates = "3.0.3"
+wiremock = "0.5.19"

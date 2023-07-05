@@ -82,7 +82,7 @@ mod tests {
 
     #[test]
     fn select_filter() {
-        let mut cfg = Config {
+        let cfg = Config {
             default_filter: "all".to_owned(),
             ..Default::default()
         };

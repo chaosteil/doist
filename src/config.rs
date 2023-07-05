@@ -46,7 +46,7 @@ fn default_filter() -> String {
     DEFAULT_FILTER.to_string()
 }
 
-///! Describes errors that occur when loading from configuration storage.
+/// Describes errors that occur when loading from configuration storage.
 #[derive(Error, Debug)]
 pub enum ConfigError {
     /// Is returned when the location of the configuraiton was inaccessible.

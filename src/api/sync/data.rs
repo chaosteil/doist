@@ -19,10 +19,7 @@ fn find_id_index(array: &[serde_json::Value], id: u64) -> Option<usize> {
     None
 }
 
-fn merge_with_deleted_arrays(
-    original: &mut Vec<serde_json::Value>,
-    patch: &Vec<serde_json::Value>,
-) {
+fn merge_with_deleted_arrays(original: &mut Vec<serde_json::Value>, patch: &[serde_json::Value]) {
     if original.is_empty() && patch.is_empty() {
         return;
     }

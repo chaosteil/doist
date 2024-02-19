@@ -208,32 +208,6 @@ impl FuzzSelect for Task {
     }
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    type Selectable<'a> = (i32, &'a str);
-
-    impl<'a> FuzzSelect for Selectable<'a> {
-        type ID = i32;
-
-        fn id(&self) -> i32 {
-            self.0
-        }
-        fn name(&self) -> &str {
-            self.1
-        }
-    }
-
-    #[test]
-    fn select_best() {
-        let select: Vec<Selectable> = vec![(0, "zero"), (1, "one"), (2, "two"), (3, "three")];
-        assert_eq!(fuzz_select(&select, "one").unwrap().0, 1);
-        assert_eq!(fuzz_select(&select, "w").unwrap().0, 2);
-        assert!(fuzz_select(&select, "what").is_err());
-    }
-}
-
 pub fn input_content(content: &str) -> Result<String> {
     let mut input = dialoguer::Input::new();
     input
@@ -304,4 +278,30 @@ pub fn input_priority() -> Result<Option<Priority>> {
     ];
     let selection = select("Priority", &items)?;
     Ok(selection.map(|s| items[s]))
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    type Selectable<'a> = (i32, &'a str);
+
+    impl<'a> FuzzSelect for Selectable<'a> {
+        type ID = i32;
+
+        fn id(&self) -> i32 {
+            self.0
+        }
+        fn name(&self) -> &str {
+            self.1
+        }
+    }
+
+    #[test]
+    fn select_best() {
+        let select: Vec<Selectable> = vec![(0, "zero"), (1, "one"), (2, "two"), (3, "three")];
+        assert_eq!(fuzz_select(&select, "one").unwrap().0, 1);
+        assert_eq!(fuzz_select(&select, "w").unwrap().0, 2);
+        assert!(fuzz_select(&select, "what").is_err());
+    }
 }

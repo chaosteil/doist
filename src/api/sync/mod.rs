@@ -3,5 +3,3 @@
 //! potential future use.
 mod data;
 mod state;
-
-pub use state::State;

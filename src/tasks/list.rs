@@ -14,7 +14,7 @@ use crate::{
 };
 use color_eyre::{eyre::WrapErr, Result};
 use owo_colors::OwoColorize;
-use strum::{Display, EnumVariantNames, FromRepr, VariantNames};
+use strum::{Display, FromRepr, VariantNames};
 
 use super::create;
 
@@ -199,7 +199,7 @@ fn list_tasks<'a>(tasks: &'a [Tree<Task>], state: &'a State) {
     }
 }
 
-#[derive(Display, FromRepr, EnumVariantNames)]
+#[derive(Display, FromRepr, VariantNames)]
 enum TaskOptions {
     Close,
     Complete,
@@ -249,7 +249,7 @@ async fn select_task_option<'a, 'b>(
     Ok(())
 }
 
-#[derive(Display, FromRepr, EnumVariantNames)]
+#[derive(Display, FromRepr, VariantNames)]
 enum EditOptions {
     Name,
     Description,

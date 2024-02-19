@@ -209,8 +209,7 @@ impl FuzzSelect for Task {
 }
 
 pub fn input_content(content: &str) -> Result<String> {
-    let mut input = dialoguer::Input::new();
-    input
+    dialoguer::Input::new()
         .with_prompt("Task Name")
         .allow_empty(false)
         .validate_with(|input: &String| -> Result<(), &str> {
@@ -219,20 +218,21 @@ pub fn input_content(content: &str) -> Result<String> {
             } else {
                 Err("empty task description")
             }
-        });
-    if !content.is_empty() {
-        input.with_initial_text(content.to_owned());
-    }
-    input.interact_text().wrap_err("No input made")
+        })
+        .with_initial_text(content.to_owned())
+        .interact_text()
+        .wrap_err("No input made")
 }
 
 pub fn input_optional(prompt: &str, default: Option<String>) -> Result<Option<String>> {
-    let mut input = dialoguer::Input::<'_, String>::new();
-    input.with_prompt(prompt).allow_empty(true);
-    if let Some(d) = default {
-        input.with_initial_text(d);
-    }
-    match input.interact_text().wrap_err("No input made")?.as_str() {
+    match dialoguer::Input::<'_, String>::new()
+        .with_prompt(prompt)
+        .allow_empty(true)
+        .with_initial_text(default.unwrap_or("".to_owned()))
+        .interact_text()
+        .wrap_err("No input made")?
+        .as_str()
+    {
         "" => Ok(None),
         s => Ok(Some(s.to_owned())),
     }

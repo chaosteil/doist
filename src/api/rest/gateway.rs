@@ -282,7 +282,7 @@ impl Gateway {
 
     /// Same as [`Gateway::post`], but doesn't require content to be set for the POST request.
     async fn post_empty<T: Serialize>(&self, path: &str, content: &T) -> Result<()> {
-        self.post::<_, String>(path, content).await?;
+        self.post::<_, Task>(path, content).await?;
         Ok(())
     }
 }

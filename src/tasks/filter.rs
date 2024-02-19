@@ -88,8 +88,8 @@ mod tests {
         };
 
         let f = Filter::new(None);
-        assert!(f.select(&cfg) == "all".to_owned());
+        assert!(f.select(&cfg) == *"all");
         let f = Filter::new(Some("today".to_owned()));
-        assert!(f.select(&cfg) == "today".to_owned());
+        assert!(f.select(&cfg) == *"today");
     }
 }

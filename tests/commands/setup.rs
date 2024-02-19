@@ -22,7 +22,7 @@ impl Tool {
             .success();
 
         let mock = MockServer::start().await;
-        let mut cfg = Config::load_prefix(&tmp.path())?;
+        let mut cfg = Config::load_prefix(tmp.path())?;
         cfg.url = Some(url::Url::parse(&mock.uri())?);
         cfg.override_time = Some(super::fixtures::FETCH_TIME.trim().parse()?);
         cfg.save()?;

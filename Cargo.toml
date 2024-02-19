@@ -17,40 +17,40 @@ categories = ["command-line-utilities"]
 name = "doist"
 
 [dependencies]
-chrono = { version = "0.4.26", features = ["serde"] }
-chrono-tz = { version = "0.8.3", features = ["serde"] }
-clap = { version = "4.3.10", features = ["derive", "wrap_help"] }
+chrono = { version = "0.4.34", features = ["serde"] }
+chrono-tz = { version = "0.8.6", features = ["serde"] }
+clap = { version = "4.5.1", features = ["derive", "wrap_help"] }
 color-eyre = "0.6.2"
-config = { version = "0.13.3", features = ["toml"] }
-dialoguer = { version = "0.10.4", features = ["fuzzy-select"] }
+config = { version = "0.14.0", features = ["toml"] }
+dialoguer = { version = "0.11.0", features = ["fuzzy-select"] }
 dirs = "5.0.1"
 fuzzy-matcher = "0.3.7"
-indicatif = "0.17.5"
-json-patch = "1.0.0"
+indicatif = "0.17.8"
+json-patch = "1.2.0"
 lazy_static = "1.4.0"
-num-traits = "0.2.15"
-owo-colors = { version = "3.5.0", features = ["supports-colors"] }
-reqwest = "0.11.18"
-reqwest-middleware = "0.2.2"
-reqwest-retry = "0.2.2"
-serde = { version = "1.0.166", features = ["derive"] }
-serde-aux = "4.2.0"
-serde_json = "1.0.100"
-serde_repr = "0.1.13"
-serde_with = "3.0.0"
-strum = { version = "0.25.0", features = ["derive"] }
-thiserror = "1.0.41"
-tokio = { version = "1.29.1", features = ["macros", "rt", "rt-multi-thread"] }
-toml = "0.7.5"
-url = { version = "2.4.0", features = ["serde"] }
-uuid = { version = "1.4.0", features = ["v4", "fast-rng", "macro-diagnostics"] }
-xdg = "2.5.0"
+num-traits = "0.2.18"
+owo-colors = { version = "4.0.0", features = ["supports-colors"] }
+reqwest = "0.11.24"
+reqwest-middleware = "0.2.4"
+reqwest-retry = "0.3.0"
+serde = { version = "1.0.196", features = ["derive"] }
+serde-aux = "4.4.0"
+serde_json = "1.0.113"
+serde_repr = "0.1.18"
+serde_with = "3.6.1"
+strum = { version = "0.26.1", features = ["derive"] }
+thiserror = "1.0.57"
+tokio = { version = "1.36.0", features = ["macros", "rt", "rt-multi-thread"] }
+toml = "0.8.10"
+url = { version = "2.5.0", features = ["serde"] }
+uuid = { version = "1.7.0", features = ["v4", "fast-rng", "macro-diagnostics"] }
+xdg = "2.5.2"
 
 [dev-dependencies]
-assert_cmd = "2.0.11"
-assert_fs = "1.0.13"
-predicates = "3.0.3"
-wiremock = "0.5.19"
+assert_cmd = "2.0.13"
+assert_fs = "1.1.1"
+predicates = "3.1.0"
+wiremock = "0.6.0"
 
 # The profile that 'cargo dist' will build with
 [profile.dist]

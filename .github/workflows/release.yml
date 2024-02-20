@@ -62,7 +62,7 @@ jobs:
         with:
           submodules: recursive
       - name: Install Rust
-        run: rustup update "1.67.1" --no-self-update && rustup default "1.67.1"
+        run: rustup update "1.76.0" --no-self-update && rustup default "1.76.0"
       - name: Install cargo-dist
         run: "curl --proto '=https' --tlsv1.2 -LsSf https://github.com/axodotdev/cargo-dist/releases/download/v0.2.0/cargo-dist-installer.sh | sh"
       - id: plan

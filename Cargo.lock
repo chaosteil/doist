@@ -606,7 +606,7 @@ checksum = "fea41bba32d969b513997752735605054bc0dfa92b4c56bf1189f2e174be7a10"
 
 [[package]]
 name = "doist"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "assert_cmd",
  "assert_fs",

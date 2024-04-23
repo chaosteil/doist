@@ -101,6 +101,9 @@ pub struct CreateProject {
     /// Mark as favorite or not.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub favorite: Option<bool>,
+    /// Sets the view style of the project.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub view_style: Option<ViewStyle>,
 }
 
 #[cfg(test)]

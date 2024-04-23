@@ -9,7 +9,7 @@ use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use super::{LabelID, ProjectID, SectionID};
+use super::{ProjectID, SectionID};
 
 /// TaskID describes the unique ID of a [`Task`].
 pub type TaskID = String;
@@ -271,8 +271,8 @@ pub struct CreateTask {
     pub parent_id: Option<TaskID>,
     /// Sets the [`Task::order`] on the new [`Task`].
     pub order: Option<isize>,
-    /// Sets the [`Task::label_ids`] on the new [`Task`].
-    pub label_ids: Vec<LabelID>,
+    /// Sets the [`Task::labels`] on the new [`Task`].
+    pub labels: Vec<String>,
     /// Sets the [`Task::priority`] on the new [`Task`].
     pub priority: Option<Priority>,
     /// Sets the [`Task::due`] on the new [`Task`].
@@ -295,9 +295,9 @@ pub struct UpdateTask {
     /// Overwrites [`Task::description`] if set.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    /// Overwrites [`Task::label_ids`] if set.
+    /// Overwrites [`Task::labels`] if set.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub label_ids: Option<Vec<LabelID>>,
+    pub labels: Option<Vec<String>>,
     /// Overwrites [`Task::priority`] if set.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub priority: Option<Priority>,

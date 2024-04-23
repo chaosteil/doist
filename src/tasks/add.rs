@@ -49,21 +49,21 @@ pub async fn add(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
         priority: params.priority.map(|p| p.into()),
         project_id: project.map(|p| p.id.clone()),
         section_id: section.map(|s| s.id.clone()),
-        label_ids: labels.iter().map(|l| l.id.clone()).collect(),
+        labels: labels.iter().map(|l| l.name.clone()).collect(),
         ..Default::default()
     };
     if let Some(due) = params.due {
         create.due = Some(TaskDue::String(due));
     }
-    let labels = if !create.label_ids.is_empty() {
+    let labels = if !create.labels.is_empty() {
         let mut labels: HashMap<_, _> = gw
             .labels()
             .await?
             .into_iter()
-            .map(|label| (label.id.clone(), label))
+            .map(|label| (label.name.clone(), label))
             .collect();
         create
-            .label_ids
+            .labels
             .iter()
             .filter_map(|l| labels.remove(l))
             .collect()

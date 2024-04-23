@@ -60,7 +60,7 @@ pub struct CreateLabel {
     pub color: Option<String>,
     /// Mark as favorite or not.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub favorite: Option<bool>,
+    pub is_favorite: Option<bool>,
 }
 
 #[cfg(test)]

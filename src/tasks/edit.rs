@@ -43,21 +43,21 @@ impl Params {
 }
 
 pub async fn edit(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
-    let label_ids = {
+    let labels = {
         let labels = params
             .labels
             .labels(&gw.labels().await?, labels::Selection::AllowEmpty)?;
         if labels.is_empty() {
             None
         } else {
-            Some(labels.into_iter().map(|l| l.id).collect())
+            Some(labels.into_iter().map(|l| l.name).collect())
         }
     };
     let mut update = UpdateTask {
         content: params.name,
         description: params.desc,
         priority: params.priority.map(|p| p.into()),
-        label_ids,
+        labels,
         ..Default::default()
     };
     if let Some(due) = params.due {

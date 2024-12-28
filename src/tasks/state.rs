@@ -81,7 +81,7 @@ impl<'a> State<'a> {
         Ok(result.map(|index| items[index]))
     }
 
-    pub fn select_or_menu(&'a self) -> Result<TaskMenu> {
+    pub fn select_or_menu(&'a self) -> Result<TaskMenu<'a>> {
         let items = self.tasks.flat_tree();
         let result = interactive::select(
             "Select task",
@@ -128,7 +128,7 @@ impl<'a> State<'a> {
             .collect()
     }
 
-    pub fn table_task<'s>(&'s self, task: &'s Tree<Task>) -> TableTask {
+    pub fn table_task<'s>(&'s self, task: &'s Tree<Task>) -> TableTask<'s> {
         TableTask(
             task,
             self.project(task),
@@ -138,7 +138,7 @@ impl<'a> State<'a> {
         )
     }
 
-    pub fn full_task<'s>(&'s self, task: &'s Tree<Task>) -> FullTask {
+    pub fn full_task<'s>(&'s self, task: &'s Tree<Task>) -> FullTask<'s> {
         FullTask(
             task,
             self.project(task),

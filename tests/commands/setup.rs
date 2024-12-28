@@ -6,6 +6,7 @@ use wiremock::MockServer;
 
 pub struct Tool {
     pub tmp: assert_fs::TempDir,
+    #[allow(dead_code)] // Is used in test code.
     pub cfg: Config,
     pub mock: MockServer,
 }

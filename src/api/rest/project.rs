@@ -51,6 +51,8 @@ pub enum ViewStyle {
     List,
     /// Project as board view.
     Board,
+    /// Project as calendar view.
+    Calendar,
 }
 
 impl Default for ViewStyle {

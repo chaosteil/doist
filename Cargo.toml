@@ -20,7 +20,7 @@ name = "doist"
 chrono = { version = "0.4.39", features = ["serde"] }
 chrono-tz = { version = "0.10.0", features = ["serde"] }
 clap = { version = "4.5.23", features = ["derive", "wrap_help"] }
-color-eyre = "0.6.3"
+color-eyre = { version = "0.6.3", default-features = false }
 config = { version = "0.15.4", features = ["toml"] }
 dialoguer = { version = "0.11.0", features = ["fuzzy-select"] }
 dirs = "5.0.1"
@@ -43,7 +43,11 @@ thiserror = "2.0.9"
 tokio = { version = "1.42.0", features = ["macros", "rt", "rt-multi-thread"] }
 toml = "0.8.19"
 url = { version = "2.5.4", features = ["serde"] }
-uuid = { version = "1.11.0", features = ["v4", "fast-rng", "macro-diagnostics"] }
+uuid = { version = "1.11.0", features = [
+  "v4",
+  "fast-rng",
+  "macro-diagnostics",
+] }
 xdg = "2.5.2"
 
 [dev-dependencies]
@@ -66,4 +70,8 @@ ci = ["github"]
 # The installers to generate for each app
 installers = ["shell", "homebrew"]
 # Target platforms to build apps for (Rust target-triple syntax)
-targets = ["x86_64-unknown-linux-gnu", "x86_64-apple-darwin", "aarch64-apple-darwin"]
+targets = [
+  "x86_64-unknown-linux-gnu",
+  "x86_64-apple-darwin",
+  "aarch64-apple-darwin",
+]

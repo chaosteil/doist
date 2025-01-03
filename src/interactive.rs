@@ -286,7 +286,7 @@ mod test {
 
     type Selectable<'a> = (i32, &'a str);
 
-    impl<'a> FuzzSelect for Selectable<'a> {
+    impl FuzzSelect for Selectable<'_> {
         type ID = i32;
 
         fn id(&self) -> i32 {

@@ -35,7 +35,7 @@ impl std::fmt::Display for FullComment<'_> {
 /// FullLabel shows label including ID
 pub struct FullLabel<'a>(pub &'a Label);
 
-impl<'a> std::fmt::Display for FullLabel<'a> {
+impl std::fmt::Display for FullLabel<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,

@@ -200,7 +200,7 @@ pub struct DueDate {
 /// too late or too soon.
 pub struct DueDateFormatter<'a>(pub &'a DueDate, pub &'a DateTime<Utc>);
 
-impl<'a> Display for DueDateFormatter<'a> {
+impl Display for DueDateFormatter<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.0.is_recurring {
             write!(

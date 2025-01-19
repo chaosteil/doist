@@ -207,10 +207,10 @@ enum TaskOptions {
     Quit,
 }
 
-async fn select_task_option<'a, 'b>(
+async fn select_task_option<'a>(
     task: &'a Tree<Task>,
     state: &'a State<'_>,
-    gw: &'b Gateway,
+    gw: &'_ Gateway,
 ) -> Result<()> {
     println!("{}", state.full_task(task));
     let result = match make_selection(TaskOptions::VARIANTS)? {

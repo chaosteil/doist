@@ -3,4 +3,3 @@ pub mod rest;
 pub mod tree;
 
 mod serialize;
-mod sync;

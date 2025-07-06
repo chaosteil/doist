@@ -3,10 +3,10 @@
 //! Todoist API items have their own ID and sometimes a parent ID. Using this information we can
 //! construct a tree of items and their subitems. This is just a dirty implementation to get a tree
 //! data structure out of that.
-use color_eyre::{eyre::eyre, Result};
+use color_eyre::{Result, eyre::eyre};
 use std::{
     cell::RefCell,
-    collections::{hash_map::Entry, HashMap, HashSet, VecDeque},
+    collections::{HashMap, HashSet, VecDeque, hash_map::Entry},
     ops::Deref,
     rc::Rc,
 };

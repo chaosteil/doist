@@ -2,14 +2,14 @@ use std::time::Duration;
 
 use chrono::Utc;
 use color_eyre::{
-    eyre::{eyre, WrapErr},
     Result,
+    eyre::{WrapErr, eyre},
 };
 use lazy_static::lazy_static;
 use reqwest::{Client, StatusCode};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware, RequestBuilder};
-use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
-use serde::{de::DeserializeOwned, Serialize};
+use reqwest_retry::{RetryTransientMiddleware, policies::ExponentialBackoff};
+use serde::{Serialize, de::DeserializeOwned};
 use uuid::Uuid;
 
 use super::{
@@ -52,7 +52,7 @@ impl Gateway {
     ///
     /// * `id` - the ID as used by the Todoist API.
     pub async fn task(&self, id: &TaskID) -> Result<Task> {
-        self.get::<(), _>(&format!("rest/v2/tasks/{}", id), None)
+        self.get::<(), _>(&format!("rest/v2/tasks/{id}"), None)
             .await
             .wrap_err("unable to get task")
     }
@@ -74,7 +74,7 @@ impl Gateway {
     /// Equivalent to pushing the circle in the UI.
     pub async fn close(&self, id: &TaskID) -> Result<()> {
         self.post_empty(
-            &format!("rest/v2/tasks/{}/close", id),
+            &format!("rest/v2/tasks/{id}/close"),
             &serde_json::Map::new(),
         )
         .await
@@ -110,7 +110,7 @@ impl Gateway {
 
     /// Updates a task with the data as specified in UpdateTask.
     pub async fn update(&self, id: &TaskID, task: &UpdateTask) -> Result<()> {
-        self.post_empty(&format!("rest/v2/tasks/{}", id), &task)
+        self.post_empty(&format!("rest/v2/tasks/{id}"), &task)
             .await
             .wrap_err("unable to update task")?;
         Ok(())
@@ -163,7 +163,7 @@ impl Gateway {
     ///
     /// * `id` - the ID as used by the Todoist API.
     pub async fn project(&self, id: &ProjectID) -> Result<Project> {
-        self.get::<(), _>(&format!("rest/v2/projects/{}", id), None)
+        self.get::<(), _>(&format!("rest/v2/projects/{id}"), None)
             .await
             .wrap_err("unable to get project")
     }
@@ -178,7 +178,7 @@ impl Gateway {
 
     /// Deletes a project by calling the Todoist API.
     pub async fn delete_project(&self, project: &ProjectID) -> Result<()> {
-        self.delete(&format!("rest/v2/projects/{}", project))
+        self.delete(&format!("rest/v2/projects/{project}"))
             .await
             .wrap_err("unable to delete project")
     }
@@ -187,7 +187,7 @@ impl Gateway {
     ///
     /// * `id` - the ID as used by the Todoist API.
     pub async fn section(&self, id: &SectionID) -> Result<Section> {
-        self.get::<(), _>(&format!("rest/v2/sections/{}", id), None)
+        self.get::<(), _>(&format!("rest/v2/sections/{id}"), None)
             .await
             .wrap_err("unable to get section")
     }
@@ -202,7 +202,7 @@ impl Gateway {
 
     /// Deletes a section by calling the Todoist API.
     pub async fn delete_section(&self, section: &SectionID) -> Result<()> {
-        self.delete(&format!("rest/v2/sections/{}", section))
+        self.delete(&format!("rest/v2/sections/{section}"))
             .await
             .wrap_err("unable to delete section")
     }
@@ -211,7 +211,7 @@ impl Gateway {
     ///
     /// * `id` - the ID as used by the Todoist API.
     pub async fn label(&self, id: &LabelID) -> Result<Label> {
-        self.get::<(), _>(&format!("rest/v2/labels/{}", id), None)
+        self.get::<(), _>(&format!("rest/v2/labels/{id}"), None)
             .await
             .wrap_err("unable to get label")
     }
@@ -226,7 +226,7 @@ impl Gateway {
 
     /// Deletes a label by calling the Todoist API.
     pub async fn delete_label(&self, label: &LabelID) -> Result<()> {
-        self.delete(&format!("rest/v2/labels/{}", label))
+        self.delete(&format!("rest/v2/labels/{label}"))
             .await
             .wrap_err("unable to delete label")
     }
@@ -310,8 +310,8 @@ async fn handle_req<R: DeserializeOwned>(req: RequestBuilder) -> Result<Option<R
 #[cfg(test)]
 mod test {
     use wiremock::{
-        matchers::{bearer_token, method, path, query_param},
         Mock, MockServer, ResponseTemplate,
+        matchers::{bearer_token, method, path, query_param},
     };
 
     use super::*;

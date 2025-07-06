@@ -8,8 +8,8 @@ use crate::{
     interactive,
 };
 use color_eyre::{
-    eyre::{eyre, WrapErr},
     Result,
+    eyre::{WrapErr, eyre},
 };
 
 pub struct State {

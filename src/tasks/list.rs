@@ -12,7 +12,7 @@ use crate::{
         state::{State, TaskMenu},
     },
 };
-use color_eyre::{eyre::WrapErr, Result};
+use color_eyre::{Result, eyre::WrapErr};
 use owo_colors::OwoColorize;
 use strum::{Display, FromRepr, VariantNames};
 
@@ -110,11 +110,11 @@ async fn list_interactive_action(
                     "Create Task...",
                     &format!(
                         "Set Filter{}...",
-                        filter
-                            .is_empty()
-                            .not()
-                            .then(|| format!(" ({})", filter.yellow()))
-                            .unwrap_or_default()
+                        if filter.is_empty().not() {
+                            format!(" ({})", filter.yellow())
+                        } else {
+                            Default::default()
+                        }
                     ),
                     "| Show All Tasks",
                     "| Inbox",

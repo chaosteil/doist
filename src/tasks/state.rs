@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use color_eyre::{eyre::eyre, eyre::WrapErr, Result};
+use color_eyre::{Result, eyre::WrapErr, eyre::eyre};
 use owo_colors::OwoColorize;
 
 use crate::{

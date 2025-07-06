@@ -3,7 +3,7 @@ use crate::{
     comments, interactive,
     projects::state::State,
 };
-use color_eyre::{eyre::eyre, Result};
+use color_eyre::{Result, eyre::eyre};
 
 #[derive(clap::Parser, Debug)]
 pub struct Params {
@@ -30,7 +30,7 @@ pub async fn view(params: Params, gw: &Gateway) -> Result<()> {
     if !sections.is_empty() {
         println!("Sections:");
         for section in sections {
-            println!("{}", section)
+            println!("{section}")
         }
     }
     if project.comment_count > 0 {

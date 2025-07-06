@@ -86,6 +86,6 @@ pub(super) async fn create_task(
     table.1 = project;
     table.2 = section;
     table.3 = labels.iter().collect();
-    println!("created task: {}", table);
+    println!("created task: {table}");
     Ok(())
 }

@@ -1,7 +1,7 @@
 use crate::api::rest::Gateway;
-use color_eyre::{eyre::eyre, Result};
+use color_eyre::{Result, eyre::eyre};
 
-use super::{label::Selection, LabelSelect};
+use super::{LabelSelect, label::Selection};
 
 #[derive(clap::Parser, Debug)]
 pub struct Params {

@@ -82,7 +82,7 @@ pub async fn create(_params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
                             .as_ref()
                             .and_then(|id| sections.iter().find(|s| s.id == *id))
                         {
-                            Some(s) => format!("{}/{}", p, s),
+                            Some(s) => format!("{p}/{s}"),
                             None => p.to_string(),
                         },
                         None => "".to_string(),

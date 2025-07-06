@@ -20,9 +20,9 @@ pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
         .into_iter()
         .filter(|s| s.project_id == project.id)
         .collect::<Vec<_>>();
-    println!("{} sections:", project);
+    println!("{project} sections:");
     for s in sections {
-        println!("{}", s);
+        println!("{s}");
     }
     Ok(())
 }

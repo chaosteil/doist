@@ -88,10 +88,10 @@ impl std::fmt::Display for FullTask<'_> {
             )?;
         }
         if let Some(project) = &project {
-            write!(f, "\nProject: {}", project)?;
+            write!(f, "\nProject: {project}")?;
         }
         if let Some(section) = &section {
-            write!(f, "\nSection: {}", section)?;
+            write!(f, "\nSection: {section}")?;
         }
         write!(f, "\nComments: {}", task.comment_count)?;
         Ok(())

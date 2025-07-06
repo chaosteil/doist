@@ -1,13 +1,13 @@
 use clap::{Arg, ArgAction, Args, FromArgMatches};
-use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
+use fuzzy_matcher::skim::SkimMatcherV2;
 use owo_colors::OwoColorize;
 use std::iter;
 
 use crate::api::rest::{
     Label, LabelID, Priority, Project, ProjectID, Section, SectionID, Task, TaskID,
 };
-use color_eyre::{eyre::eyre, eyre::WrapErr, Result};
+use color_eyre::{Result, eyre::WrapErr, eyre::eyre};
 
 #[derive(Debug, Default)]
 pub struct Selection<T: FuzzSelect> {
@@ -111,7 +111,7 @@ impl<T: FuzzSelect + std::fmt::Display> Selection<T> {
                 return Ok(self
                     .id
                     .as_ref()
-                    .and_then(|id| items.iter().find(|item| item.id() == *id)))
+                    .and_then(|id| items.iter().find(|item| item.id() == *id)));
             }
         };
         Ok(Some(fuzz_select(items, name)?))

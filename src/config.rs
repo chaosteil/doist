@@ -78,13 +78,23 @@ impl Config {
         xdg::BaseDirectories::with_prefix(prefix.and_then(|p| p.to_str()).unwrap_or(XDG_PREFIX))
     }
 
+    /// Returns the name of the config file that is used for configuration.
+    fn config_file(prefix: Option<&Path>) -> Result<PathBuf, ConfigError> {
+        Config::config_dir(prefix)
+            .get_config_file(CONFIG_FILE)
+            .ok_or_else(|| ConfigError::File {
+                file: PathBuf::from(CONFIG_FILE),
+                io: None,
+            })
+    }
+
     /// Load configuration from storage, if it exists.
     ///
     /// Tries to load configuration from storage, but If configuration does not exist, it will
     /// initialize a default configuration.
     pub fn load() -> Result<Config, ConfigError> {
-        let file = Self::config_dir(None);
-        Self::load_from(file)
+        let file = Self::config_file(None)?;
+        Self::load_from(&file)
     }
 
     /// Load configuration from storage specified in another place, if it exists.
@@ -92,26 +102,23 @@ impl Config {
     /// Tries to load configuration from storage, but If configuration does not exist, it will
     /// initialize a default configuration.
     pub fn load_prefix(path: &Path) -> Result<Config, ConfigError> {
-        let file = Self::config_dir(Some(path));
-        let mut cfg = Self::load_from(file)?;
+        let file = Self::config_file(Some(path))?;
+        let mut cfg = Self::load_from(&file)?;
         cfg.prefix = Some(path.to_owned());
         Ok(cfg)
     }
 
-    fn load_from(dir: xdg::BaseDirectories) -> Result<Config, ConfigError> {
-        let file = dir
-            .get_config_file(CONFIG_FILE)
-            .ok_or_else(|| ConfigError::File {
-                file: dir
-                    .get_config_file(CONFIG_FILE)
-                    .unwrap_or_else(|| PathBuf::from(CONFIG_FILE)),
-                io: None,
-            })?;
-        let data = match fs::read_to_string(&file) {
+    fn load_from(file: &PathBuf) -> Result<Config, ConfigError> {
+        let data = match fs::read_to_string(file) {
             Ok(d) => d,
             Err(io) => match io.kind() {
                 std::io::ErrorKind::NotFound => "".to_string(),
-                _ => return Err(ConfigError::File { file, io: Some(io) })?,
+                _ => {
+                    return Err(ConfigError::File {
+                        file: file.clone(),
+                        io: Some(io),
+                    })?;
+                }
             },
         };
         let config = toml::from_str(&data).unwrap();

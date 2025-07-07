@@ -70,7 +70,21 @@ const CONFIG_FILE: &str = "config.toml";
 const XDG_PREFIX: &str = "doist";
 
 impl Config {
+    #[cfg(windows)]
+    fn config_dir(prefix: Option<&Path>) -> Result<PathBuf, ConfigError> {
+        dirs::config_dir()
+            .map(|mut path| {
+                path.push(prefix.and_then(|p| p.to_str()).unwrap_or(XDG_PREFIX));
+                path
+            })
+            .ok_or_else(|| ConfigError::File {
+                file: PathBuf::from(XDG_PREFIX),
+                io: None,
+            })
+    }
+
     /// Returns the name of the directories that are used for the configuration.
+    #[cfg(not(windows))]
     fn config_dir(prefix: Option<&Path>) -> Result<PathBuf, ConfigError> {
         xdg::BaseDirectories::with_prefix(prefix.and_then(|p| p.to_str()).unwrap_or(XDG_PREFIX))
             .get_config_home()

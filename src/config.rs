@@ -49,9 +49,6 @@ fn default_filter() -> String {
 /// Describes errors that occur when loading from configuration storage.
 #[derive(Error, Debug)]
 pub enum ConfigError {
-    /// Is returned when the location of the configuraiton was inaccessible.
-    #[error("failed to place config into its directory")]
-    Location(#[from] xdg::BaseDirectoriesError),
     /// For errors that get returned when reading the config file.
     #[error("unable to work with config file {file}")]
     File {
@@ -74,18 +71,20 @@ const XDG_PREFIX: &str = "doist";
 
 impl Config {
     /// Returns the name of the directories that are used for the configuration.
-    fn config_dir(prefix: Option<&Path>) -> xdg::BaseDirectories {
+    fn config_dir(prefix: Option<&Path>) -> Result<PathBuf, ConfigError> {
         xdg::BaseDirectories::with_prefix(prefix.and_then(|p| p.to_str()).unwrap_or(XDG_PREFIX))
+            .get_config_home()
+            .ok_or_else(|| ConfigError::File {
+                file: PathBuf::from(XDG_PREFIX),
+                io: None,
+            })
     }
 
     /// Returns the name of the config file that is used for configuration.
     fn config_file(prefix: Option<&Path>) -> Result<PathBuf, ConfigError> {
-        Config::config_dir(prefix)
-            .get_config_file(CONFIG_FILE)
-            .ok_or_else(|| ConfigError::File {
-                file: PathBuf::from(CONFIG_FILE),
-                io: None,
-            })
+        let mut path = Self::config_dir(prefix)?;
+        path.push(CONFIG_FILE);
+        Ok(path)
     }
 
     /// Load configuration from storage, if it exists.
@@ -127,13 +126,12 @@ impl Config {
 
     /// Saves the current configuration to storage.
     pub fn save(&self) -> Result<(), ConfigError> {
-        let dir = Self::config_dir(self.prefix.as_deref());
-        let file = dir
-            .place_config_file(CONFIG_FILE)
+        let file = Self::config_file(self.prefix.as_deref())?;
+        file.parent()
+            .map(fs::create_dir_all)
+            .transpose()
             .map_err(|io| ConfigError::File {
-                file: dir
-                    .get_config_file(CONFIG_FILE)
-                    .unwrap_or_else(|| PathBuf::from(CONFIG_FILE)),
+                file: file.clone(),
                 io: Some(io),
             })?;
         let data = toml::to_string(self)?;

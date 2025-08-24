@@ -201,7 +201,9 @@ fn list_tasks<'a>(tasks: &'a [Tree<Task>], state: &'a State) {
 
 #[derive(Display, FromRepr, VariantNames)]
 enum TaskOptions {
+    #[strum(serialize = "Close Task")]
     Close,
+    #[strum(serialize = "Complete Forever")]
     Complete,
     Edit,
     Quit,

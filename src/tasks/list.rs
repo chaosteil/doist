@@ -23,7 +23,7 @@ pub struct Params {
     #[clap(flatten)]
     filter: filter::Filter,
     /// Disables interactive mode and simply displays the list.
-    #[arg(short = 'n', long = "nointeractive")]
+    #[arg(short = 'n', long = "nointeractive", conflicts_with = "continuous")]
     nointeractive: bool,
     #[clap(flatten)]
     project: interactive::Selection<Project>,
@@ -47,9 +47,9 @@ pub async fn list(mut params: Params, gw: &Gateway, cfg: &Config) -> Result<()> 
     if params.continuous {
         return list_interactive(params, gw, cfg).await;
     }
-    // Default to non-interactive if neither flag was explicitly provided
+    // Default to non-interactive if not explicitly set
     // The nointeractive flag is now redundant but kept for backward compatibility
-    if !params.continuous && !params.nointeractive {
+    if !params.nointeractive {
         params.nointeractive = true;
     }
     match list_action(&params, gw, cfg).await {

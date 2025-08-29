@@ -41,3 +41,16 @@
 - Sync upstream: `git fetch upstream && git checkout main && git reset --hard upstream/main`.
 - Update work branch: `git checkout rob/patches && git merge --no-ff main` (or `git rebase main` then `git push --force-with-lease`).
 - New work: branch off `rob/patches` and PR back into `rob/patches`.
+
+## Architecture Overview
+- Entry points: binary `src/bin/doist.rs` calls into `lib.rs`, which parses CLI via Clap in `command.rs` (`Arguments`, `Commands`, `AuthCommands`).
+- Config: `config::Config` loads/saves token and base URL (XDG dir via `dirs`/`xdg`). Tests use `--config_prefix` to sandbox configs.
+- HTTP layer: `api` module builds a `reqwest` client with retry middleware (`reqwest-middleware`, `reqwest-retry`). DTOs serialize via `serde`/`serde_json`.
+- Domains: `tasks/`, `projects/`, `sections/`, `labels/` each expose subcommand params and ops (`add`, `list`, `view`, etc.). Command routing is in `command.rs`.
+- UX: interactive flows use `dialoguer` (fuzzy select) and `indicatif`; time handling via `chrono`/`chrono-tz`.
+- Errors: `color-eyre::Result` and `thiserror` for typed errors.
+
+## Feature Development Workflow
+- Add a subcommand: define `Params` + handler in the relevant domain (e.g., `tasks/<op>.rs`), wire it in `AuthCommands` dispatch.
+- Extend API: add request/response types under `api/`, use `serde` for (de)serialization, and reuse the shared client.
+- Tests: add integration tests under `tests/commands/`, mocking HTTP with `wiremock` and spawning the binary via `assert_cmd` (`Tool::init`).

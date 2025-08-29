@@ -8,11 +8,16 @@
 
 ## Build, Test, and Development Commands
 - Build: `cargo build` (release: `cargo build --release`).
-- Run: `cargo run -- <args>` (e.g., `cargo run -- list --nointeractive`).
+- Run: `cargo run -- <args>` (e.g., `cargo run -- list` for default non-interactive output).
 - Test: `cargo test` (verbose: `cargo test -- --nocapture`).
 - Format: `cargo fmt --all` (CI enforces `cargo fmt --check`).
 - Lint: `cargo clippy --all-targets -- -D warnings` (CI runs clippy).
 - Release (maintainers): `cargo dist` and `cargo release -x <level>` per CONTRIBUTING.
+
+## CLI Behavior
+- Default: `doist list` outputs tasks in non-interactive mode (suitable for piping/scripting)
+- `-i/--interactive`: Enables continuous interactive mode for task selection and operations
+- `-n/--nointeractive`: Explicitly forces non-interactive mode (supported for backward compatibility but now redundant)
 
 ## Coding Style & Naming Conventions
 - Edition: Rust 2024; use `rustfmt` defaults (4-space indentation).

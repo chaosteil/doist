@@ -42,6 +42,13 @@
 - Update work branch: `git checkout rob/patches && git merge --no-ff main` (or `git rebase main` then `git push --force-with-lease`).
 - New work: branch off `rob/patches` and PR back into `rob/patches`.
 
+## Issue & PR Management
+- **IMPORTANT**: All issues and PRs should be created on the fork (`robbarry/doist`), NOT upstream (`chaosteil/doist`).
+- Create issue: `gh issue create --repo robbarry/doist`
+- Create PR: Target `rob/patches` branch on the fork
+- List issues: `gh issue list --repo robbarry/doist`
+- We do not touch the upstream repository directly for now.
+
 ## Architecture Overview
 - Entry points: binary `src/bin/doist.rs` calls into `lib.rs`, which parses CLI via Clap in `command.rs` (`Arguments`, `Commands`, `AuthCommands`).
 - Config: `config::Config` loads/saves token and base URL (XDG dir via `dirs`/`xdg`). Tests use `--config_prefix` to sandbox configs.

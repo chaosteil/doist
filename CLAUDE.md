@@ -66,3 +66,8 @@
 - Add a subcommand: define `Params` + handler in the relevant domain (e.g., `tasks/<op>.rs`), wire it in `AuthCommands` dispatch.
 - Extend API: add request/response types under `api/`, use `serde` for (de)serialization, and reuse the shared client.
 - Tests: add integration tests under `tests/commands/`, mocking HTTP with `wiremock` and spawning the binary via `assert_cmd` (`Tool::init`).
+
+## Remote Installation
+- For installing doist on remote servers, see `docs/REMOTE_INSTALL.md`
+- Quick install: Build from source using Rust toolchain and cargo
+- Servers with doist installed: nonprofits, alvin

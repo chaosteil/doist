@@ -42,9 +42,15 @@ pub struct Params {
 }
 
 /// List lists the tasks of the current user accessing the gateway with the given filter.
-pub async fn list(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
-    if params.continuous && !params.nointeractive {
+pub async fn list(mut params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
+    // If explicitly continuous interactive, use interactive mode
+    if params.continuous {
         return list_interactive(params, gw, cfg).await;
+    }
+    // Default to non-interactive if neither flag was explicitly provided
+    // The nointeractive flag is now redundant but kept for backward compatibility
+    if !params.continuous && !params.nointeractive {
+        params.nointeractive = true;
     }
     match list_action(&params, gw, cfg).await {
         Ok(_) => Ok(()),

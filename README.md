@@ -65,26 +65,30 @@ Now you're authenticated and can use the other functions of the tool.
 
 ### List tasks
 
-Listing tasks and then working with them interactively is the recommended way to
-work with the CLI.
-
-By default the list view shows todays tasks and lets you work with them:
+Listing tasks is the primary way to work with the CLI. By default, tasks are 
+displayed in non-interactive mode, showing today's tasks:
 
 ```bash
 doist
 # Alternatively: `doist list` or `doist l`.
 ```
 
+This will print your tasks to the terminal, suitable for piping or scripting.
+
+For an interactive experience where you can search and select tasks to work with,
+use the interactive flag:
+
+```bash
+doist list --interactive
+# Alternatively: `doist l -i`
+```
+
 This will allow you to type parts of the output until you select the task you
 want to work with (fuzzy search). Selecting will allow you to select various
 other subcommands, like closing, changing due dates or even editing tasks.
 
-You can also disable interactive mode to pipe use the output somewhere else:
-
-```bash
-doist list --nointeractive
-# Alternatively: `doist l -n`
-```
+The `--nointeractive` flag (`-n`) is still supported for backward compatibility,
+but is now redundant since non-interactive is the default.
 
 By default all interactive commands have a filter applied to show the most
 relevant tasks. See the

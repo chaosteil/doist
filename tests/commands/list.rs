@@ -10,6 +10,10 @@ async fn list() -> Result<()> {
         vec!["list", "--nointeractive"],
         vec!["l", "--nointeractive"],
         vec!["--nointeractive"],
+        // Test default non-interactive behavior (no --nointeractive flag)
+        vec!["list"],
+        vec!["l"],
+        vec![],
     ] {
         let cmd = Tool::init().await?;
 

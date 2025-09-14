@@ -5,8 +5,8 @@ Concise instructions for LLMs to install, authenticate, and use the doist CLI sa
 ## Repo & Defaults
 - Fork: https://github.com/robbarry/doist (default branch: `rob/patches`).
 - Language: Rust (Edition 2024).
+- Default action: `list` tasks (non-interactive).
 - Default filter: shows today | overdue (not all tasks).
-- Current default mode: interactive. Use `-n/--nointeractive` for non‑interactive output. Note: a PR proposes flipping this default; rely on flags to be explicit.
 
 ## Install (local)
 ```bash
@@ -23,24 +23,63 @@ doist --version
 doist auth <API_TOKEN>
 ```
 
-## Core Commands (safe defaults)
-```bash
-# List (non‑interactive, suitable for piping)
-doist list -n
+## Core Commands
+The default command is `list`. All commands below require authentication.
 
-# List all tasks (not default)
+### Task Commands
+```bash
+# List tasks (default, non-interactive)
+doist list -n
+doist # same as above
+
+# List all tasks
 doist list -n -f all
 
-# Interactive (fuzzy select, actions menu)
-doist list -i
-
-# Add tasks
+# Add a task
 doist add "Review PR" -P Work -L code -p 2 -d today
 
-# View / close / edit by ID (from list output)
+# Create a task interactively
+doist create
+
+# View, edit, close, or comment on a task by ID
 doist view <task_id>
-doist close <task_id>
 doist edit <task_id>
+doist close <task_id>
+doist comment <task_id> "This is a comment"
+```
+
+### Project Commands (`doist projects ...`)
+Alias: `p`
+```bash
+# List projects
+doist projects list
+
+# Add, view, delete a project
+doist projects add "New Project"
+doist projects view <project_id>
+doist projects delete <project_id>
+```
+
+### Label Commands (`doist labels ...`)
+Alias: `lbl`
+```bash
+# List labels
+doist labels list
+
+# Add, delete a label
+doist labels add "new-label"
+doist labels delete <label_id>
+```
+
+### Section Commands (`doist projects sections ...`)
+Alias: `s` (under `projects`)
+```bash
+# List sections in a project
+doist projects sections --project-id <project_id> list
+
+# Add, delete a section
+doist projects sections --project-id <project_id> add "New Section"
+doist projects sections --project-id <project_id> delete <section_id>
 ```
 
 ## Useful Flags
@@ -61,8 +100,10 @@ doist edit <task_id>
 - Auth errors: re‑run `doist auth <API_TOKEN>`.
 - PATH issues: ensure `~/.cargo/bin` (or install path) is on `PATH`.
 
-## Development (brief)
+## Development
 - Run: `cargo run -- list -n`.
-- Test: `cargo test`; Lint/format: `cargo clippy` / `cargo fmt --all`.
+- Test: `cargo test`.
+- Format: `cargo fmt --all`.
+- Lint: `cargo clippy --all-targets -- -D warnings`.
 - Config sandbox for tests: add `--config_prefix <dir>` to isolate state.
 

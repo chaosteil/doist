@@ -30,7 +30,7 @@ pub async fn view(params: Params, gw: &Gateway) -> Result<()> {
     if !sections.is_empty() {
         println!("Sections:");
         for section in sections {
-            println!("{}", section)
+            println!("{section}")
         }
     }
     if project.comment_count > 0 {

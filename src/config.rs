@@ -49,9 +49,6 @@ fn default_filter() -> String {
 /// Describes errors that occur when loading from configuration storage.
 #[derive(Error, Debug)]
 pub enum ConfigError {
-    /// Is returned when the location of the configuraiton was inaccessible.
-    #[error("failed to place config into its directory")]
-    Location(#[from] xdg::BaseDirectoriesError),
     /// For errors that get returned when reading the config file.
     #[error("unable to work with config file {file}")]
     File {
@@ -59,7 +56,7 @@ pub enum ConfigError {
         file: PathBuf,
         /// The error that prevented from working with the config file.
         #[source]
-        io: std::io::Error,
+        io: Option<std::io::Error>,
     },
     /// For errors that happen during saving of the config file.
     #[error("unable to save config file")]
@@ -73,11 +70,35 @@ const CONFIG_FILE: &str = "config.toml";
 const XDG_PREFIX: &str = "doist";
 
 impl Config {
+    #[cfg(windows)]
+    fn config_dir(prefix: Option<&Path>) -> Result<PathBuf, ConfigError> {
+        dirs::config_dir()
+            .map(|mut path| {
+                path.push(prefix.and_then(|p| p.to_str()).unwrap_or(XDG_PREFIX));
+                path
+            })
+            .ok_or_else(|| ConfigError::File {
+                file: PathBuf::from(XDG_PREFIX),
+                io: None,
+            })
+    }
+
     /// Returns the name of the directories that are used for the configuration.
-    fn config_dir(
-        prefix: Option<&Path>,
-    ) -> Result<xdg::BaseDirectories, xdg::BaseDirectoriesError> {
+    #[cfg(not(windows))]
+    fn config_dir(prefix: Option<&Path>) -> Result<PathBuf, ConfigError> {
         xdg::BaseDirectories::with_prefix(prefix.and_then(|p| p.to_str()).unwrap_or(XDG_PREFIX))
+            .get_config_home()
+            .ok_or_else(|| ConfigError::File {
+                file: PathBuf::from(XDG_PREFIX),
+                io: None,
+            })
+    }
+
+    /// Returns the name of the config file that is used for configuration.
+    fn config_file(prefix: Option<&Path>) -> Result<PathBuf, ConfigError> {
+        let mut path = Self::config_dir(prefix)?;
+        path.push(CONFIG_FILE);
+        Ok(path)
     }
 
     /// Load configuration from storage, if it exists.
@@ -85,8 +106,8 @@ impl Config {
     /// Tries to load configuration from storage, but If configuration does not exist, it will
     /// initialize a default configuration.
     pub fn load() -> Result<Config, ConfigError> {
-        let file = Self::config_dir(None)?;
-        Self::load_from(file)
+        let file = Self::config_file(None)?;
+        Self::load_from(&file)
     }
 
     /// Load configuration from storage specified in another place, if it exists.
@@ -94,19 +115,23 @@ impl Config {
     /// Tries to load configuration from storage, but If configuration does not exist, it will
     /// initialize a default configuration.
     pub fn load_prefix(path: &Path) -> Result<Config, ConfigError> {
-        let file = Self::config_dir(Some(path))?;
-        let mut cfg = Self::load_from(file)?;
+        let file = Self::config_file(Some(path))?;
+        let mut cfg = Self::load_from(&file)?;
         cfg.prefix = Some(path.to_owned());
         Ok(cfg)
     }
 
-    fn load_from(dir: xdg::BaseDirectories) -> Result<Config, ConfigError> {
-        let file = dir.get_config_file(CONFIG_FILE);
-        let data = match fs::read_to_string(&file) {
+    fn load_from(file: &PathBuf) -> Result<Config, ConfigError> {
+        let data = match fs::read_to_string(file) {
             Ok(d) => d,
             Err(io) => match io.kind() {
                 std::io::ErrorKind::NotFound => "".to_string(),
-                _ => return Err(ConfigError::File { file, io })?,
+                _ => {
+                    return Err(ConfigError::File {
+                        file: file.clone(),
+                        io: Some(io),
+                    })?;
+                }
             },
         };
         let config = toml::from_str(&data).unwrap();
@@ -115,15 +140,16 @@ impl Config {
 
     /// Saves the current configuration to storage.
     pub fn save(&self) -> Result<(), ConfigError> {
-        let dir = Self::config_dir(self.prefix.as_deref())?;
-        let file = dir
-            .place_config_file(CONFIG_FILE)
+        let file = Self::config_file(self.prefix.as_deref())?;
+        file.parent()
+            .map(fs::create_dir_all)
+            .transpose()
             .map_err(|io| ConfigError::File {
-                file: dir.get_config_file(CONFIG_FILE),
-                io,
+                file: file.clone(),
+                io: Some(io),
             })?;
         let data = toml::to_string(self)?;
-        fs::write(&file, data).map_err(|io| ConfigError::File { file, io })?;
+        fs::write(&file, data).map_err(|io| ConfigError::File { file, io: Some(io) })?;
         Ok(())
     }
 

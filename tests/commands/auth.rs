@@ -4,6 +4,7 @@ use color_eyre::Result;
 use doist::config::Config;
 use std::process::Command;
 
+#[cfg(not(windows))]
 #[test]
 fn authentication() -> Result<()> {
     let tmp = assert_fs::TempDir::new()?;

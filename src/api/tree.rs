@@ -52,7 +52,7 @@ impl<T: Treeable> Ord for Tree<T> {
 
 impl<T: Treeable + std::cmp::PartialEq> PartialOrd for Tree<T> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.item.cmp(&other.item))
+        Some(self.cmp(other))
     }
 }
 

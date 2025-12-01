@@ -110,11 +110,11 @@ async fn list_interactive_action(
                     "Create Task...",
                     &format!(
                         "Set Filter{}...",
-                        filter
-                            .is_empty()
-                            .not()
-                            .then(|| format!(" ({})", filter.yellow()))
-                            .unwrap_or_default()
+                        if filter.is_empty().not() {
+                            format!(" ({})", filter.yellow())
+                        } else {
+                            Default::default()
+                        }
                     ),
                     "| Show All Tasks",
                     "| Inbox",

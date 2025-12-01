@@ -46,8 +46,10 @@ pub struct Project {
 /// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v2/#projects).
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum ViewStyle {
     /// Project as list view (default).
+    #[default]
     List,
     /// Project as board view.
     Board,
@@ -55,11 +57,6 @@ pub enum ViewStyle {
     Calendar,
 }
 
-impl Default for ViewStyle {
-    fn default() -> Self {
-        Self::List
-    }
-}
 
 impl Treeable for Project {
     type ID = ProjectID;

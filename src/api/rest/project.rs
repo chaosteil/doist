@@ -57,7 +57,6 @@ pub enum ViewStyle {
     Calendar,
 }
 
-
 impl Treeable for Project {
     type ID = ProjectID;
 

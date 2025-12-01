@@ -52,7 +52,7 @@ impl<T: Treeable> Ord for Tree<T> {
 
 impl<T: Treeable + std::cmp::PartialEq> PartialOrd for Tree<T> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.item.cmp(&other.item))
+        Some(self.cmp(other))
     }
 }
 
@@ -111,10 +111,10 @@ impl<T: Treeable + std::cmp::Eq> Tree<T> {
         let (top_level_items, mut subitems): (VecDeque<_>, VecDeque<_>) = items
             .into_iter()
             .map(|mut item| {
-                if let Some(parent) = item.parent_id() {
-                    if !ids.contains(&parent) {
-                        item.reset_parent();
-                    }
+                if let Some(parent) = item.parent_id()
+                    && !ids.contains(&parent)
+                {
+                    item.reset_parent();
                 }
                 Rc::new(RefCell::new(TreeBuilder {
                     item,

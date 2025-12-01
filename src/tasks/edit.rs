@@ -1,4 +1,4 @@
-use color_eyre::Result;
+use color_eyre::{Result, eyre::eyre};
 
 use crate::{
     api::{
@@ -44,13 +44,17 @@ impl Params {
 
 pub async fn edit(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
     let labels = {
-        let labels = params
-            .labels
-            .labels(&gw.labels().await?, labels::Selection::AllowEmpty)?;
-        if labels.is_empty() {
+        if params.labels.is_empty() {
             None
         } else {
-            Some(labels.into_iter().map(|l| l.name).collect())
+            let labels = params
+                .labels
+                .labels(&gw.labels().await?, labels::Selection::AllowEmpty)?;
+            if labels.is_empty() {
+                None
+            } else {
+                Some(labels.into_iter().map(|l| l.name).collect())
+            }
         }
     };
     let mut update = UpdateTask {
@@ -63,6 +67,45 @@ pub async fn edit(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
     if let Some(due) = params.due {
         update.due = Some(TaskDue::String(due))
     }
+    if update == UpdateTask::default() {
+        return Err(eyre!(
+            "No changes to apply. Use the CLI flags to set the desired fields."
+        ));
+    }
     gw.update(&params.task.task_id(gw, cfg).await?, &update)
         .await
+}
+
+#[cfg(test)]
+mod test {
+    use wiremock::MockServer;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn update_nochanges() {
+        let mock_server = MockServer::start().await;
+        let gw = Gateway::new("", &mock_server.uri().parse().unwrap());
+        let result = edit(
+            Params {
+                task: TaskOrInteractive::with_id("123".into()),
+                name: None,
+                due: None,
+                desc: None,
+                priority: None,
+                labels: LabelSelect::default(),
+            },
+            &gw,
+            &Config::default(),
+        )
+        .await;
+        mock_server.verify().await;
+        assert!(result.is_err(), "{:?}", result.unwrap_err());
+        let result = result.unwrap_err();
+        assert!(
+            result.to_string().contains("No changes to apply"),
+            "{:?}",
+            result
+        );
+    }
 }

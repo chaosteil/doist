@@ -244,7 +244,7 @@ impl Display for DueDateFormatter<'_> {
 }
 
 /// Human representation of the due date.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum TaskDue {
     /// Human readable representation of the date.
     #[serde(rename = "due_string")]
@@ -287,7 +287,7 @@ pub struct CreateTask {
 /// Command used with [`super::Gateway::update`] to update a [`Task`].
 ///
 /// Each field is optional, so if something exists, that part of the [`Task`] will get overwritten.
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Default)]
 pub struct UpdateTask {
     /// Overwrites [`Task::content`] if set.
     #[serde(skip_serializing_if = "Option::is_none")]

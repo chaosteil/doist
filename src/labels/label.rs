@@ -29,6 +29,10 @@ pub enum Selection {
 }
 
 impl LabelSelect {
+    pub fn is_empty(&self) -> bool {
+        self.label_ids.is_none() && self.label_names.is_none()
+    }
+
     pub fn labels(&self, labels: &[Label], selection: Selection) -> Result<Vec<Label>> {
         let label_ids = self.label_ids.clone().unwrap_or_default();
         let mut all_labels = labels

@@ -12,7 +12,7 @@ use crate::{
         state::{State, TaskMenu},
     },
 };
-use color_eyre::{eyre::WrapErr, Result};
+use color_eyre::{Result, eyre::WrapErr};
 use owo_colors::OwoColorize;
 use strum::{Display, FromRepr, VariantNames};
 

@@ -2,14 +2,14 @@ use std::time::Duration;
 
 use chrono::Utc;
 use color_eyre::{
-    eyre::{eyre, WrapErr},
     Result,
+    eyre::{WrapErr, eyre},
 };
 use lazy_static::lazy_static;
 use reqwest::{Client, StatusCode};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware, RequestBuilder};
-use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
-use serde::{de::DeserializeOwned, Serialize};
+use reqwest_retry::{RetryTransientMiddleware, policies::ExponentialBackoff};
+use serde::{Serialize, de::DeserializeOwned};
 use uuid::Uuid;
 
 use super::{
@@ -310,8 +310,8 @@ async fn handle_req<R: DeserializeOwned>(req: RequestBuilder) -> Result<Option<R
 #[cfg(test)]
 mod test {
     use wiremock::{
-        matchers::{bearer_token, method, path, query_param},
         Mock, MockServer, ResponseTemplate,
+        matchers::{bearer_token, method, path, query_param},
     };
 
     use super::*;

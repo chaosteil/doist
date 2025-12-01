@@ -1,4 +1,4 @@
-use color_eyre::{eyre::WrapErr, Result};
+use color_eyre::{Result, eyre::WrapErr};
 use owo_colors::{OwoColorize, Stream};
 
 use crate::{
@@ -31,13 +31,13 @@ pub async fn close(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
     gw.close(&id).await?;
     println!("closed task {}", id.clone().bright_red());
     let task = gw.task(&id).await?;
-    if !task.is_completed {
-        if let Some(due) = task.due {
-            if let Some(exact) = due.exact {
-                println!("next due date: {}", exact.datetime);
-            } else {
-                println!("next due date: {}", due.date);
-            }
+    if !task.is_completed
+        && let Some(due) = task.due
+    {
+        if let Some(exact) = due.exact {
+            println!("next due date: {}", exact.datetime);
+        } else {
+            println!("next due date: {}", due.date);
         }
     }
     Ok(())

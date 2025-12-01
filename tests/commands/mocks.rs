@@ -1,4 +1,4 @@
-use wiremock::{matchers, Mock, MockBuilder, ResponseTemplate};
+use wiremock::{Mock, MockBuilder, ResponseTemplate, matchers};
 
 use crate::setup::Tool;
 

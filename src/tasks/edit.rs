@@ -7,7 +7,7 @@ use crate::{
     },
     config::Config,
     labels::{self, LabelSelect},
-    tasks::{filter::TaskOrInteractive, Priority},
+    tasks::{Priority, filter::TaskOrInteractive},
 };
 
 #[derive(clap::Parser, Debug)]

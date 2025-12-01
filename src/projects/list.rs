@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::api::rest::{Gateway, Project, Task};
-use color_eyre::{eyre::eyre, Result};
+use color_eyre::{Result, eyre::eyre};
 
 #[derive(clap::Parser, Debug)]
 pub struct Params {

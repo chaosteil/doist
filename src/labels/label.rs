@@ -4,7 +4,7 @@ use crate::{
     api::rest::{FullLabel, Label},
     interactive,
 };
-use color_eyre::{eyre::eyre, Result};
+use color_eyre::{Result, eyre::eyre};
 
 use crate::api::rest::LabelID;
 
@@ -58,16 +58,18 @@ impl LabelSelect {
 
         if self.label_names.is_none() {
             if found_labels.is_empty() && selection == Selection::MustChoose {
-                return Ok(vec![all_labels
-                    .remove(
-                        &label_list[interactive::select(
-                            "Select label",
-                            &label_list.iter().map(FullLabel).collect::<Vec<_>>(),
-                        )?
-                        .ok_or_else(|| eyre!("no labels selected"))?]
-                        .id,
-                    )
-                    .unwrap()]);
+                return Ok(vec![
+                    all_labels
+                        .remove(
+                            &label_list[interactive::select(
+                                "Select label",
+                                &label_list.iter().map(FullLabel).collect::<Vec<_>>(),
+                            )?
+                            .ok_or_else(|| eyre!("no labels selected"))?]
+                            .id,
+                        )
+                        .unwrap(),
+                ]);
             }
             return Ok(found_labels);
         }

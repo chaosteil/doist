@@ -3,13 +3,14 @@ use wiremock::{Mock, MockBuilder, ResponseTemplate, matchers};
 use crate::setup::Tool;
 
 pub async fn mock_tasks(tool: &Tool, times: u64) {
-    mock_http(
+    mock_http_with_builder(
         tool,
         "GET",
-        "/api/v1/tasks",
+        "/api/v1/tasks/filter",
         200,
         super::fixtures::TASKS,
         times,
+        |mb| mb.and(matchers::query_param("query", "(today | overdue)")),
     )
     .await
 }
@@ -18,23 +19,24 @@ pub async fn mock_tasks_all(tool: &Tool, times: u64) {
     mock_http_with_builder(
         tool,
         "GET",
-        "/api/v1/tasks",
+        "/api/v1/tasks/filter",
         200,
         super::fixtures::TASKS,
         times,
-        |mb| mb.and(matchers::query_param("filter", "all")),
+        |mb| mb.and(matchers::query_param("query", "all")),
     )
     .await
 }
 
 pub async fn mock_tasks_partial(tool: &Tool, times: u64) {
-    mock_http(
+    mock_http_with_builder(
         tool,
         "GET",
-        "/api/v1/tasks",
+        "/api/v1/tasks/filter",
         200,
         super::fixtures::TASKS_PARTIAL,
         times,
+        |mb| mb.and(matchers::query_param("query", "(today | overdue)")),
     )
     .await
 }

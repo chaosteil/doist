@@ -16,6 +16,10 @@ pub type TaskID = String;
 /// UserID is the unique ID of a User.
 pub type UserID = String;
 
+fn default_task_url() -> Url {
+    "https://todoist.com/".parse().unwrap()
+}
+
 /// Task describes a Task from the Todoist API.
 ///
 /// Taken from the [Developer Documentation](https://developer.todoist.com/api/v1#tag/Tasks).
@@ -44,11 +48,14 @@ pub struct Task {
     /// The due date of the Task.
     pub due: Option<DueDate>,
     /// Links the Task to a URL in the Todoist UI.
+    #[serde(default = "default_task_url")]
     pub url: Url,
     /// How many comments are written for this Task.
     pub note_count: usize,
-    /// Who created this task.
+    /// The user context this task belongs to.
     pub user_id: UserID,
+    /// Who added/created this task.
+    pub added_by_uid: Option<UserID>,
     /// Who this task is assigned to.
     pub responsible_uid: Option<UserID>,
     /// Who assigned this task to the [`Task::assignee`]
@@ -332,6 +339,7 @@ impl Task {
             url: "http://localhost".to_string().parse().unwrap(),
             note_count: 0,
             user_id: "0".to_string(),
+            added_by_uid: None,
             responsible_uid: None,
             assigned_by_uid: None,
             added_at: Utc::now(),

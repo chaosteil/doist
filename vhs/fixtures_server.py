@@ -19,8 +19,11 @@ sections = json_read("sections.json")
 url_map = {
     "/api/v1/tasks": {
         "/": tasks,
-        "?filter=%28today+%7C+overdue%29": tasks,
         "/7000003": tasks[3]
+    },
+    "/api/v1/tasks/filter": {
+        "?query=%28today+%7C+overdue%29": tasks,
+        "?query=all": tasks,
     },
     "/api/v1/labels": {
         "/": labels,
@@ -52,6 +55,11 @@ def filter_completed():
         if not isinstance(v, list):
             continue
         url_map["/api/v1/tasks"][k] = \
+            list(filter(lambda t: t["checked"] == False, tasks))
+    for k, v in url_map["/api/v1/tasks/filter"].items():
+        if not isinstance(v, list):
+            continue
+        url_map["/api/v1/tasks/filter"][k] = \
             list(filter(lambda t: t["checked"] == False, tasks))
 
 

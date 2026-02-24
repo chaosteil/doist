@@ -68,24 +68,27 @@ impl Gateway {
     ///
     /// * `filter` - a filter query as described in the [documentation](https://todoist.com/help/articles/205248842).
     pub async fn tasks(&self, filter: Option<&str>) -> Result<Vec<Task>> {
-        let params = filter
-            .map(|f| vec![("filter".to_string(), f.to_string())])
-            .unwrap_or_default();
-        self.get_list("api/v1/tasks", params)
+        if let Some(filter) = filter {
+            self.get_list(
+                "api/v1/tasks/filter",
+                vec![("query".to_string(), filter.to_string())],
+            )
             .await
             .wrap_err("unable to get tasks")
+        } else {
+            self.get_list("api/v1/tasks", vec![])
+                .await
+                .wrap_err("unable to get tasks")
+        }
     }
 
     /// Closes a task.
     ///
     /// Equivalent to pushing the circle in the UI.
     pub async fn close(&self, id: &TaskID) -> Result<()> {
-        self.post_empty(
-            &format!("api/v1/tasks/{id}/close"),
-            &serde_json::Map::new(),
-        )
-        .await
-        .wrap_err("unable to close task")?;
+        self.post_empty(&format!("api/v1/tasks/{id}/close"), &serde_json::Map::new())
+            .await
+            .wrap_err("unable to close task")?;
         Ok(())
     }
 
@@ -422,6 +425,25 @@ mod test {
     }
 
     #[tokio::test]
+    async fn tasks_with_filter() -> Result<()> {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/tasks/filter"))
+            .and(query_param("query", "(today | overdue)"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(paged(vec![
+                create_task("123", "456", "hello there"),
+                create_task("234", "567", "general kenobi"),
+            ])))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let tasks = gw.tasks(Some("(today | overdue)")).await.unwrap();
+        mock_server.verify().await;
+        assert_eq!(tasks.len(), 2);
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn close_task() {
         let mock_server = MockServer::start().await;
         Mock::given(method("POST"))
@@ -503,12 +525,10 @@ mod test {
         let mock_server = MockServer::start().await;
         Mock::given(method("GET"))
             .and(path("/api/v1/projects"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_json(paged(vec![
-                    Project::new("123", "one"),
-                    Project::new("456", "two"),
-                ])),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(paged(vec![
+                Project::new("123", "one"),
+                Project::new("456", "two"),
+            ])))
             .mount(&mock_server)
             .await;
         let gw = gateway("", &mock_server);
@@ -537,12 +557,10 @@ mod test {
         let mock_server = MockServer::start().await;
         Mock::given(method("GET"))
             .and(path("/api/v1/labels"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_json(paged(vec![
-                    Label::new("123", "one"),
-                    Label::new("456", "two"),
-                ])),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(paged(vec![
+                Label::new("123", "one"),
+                Label::new("456", "two"),
+            ])))
             .mount(&mock_server)
             .await;
         let gw = gateway("", &mock_server);

@@ -37,7 +37,5 @@ where
         return Ok(dt.date_naive());
     }
 
-    Err(de::Error::custom(format!(
-        "invalid due.date format: {raw}"
-    )))
+    Err(de::Error::custom(format!("invalid due.date format: {raw}")))
 }

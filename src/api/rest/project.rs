@@ -32,8 +32,9 @@ pub struct Project {
     /// Toggle to mark this project as a favorite.
     pub is_favorite: bool,
     /// URL to the Todoist UI.
-    pub url: Url,
+    pub url: Option<Url>,
     /// View style to show in todoist clients.
+    #[serde(default)]
     pub view_style: ViewStyle,
 }
 
@@ -114,7 +115,7 @@ impl Project {
             child_order: 0,
             inbox_project: false,
             is_favorite: false,
-            url: "http://localhost".to_string().parse().unwrap(),
+            url: Some("http://localhost".to_string().parse().unwrap()),
             view_style: Default::default(),
         }
     }

@@ -1,4 +1,4 @@
-[
+{"results": [
 	{
 		"id": "1999991",
 		"name": "one",
@@ -13,4 +13,4 @@
 		"color": "blue",
 		"is_favorite": false
 	}
-]
+], "next_cursor": null}

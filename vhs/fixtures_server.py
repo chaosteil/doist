@@ -17,18 +17,21 @@ projects = json_read("projects.json")
 sections = json_read("sections.json")
 
 url_map = {
-    "/rest/v2/tasks": {
+    "/api/v1/tasks": {
         "/": tasks,
-        "?filter=%28today+%7C+overdue%29": tasks,
         "/7000003": tasks[3]
     },
-    "/rest/v2/labels": {
+    "/api/v1/tasks/filter": {
+        "?query=%28today+%7C+overdue%29": tasks,
+        "?query=all": tasks,
+    },
+    "/api/v1/labels": {
         "/": labels,
     },
-    "/rest/v2/projects": {
+    "/api/v1/projects": {
         "/": projects,
     },
-    "/rest/v2/sections": {
+    "/api/v1/sections": {
         "/": sections,
     },
 }
@@ -48,11 +51,16 @@ for k, v in url_map.items():
 
 
 def filter_completed():
-    for k, v in url_map["/rest/v2/tasks"].items():
+    for k, v in url_map["/api/v1/tasks"].items():
         if not isinstance(v, list):
             continue
-        url_map["/rest/v2/tasks"][k] = \
-            list(filter(lambda t: t["is_completed"] == False, tasks))
+        url_map["/api/v1/tasks"][k] = \
+            list(filter(lambda t: t["checked"] == False, tasks))
+    for k, v in url_map["/api/v1/tasks/filter"].items():
+        if not isinstance(v, list):
+            continue
+        url_map["/api/v1/tasks/filter"][k] = \
+            list(filter(lambda t: t["checked"] == False, tasks))
 
 
 class HTTPHandler(http.server.BaseHTTPRequestHandler):
@@ -65,7 +73,10 @@ class HTTPHandler(http.server.BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.end_headers()
-                self.wfile.write(json.dumps(v[suffix]).encode())
+                data = v[suffix]
+                if isinstance(data, list):
+                    data = {"results": data, "next_cursor": None}
+                self.wfile.write(json.dumps(data).encode())
                 return
         self.send_response(404)
         self.end_headers()
@@ -85,7 +96,7 @@ class HTTPHandler(http.server.BaseHTTPRequestHandler):
                 tasks[1]["content"] = content
 
         if self.path.endswith("/7000003/close"):
-            tasks[3]["is_completed"] = True
+            tasks[3]["checked"] = True
             filter_completed()
 
         self.send_response(204)

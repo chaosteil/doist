@@ -33,8 +33,8 @@ pub async fn view(params: Params, gw: &Gateway) -> Result<()> {
             println!("{section}")
         }
     }
-    if project.comment_count > 0 {
-        let comments = gw.project_comments(&project.id).await?;
+    let comments = gw.project_comments(&project.id).await?;
+    if !comments.is_empty() {
         comments::list(&comments)
     }
     Ok(())

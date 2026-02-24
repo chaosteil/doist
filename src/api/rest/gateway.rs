@@ -9,8 +9,15 @@ use lazy_static::lazy_static;
 use reqwest::{Client, StatusCode};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware, RequestBuilder};
 use reqwest_retry::{RetryTransientMiddleware, policies::ExponentialBackoff};
-use serde::{Serialize, de::DeserializeOwned};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use uuid::Uuid;
+
+/// Wrapper for paginated list responses from the Todoist API v1.
+#[derive(Deserialize)]
+struct PaginatedResponse<T> {
+    results: Vec<T>,
+    next_cursor: Option<String>,
+}
 
 use super::{
     Comment, CreateComment, CreateLabel, CreateProject, CreateSection, CreateTask, Label, LabelID,
@@ -52,7 +59,7 @@ impl Gateway {
     ///
     /// * `id` - the ID as used by the Todoist API.
     pub async fn task(&self, id: &TaskID) -> Result<Task> {
-        self.get::<(), _>(&format!("rest/v2/tasks/{id}"), None)
+        self.get::<(), _>(&format!("api/v1/tasks/{id}"), None)
             .await
             .wrap_err("unable to get task")
     }
@@ -61,24 +68,27 @@ impl Gateway {
     ///
     /// * `filter` - a filter query as described in the [documentation](https://todoist.com/help/articles/205248842).
     pub async fn tasks(&self, filter: Option<&str>) -> Result<Vec<Task>> {
-        self.get(
-            "rest/v2/tasks",
-            filter.map(|filter| vec![("filter", filter)]),
-        )
-        .await
-        .wrap_err("unable to get tasks")
+        if let Some(filter) = filter {
+            self.get_list(
+                "api/v1/tasks/filter",
+                vec![("query".to_string(), filter.to_string())],
+            )
+            .await
+            .wrap_err("unable to get tasks")
+        } else {
+            self.get_list("api/v1/tasks", vec![])
+                .await
+                .wrap_err("unable to get tasks")
+        }
     }
 
     /// Closes a task.
     ///
     /// Equivalent to pushing the circle in the UI.
     pub async fn close(&self, id: &TaskID) -> Result<()> {
-        self.post_empty(
-            &format!("rest/v2/tasks/{id}/close"),
-            &serde_json::Map::new(),
-        )
-        .await
-        .wrap_err("unable to close task")?;
+        self.post_empty(&format!("api/v1/tasks/{id}/close"), &serde_json::Map::new())
+            .await
+            .wrap_err("unable to close task")?;
         Ok(())
     }
 
@@ -102,7 +112,7 @@ impl Gateway {
 
     /// Creates a task by calling the Todoist API.
     pub async fn create(&self, task: &CreateTask) -> Result<Task> {
-        self.post("rest/v2/tasks", task)
+        self.post("api/v1/tasks", task)
             .await
             .wrap_err("unable to create task")?
             .ok_or_else(|| eyre!("unable to create task"))
@@ -110,7 +120,7 @@ impl Gateway {
 
     /// Updates a task with the data as specified in UpdateTask.
     pub async fn update(&self, id: &TaskID, task: &UpdateTask) -> Result<()> {
-        self.post_empty(&format!("rest/v2/tasks/{id}"), &task)
+        self.post_empty(&format!("api/v1/tasks/{id}"), &task)
             .await
             .wrap_err("unable to update task")?;
         Ok(())
@@ -118,42 +128,48 @@ impl Gateway {
 
     /// Returns the list of Projects.
     pub async fn projects(&self) -> Result<Vec<Project>> {
-        self.get::<(), _>("rest/v2/projects", None)
+        self.get_list("api/v1/projects", vec![])
             .await
             .wrap_err("unable to get projects")
     }
 
     /// Returns the list of all Sections.
     pub async fn sections(&self) -> Result<Vec<Section>> {
-        self.get::<(), _>("rest/v2/sections", None)
+        self.get_list("api/v1/sections", vec![])
             .await
             .wrap_err("unable to get sections")
     }
 
     /// Returns the list of all Labels.
     pub async fn labels(&self) -> Result<Vec<Label>> {
-        self.get::<(), _>("rest/v2/labels", None)
+        self.get_list("api/v1/labels", vec![])
             .await
             .wrap_err("unable to get labels")
     }
 
     /// Returns the list of all comments attached to the given Project.
     pub async fn project_comments(&self, id: &ProjectID) -> Result<Vec<Comment>> {
-        self.get("rest/v2/comments", Some(&[("project_id", id)]))
-            .await
-            .wrap_err("unable to get comments")
+        self.get_list(
+            "api/v1/comments",
+            vec![("project_id".to_string(), id.to_string())],
+        )
+        .await
+        .wrap_err("unable to get comments")
     }
 
     /// Returns the list of all comments attached to the given Task.
     pub async fn task_comments(&self, id: &TaskID) -> Result<Vec<Comment>> {
-        self.get("rest/v2/comments", Some(&[("task_id", id)]))
-            .await
-            .wrap_err("unable to get comments")
+        self.get_list(
+            "api/v1/comments",
+            vec![("task_id".to_string(), id.to_string())],
+        )
+        .await
+        .wrap_err("unable to get comments")
     }
 
     /// Creates a comment by calling the API.
     pub async fn create_comment(&self, comment: &CreateComment) -> Result<Comment> {
-        self.post("rest/v2/comments", comment)
+        self.post("api/v1/comments", comment)
             .await
             .wrap_err("unable to create comment")?
             .ok_or_else(|| eyre!("unable to create comment"))
@@ -163,14 +179,14 @@ impl Gateway {
     ///
     /// * `id` - the ID as used by the Todoist API.
     pub async fn project(&self, id: &ProjectID) -> Result<Project> {
-        self.get::<(), _>(&format!("rest/v2/projects/{id}"), None)
+        self.get::<(), _>(&format!("api/v1/projects/{id}"), None)
             .await
             .wrap_err("unable to get project")
     }
 
     /// Creates a project by calling the Todoist API.
     pub async fn create_project(&self, project: &CreateProject) -> Result<Project> {
-        self.post("rest/v2/projects", project)
+        self.post("api/v1/projects", project)
             .await
             .wrap_err("unable to create project")?
             .ok_or_else(|| eyre!("unable to create project"))
@@ -178,7 +194,7 @@ impl Gateway {
 
     /// Deletes a project by calling the Todoist API.
     pub async fn delete_project(&self, project: &ProjectID) -> Result<()> {
-        self.delete(&format!("rest/v2/projects/{project}"))
+        self.delete(&format!("api/v1/projects/{project}"))
             .await
             .wrap_err("unable to delete project")
     }
@@ -187,14 +203,14 @@ impl Gateway {
     ///
     /// * `id` - the ID as used by the Todoist API.
     pub async fn section(&self, id: &SectionID) -> Result<Section> {
-        self.get::<(), _>(&format!("rest/v2/sections/{id}"), None)
+        self.get::<(), _>(&format!("api/v1/sections/{id}"), None)
             .await
             .wrap_err("unable to get section")
     }
 
     /// Creates a section by calling the Todoist API.
     pub async fn create_section(&self, section: &CreateSection) -> Result<Section> {
-        self.post("rest/v2/sections", section)
+        self.post("api/v1/sections", section)
             .await
             .wrap_err("unable to create section")?
             .ok_or_else(|| eyre!("unable to create section"))
@@ -202,7 +218,7 @@ impl Gateway {
 
     /// Deletes a section by calling the Todoist API.
     pub async fn delete_section(&self, section: &SectionID) -> Result<()> {
-        self.delete(&format!("rest/v2/sections/{section}"))
+        self.delete(&format!("api/v1/sections/{section}"))
             .await
             .wrap_err("unable to delete section")
     }
@@ -211,14 +227,14 @@ impl Gateway {
     ///
     /// * `id` - the ID as used by the Todoist API.
     pub async fn label(&self, id: &LabelID) -> Result<Label> {
-        self.get::<(), _>(&format!("rest/v2/labels/{id}"), None)
+        self.get::<(), _>(&format!("api/v1/labels/{id}"), None)
             .await
             .wrap_err("unable to get label")
     }
 
     /// Creates a label by calling the Todoist API.
     pub async fn create_label(&self, label: &CreateLabel) -> Result<Label> {
-        self.post("rest/v2/labels", label)
+        self.post("api/v1/labels", label)
             .await
             .wrap_err("unable to create label")?
             .ok_or_else(|| eyre!("unable to create label"))
@@ -226,7 +242,7 @@ impl Gateway {
 
     /// Deletes a label by calling the Todoist API.
     pub async fn delete_label(&self, label: &LabelID) -> Result<()> {
-        self.delete(&format!("rest/v2/labels/{label}"))
+        self.delete(&format!("api/v1/labels/{label}"))
             .await
             .wrap_err("unable to delete label")
     }
@@ -249,6 +265,34 @@ impl Gateway {
         handle_req(req)
             .await?
             .ok_or_else(|| eyre!("Invalid response from API"))
+    }
+
+    /// Makes paginated GET requests to a list endpoint, collecting all results automatically.
+    async fn get_list<R: DeserializeOwned>(
+        &self,
+        path: &str,
+        mut params: Vec<(String, String)>,
+    ) -> Result<Vec<R>> {
+        let mut all_results = Vec::new();
+        loop {
+            let req = self
+                .client
+                .get(self.url.join(path)?)
+                .bearer_auth(&self.token)
+                .query(&params);
+            let page = handle_req::<PaginatedResponse<R>>(req)
+                .await?
+                .ok_or_else(|| eyre!("Invalid response from API"))?;
+            all_results.extend(page.results);
+            match page.next_cursor {
+                Some(cursor) => {
+                    params.retain(|(k, _)| k != "cursor");
+                    params.push(("cursor".to_string(), cursor));
+                }
+                None => break,
+            }
+        }
+        Ok(all_results)
     }
 
     /// Sends a POST request to the Todoist API with the given content.
@@ -309,6 +353,7 @@ async fn handle_req<R: DeserializeOwned>(req: RequestBuilder) -> Result<Option<R
 
 #[cfg(test)]
 mod test {
+    use serde::Serialize;
     use wiremock::{
         Mock, MockServer, ResponseTemplate,
         matchers::{bearer_token, method, path, query_param},
@@ -318,12 +363,22 @@ mod test {
     use crate::api::rest::{Task, ThreadID};
     use color_eyre::Result;
 
+    /// Wraps items in the paginated response format the API v1 uses for list endpoints.
+    #[derive(Serialize)]
+    struct PagedList<T: Serialize> {
+        results: Vec<T>,
+    }
+
+    fn paged<T: Serialize>(items: Vec<T>) -> PagedList<T> {
+        PagedList { results: items }
+    }
+
     #[tokio::test]
     async fn has_authentication() {
         let mock_server = MockServer::start().await;
         Mock::given(method("GET"))
             .and(bearer_token("hellothere"))
-            .and(path("/rest/v2/tasks/123"))
+            .and(path("/api/v1/tasks/123"))
             .respond_with(
                 ResponseTemplate::new(200).set_body_json(create_task("123", "456", "hello")),
             )
@@ -338,7 +393,7 @@ mod test {
     async fn task() {
         let mock_server = MockServer::start().await;
         Mock::given(method("GET"))
-            .and(path("/rest/v2/tasks/123"))
+            .and(path("/api/v1/tasks/123"))
             .respond_with(
                 ResponseTemplate::new(200).set_body_json(create_task("123", "456", "hello")),
             )
@@ -355,11 +410,11 @@ mod test {
     async fn tasks() -> Result<()> {
         let mock_server = MockServer::start().await;
         Mock::given(method("GET"))
-            .and(path("/rest/v2/tasks"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(&[
+            .and(path("/api/v1/tasks"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(paged(vec![
                 create_task("123", "456", "hello there"),
                 create_task("234", "567", "general kenobi"),
-            ]))
+            ])))
             .mount(&mock_server)
             .await;
         let gw = gateway("", &mock_server);
@@ -370,10 +425,29 @@ mod test {
     }
 
     #[tokio::test]
+    async fn tasks_with_filter() -> Result<()> {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/v1/tasks/filter"))
+            .and(query_param("query", "(today | overdue)"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(paged(vec![
+                create_task("123", "456", "hello there"),
+                create_task("234", "567", "general kenobi"),
+            ])))
+            .mount(&mock_server)
+            .await;
+        let gw = gateway("", &mock_server);
+        let tasks = gw.tasks(Some("(today | overdue)")).await.unwrap();
+        mock_server.verify().await;
+        assert_eq!(tasks.len(), 2);
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn close_task() {
         let mock_server = MockServer::start().await;
         Mock::given(method("POST"))
-            .and(path("/rest/v2/tasks/123/close"))
+            .and(path("/api/v1/tasks/123/close"))
             .respond_with(ResponseTemplate::new(204))
             .mount(&mock_server)
             .await;
@@ -386,12 +460,12 @@ mod test {
     async fn complete_task() {
         let mock_server = MockServer::start().await;
         Mock::given(method("POST"))
-            .and(path("/rest/v2/tasks/123"))
+            .and(path("/api/v1/tasks/123"))
             .respond_with(ResponseTemplate::new(204))
             .mount(&mock_server)
             .await;
         Mock::given(method("POST"))
-            .and(path("/rest/v2/tasks/123/close"))
+            .and(path("/api/v1/tasks/123/close"))
             .respond_with(ResponseTemplate::new(204))
             .mount(&mock_server)
             .await;
@@ -405,7 +479,7 @@ mod test {
     async fn update_task() {
         let mock_server = MockServer::start().await;
         Mock::given(method("POST"))
-            .and(path("/rest/v2/tasks/123"))
+            .and(path("/api/v1/tasks/123"))
             .respond_with(ResponseTemplate::new(204))
             .mount(&mock_server)
             .await;
@@ -427,7 +501,7 @@ mod test {
     async fn creates_task() {
         let mock_server = MockServer::start().await;
         Mock::given(method("POST"))
-            .and(path("/rest/v2/tasks"))
+            .and(path("/api/v1/tasks"))
             .respond_with(
                 ResponseTemplate::new(200).set_body_json(create_task("123", "456", "hello")),
             )
@@ -450,11 +524,11 @@ mod test {
     async fn lists_projects() {
         let mock_server = MockServer::start().await;
         Mock::given(method("GET"))
-            .and(path("/rest/v2/projects"))
-            .respond_with(
-                ResponseTemplate::new(200)
-                    .set_body_json(vec![Project::new("123", "one"), Project::new("456", "two")]),
-            )
+            .and(path("/api/v1/projects"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(paged(vec![
+                Project::new("123", "one"),
+                Project::new("456", "two"),
+            ])))
             .mount(&mock_server)
             .await;
         let gw = gateway("", &mock_server);
@@ -467,7 +541,7 @@ mod test {
     async fn show_project() {
         let mock_server = MockServer::start().await;
         Mock::given(method("GET"))
-            .and(path("/rest/v2/projects/123"))
+            .and(path("/api/v1/projects/123"))
             .respond_with(ResponseTemplate::new(200).set_body_json(Project::new("123", "one")))
             .mount(&mock_server)
             .await;
@@ -482,11 +556,11 @@ mod test {
     async fn lists_labels() {
         let mock_server = MockServer::start().await;
         Mock::given(method("GET"))
-            .and(path("/rest/v2/labels"))
-            .respond_with(
-                ResponseTemplate::new(200)
-                    .set_body_json(vec![Label::new("123", "one"), Label::new("456", "two")]),
-            )
+            .and(path("/api/v1/labels"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(paged(vec![
+                Label::new("123", "one"),
+                Label::new("456", "two"),
+            ])))
             .mount(&mock_server)
             .await;
         let gw = gateway("", &mock_server);
@@ -499,7 +573,7 @@ mod test {
     async fn show_label() {
         let mock_server = MockServer::start().await;
         Mock::given(method("GET"))
-            .and(path("/rest/v2/labels/123"))
+            .and(path("/api/v1/labels/123"))
             .respond_with(ResponseTemplate::new(200).set_body_json(Label::new("123", "one")))
             .mount(&mock_server)
             .await;
@@ -514,11 +588,11 @@ mod test {
     async fn lists_sections() {
         let mock_server = MockServer::start().await;
         Mock::given(method("GET"))
-            .and(path("/rest/v2/sections"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(vec![
+            .and(path("/api/v1/sections"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(paged(vec![
                 Section::new("123", "1", "one"),
                 Section::new("456", "2", "two"),
-            ]))
+            ])))
             .mount(&mock_server)
             .await;
         let gw = gateway("", &mock_server);
@@ -531,7 +605,7 @@ mod test {
     async fn show_section() {
         let mock_server = MockServer::start().await;
         Mock::given(method("GET"))
-            .and(path("/rest/v2/sections/123"))
+            .and(path("/api/v1/sections/123"))
             .respond_with(ResponseTemplate::new(200).set_body_json(Section::new("123", "1", "one")))
             .mount(&mock_server)
             .await;
@@ -546,7 +620,7 @@ mod test {
     async fn create_project_comment() {
         let mock_server = MockServer::start().await;
         Mock::given(method("POST"))
-            .and(path("/rest/v2/comments"))
+            .and(path("/api/v1/comments"))
             .respond_with(ResponseTemplate::new(200).set_body_json(create_comment(
                 "1",
                 ThreadID::Project {
@@ -575,7 +649,7 @@ mod test {
     async fn create_task_comment() {
         let mock_server = MockServer::start().await;
         Mock::given(method("POST"))
-            .and(path("/rest/v2/comments"))
+            .and(path("/api/v1/comments"))
             .respond_with(ResponseTemplate::new(200).set_body_json(create_comment(
                 "1",
                 ThreadID::Task {
@@ -604,9 +678,9 @@ mod test {
     async fn show_comments() {
         let mock_server = MockServer::start().await;
         Mock::given(method("GET"))
-            .and(path("/rest/v2/comments"))
+            .and(path("/api/v1/comments"))
             .and(query_param("project_id", "123"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(vec![
+            .respond_with(ResponseTemplate::new(200).set_body_json(paged(vec![
                 create_comment(
                     "1",
                     ThreadID::Project {
@@ -621,13 +695,13 @@ mod test {
                     },
                     "there",
                 ),
-            ]))
+            ])))
             .mount(&mock_server)
             .await;
         Mock::given(method("GET"))
-            .and(path("/rest/v2/comments"))
+            .and(path("/api/v1/comments"))
             .and(query_param("task_id", "456"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(vec![
+            .respond_with(ResponseTemplate::new(200).set_body_json(paged(vec![
                 create_comment(
                     "1",
                     ThreadID::Task {
@@ -642,7 +716,7 @@ mod test {
                     },
                     "way",
                 ),
-            ]))
+            ])))
             .mount(&mock_server)
             .await;
         let gw = gateway("", &mock_server);
@@ -659,7 +733,7 @@ mod test {
     async fn creates_label() {
         let mock_server = MockServer::start().await;
         Mock::given(method("POST"))
-            .and(path("/rest/v2/labels"))
+            .and(path("/api/v1/labels"))
             .respond_with(ResponseTemplate::new(200).set_body_json(Label::new("123", "hello")))
             .mount(&mock_server)
             .await;
@@ -679,7 +753,7 @@ mod test {
     async fn delete_label() {
         let mock_server = MockServer::start().await;
         Mock::given(method("DELETE"))
-            .and(path("/rest/v2/labels/123"))
+            .and(path("/api/v1/labels/123"))
             .respond_with(ResponseTemplate::new(204))
             .mount(&mock_server)
             .await;
@@ -692,7 +766,7 @@ mod test {
     async fn creates_project() {
         let mock_server = MockServer::start().await;
         Mock::given(method("POST"))
-            .and(path("/rest/v2/projects"))
+            .and(path("/api/v1/projects"))
             .respond_with(ResponseTemplate::new(200).set_body_json(Project::new("123", "hello")))
             .mount(&mock_server)
             .await;
@@ -712,7 +786,7 @@ mod test {
     async fn delete_project() {
         let mock_server = MockServer::start().await;
         Mock::given(method("DELETE"))
-            .and(path("/rest/v2/projects/123"))
+            .and(path("/api/v1/projects/123"))
             .respond_with(ResponseTemplate::new(204))
             .mount(&mock_server)
             .await;
@@ -729,7 +803,7 @@ mod test {
     async fn creates_section() {
         let mock_server = MockServer::start().await;
         Mock::given(method("POST"))
-            .and(path("/rest/v2/sections"))
+            .and(path("/api/v1/sections"))
             .respond_with(
                 ResponseTemplate::new(200).set_body_json(Section::new("123", "456", "heya")),
             )
@@ -753,7 +827,7 @@ mod test {
     async fn delete_section() {
         let mock_server = MockServer::start().await;
         Mock::given(method("DELETE"))
-            .and(path("/rest/v2/sections/123"))
+            .and(path("/api/v1/sections/123"))
             .respond_with(ResponseTemplate::new(204))
             .mount(&mock_server)
             .await;
@@ -770,9 +844,14 @@ mod test {
     }
 
     fn create_comment(id: &str, tid: ThreadID, content: &str) -> Comment {
+        let (item_id, project_id) = match tid {
+            ThreadID::Task { task_id } => (Some(task_id), None),
+            ThreadID::Project { project_id } => (None, Some(project_id)),
+        };
         Comment {
             id: id.to_string(),
-            thread: tid,
+            item_id,
+            project_id,
             posted_at: Utc::now(),
             content: content.to_string(),
             attachment: None,

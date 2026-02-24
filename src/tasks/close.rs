@@ -31,7 +31,7 @@ pub async fn close(params: Params, gw: &Gateway, cfg: &Config) -> Result<()> {
     gw.close(&id).await?;
     println!("closed task {}", id.clone().bright_red());
     let task = gw.task(&id).await?;
-    if !task.is_completed
+    if !task.checked
         && let Some(due) = task.due
     {
         if let Some(exact) = due.exact {

@@ -3,13 +3,14 @@ use wiremock::{Mock, MockBuilder, ResponseTemplate, matchers};
 use crate::setup::Tool;
 
 pub async fn mock_tasks(tool: &Tool, times: u64) {
-    mock_http(
+    mock_http_with_builder(
         tool,
         "GET",
-        "/rest/v2/tasks",
+        "/api/v1/tasks/filter",
         200,
         super::fixtures::TASKS,
         times,
+        |mb| mb.and(matchers::query_param("query", "(today | overdue)")),
     )
     .await
 }
@@ -18,23 +19,24 @@ pub async fn mock_tasks_all(tool: &Tool, times: u64) {
     mock_http_with_builder(
         tool,
         "GET",
-        "/rest/v2/tasks",
+        "/api/v1/tasks/filter",
         200,
         super::fixtures::TASKS,
         times,
-        |mb| mb.and(matchers::query_param("filter", "all")),
+        |mb| mb.and(matchers::query_param("query", "all")),
     )
     .await
 }
 
 pub async fn mock_tasks_partial(tool: &Tool, times: u64) {
-    mock_http(
+    mock_http_with_builder(
         tool,
         "GET",
-        "/rest/v2/tasks",
+        "/api/v1/tasks/filter",
         200,
         super::fixtures::TASKS_PARTIAL,
         times,
+        |mb| mb.and(matchers::query_param("query", "(today | overdue)")),
     )
     .await
 }
@@ -43,7 +45,7 @@ pub async fn mock_labels(tool: &Tool, times: u64) {
     mock_http(
         tool,
         "GET",
-        "/rest/v2/labels",
+        "/api/v1/labels",
         200,
         super::fixtures::LABELS,
         times,
@@ -55,7 +57,7 @@ pub async fn mock_projects(tool: &Tool, times: u64) {
     mock_http(
         tool,
         "GET",
-        "/rest/v2/projects",
+        "/api/v1/projects",
         200,
         super::fixtures::PROJECTS,
         times,
@@ -67,7 +69,7 @@ pub async fn mock_sections(tool: &Tool, times: u64) {
     mock_http(
         tool,
         "GET",
-        "/rest/v2/sections",
+        "/api/v1/sections",
         200,
         super::fixtures::SECTIONS,
         times,

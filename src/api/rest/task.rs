@@ -1,7 +1,7 @@
 use core::fmt;
 use std::fmt::Display;
 
-use crate::api::serialize::todoist_rfc3339;
+use crate::api::serialize::{todoist_due_date, todoist_rfc3339};
 use crate::api::tree::Treeable;
 use chrono::{DateTime, FixedOffset, Utc};
 use owo_colors::{OwoColorize, Stream};
@@ -195,6 +195,7 @@ pub struct DueDate {
     #[serde(rename = "string")]
     pub string: String,
     /// The date on which the Task is due.
+    #[serde(deserialize_with = "todoist_due_date")]
     pub date: chrono::NaiveDate,
     /// Lets us know if it is recurring (reopens after close).
     pub is_recurring: bool,

@@ -3,12 +3,10 @@
 		"id": "1000001",
 		"color": "berry_red",
 		"name": "Inbox",
-		"order": 0,
-		"comment_count": 0,
+		"child_order": 0,
 		"is_shared": false,
 		"is_favorite": false,
-		"is_inbox_project": true,
-		"is_team_inbox": false,
+		"inbox_project": true,
 		"url": "https://todoist.com/showProject?id=1000001",
 		"view_style": "list"
 	}

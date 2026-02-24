@@ -18,7 +18,7 @@ pub type UserID = String;
 
 /// Task describes a Task from the Todoist API.
 ///
-/// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v2/#tasks).
+/// Taken from the [Developer Documentation](https://developer.todoist.com/api/v1#tag/Tasks).
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Clone)]
 pub struct Task {
     /// Unique ID of a Task.
@@ -32,13 +32,13 @@ pub struct Task {
     /// Description is the description found under the content.
     pub description: String,
     /// Completed is set if this task was completed.
-    pub is_completed: bool,
+    pub checked: bool,
     /// All associated [`super::Label`]s to this Task. Just label names are used here.
     pub labels: Vec<String>,
     /// If set, this Task is a subtask of another.
     pub parent_id: Option<TaskID>,
-    /// Order the order within the subtasks of a Task.
-    pub order: isize,
+    /// Order within the subtasks or project of a Task.
+    pub child_order: isize,
     /// Priority is how urgent the task is.
     pub priority: Priority,
     /// The due date of the Task.
@@ -46,16 +46,16 @@ pub struct Task {
     /// Links the Task to a URL in the Todoist UI.
     pub url: Url,
     /// How many comments are written for this Task.
-    pub comment_count: usize,
+    pub note_count: usize,
+    /// Who created this task.
+    pub user_id: UserID,
     /// Who this task is assigned to.
-    pub creator_id: UserID,
-    /// Who this task is assigned to.
-    pub assignee_id: Option<UserID>,
+    pub responsible_uid: Option<UserID>,
     /// Who assigned this task to the [`Task::assignee`]
-    pub assigner_id: Option<UserID>,
+    pub assigned_by_uid: Option<UserID>,
     /// Exact date when the task was created.
     #[serde(serialize_with = "todoist_rfc3339")]
-    pub created_at: DateTime<Utc>,
+    pub added_at: DateTime<Utc>,
 }
 
 impl Treeable for Task {
@@ -103,7 +103,7 @@ impl Ord for Task {
             core::cmp::Ordering::Equal => {}
             ord => return ord,
         }
-        match self.order.cmp(&other.order) {
+        match self.child_order.cmp(&other.child_order) {
             core::cmp::Ordering::Equal => {}
             ord => return ord,
         }
@@ -323,18 +323,18 @@ impl Task {
             section_id: None,
             content: content.to_string(),
             description: String::new(),
-            is_completed: false,
+            checked: false,
             labels: Vec::new(),
             parent_id: None,
-            order: 0,
+            child_order: 0,
             priority: Priority::default(),
             due: None,
             url: "http://localhost".to_string().parse().unwrap(),
-            comment_count: 0,
-            creator_id: "0".to_string(),
-            assignee_id: None,
-            assigner_id: None,
-            created_at: Utc::now(),
+            note_count: 0,
+            user_id: "0".to_string(),
+            responsible_uid: None,
+            assigned_by_uid: None,
+            added_at: Utc::now(),
         }
     }
 }

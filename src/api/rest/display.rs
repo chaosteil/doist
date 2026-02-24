@@ -93,7 +93,7 @@ impl std::fmt::Display for FullTask<'_> {
         if let Some(section) = &section {
             write!(f, "\nSection: {section}")?;
         }
-        write!(f, "\nComments: {}", task.comment_count)?;
+        write!(f, "\nComments: {}", task.note_count)?;
         Ok(())
     }
 }

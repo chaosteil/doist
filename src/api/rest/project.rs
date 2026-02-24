@@ -11,7 +11,7 @@ pub type ProjectSyncID = String;
 
 /// Project as described by the Todoist API.
 ///
-/// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v2/#projects).
+/// Taken from the [Developer Documentation](https://developer.todoist.com/api/v1#tag/Projects).
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone)]
 pub struct Project {
@@ -21,18 +21,14 @@ pub struct Project {
     pub parent_id: Option<ProjectID>,
     /// The name of the Project. Displayed in the project list in the UI.
     pub name: String,
-    /// How many project comments.
-    pub comment_count: usize,
     /// Color as used by the Todoist UI.
     pub color: String,
     /// Whether the project is shared with someone else.
     pub is_shared: bool,
     /// Project order under the same parent.
-    pub order: isize,
+    pub child_order: isize,
     /// This marks the project as the initial Inbox project if it exists.
-    pub is_inbox_project: bool,
-    /// This markes the project as a TeamInbox project if it exists.
-    pub is_team_inbox: bool,
+    pub inbox_project: bool,
     /// Toggle to mark this project as a favorite.
     pub is_favorite: bool,
     /// URL to the Todoist UI.
@@ -43,7 +39,7 @@ pub struct Project {
 
 /// ViewStyle for viewing of the project in different clients.
 ///
-/// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v2/#projects).
+/// Taken from the [Developer Documentation](https://developer.todoist.com/api/v1#tag/Projects).
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Ord, PartialOrd, Clone)]
 #[serde(rename_all = "lowercase")]
 #[derive(Default)]
@@ -113,12 +109,10 @@ impl Project {
             id: id.to_string(),
             name: name.to_string(),
             parent_id: None,
-            comment_count: 0,
             color: "".to_string(),
             is_shared: false,
-            order: 0,
-            is_inbox_project: false,
-            is_team_inbox: false,
+            child_order: 0,
+            inbox_project: false,
             is_favorite: false,
             url: "http://localhost".to_string().parse().unwrap(),
             view_style: Default::default(),

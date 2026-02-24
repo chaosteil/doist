@@ -25,14 +25,15 @@ pub enum ThreadID {
 
 /// Comment describes a Comment from the Todoist API.
 ///
-/// Taken from the [Developer Documentation](https://developer.todoist.com/rest/v2/#comments)
+/// Taken from the [Developer Documentation](https://developer.todoist.com/api/v1/#tag/Comments)
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Comment {
     /// The unique ID of a comment.
     pub id: CommentID,
-    /// Where the comment is attached to.
-    #[serde(flatten)]
-    pub thread: ThreadID,
+    /// Set if this comment is attached to a task. The API returns this as `item_id`.
+    pub item_id: Option<TaskID>,
+    /// Set if this comment is attached to a project.
+    pub project_id: Option<ProjectID>,
     /// The date when the comment was posted.
     #[serde(serialize_with = "todoist_rfc3339")]
     pub posted_at: chrono::DateTime<chrono::Utc>,

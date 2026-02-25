@@ -30,7 +30,7 @@ json-patch = "4.0.0"
 lazy_static = "1.5.0"
 num-traits = "0.2.19"
 owo-colors = { version = "4.2.2", features = ["supports-colors"] }
-reqwest = "0.12.23"
+reqwest = { version = "0.12.23", features = ["native-tls-vendored"] }
 reqwest-middleware = "0.4.2"
 reqwest-retry = "0.7.0"
 serde = { version = "1.0.219", features = ["derive"] }

@@ -20,6 +20,8 @@ jobs:
           fetch-depth: 0
       - name: Fix git safe.directory
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Install mingw-w64 for dlltool
+        run: apt-get update && apt-get install -y mingw-w64
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:

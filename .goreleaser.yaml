@@ -31,6 +31,12 @@ homebrew_casks:
     homepage: "https://github.com/chaosteil/doist"
     description: "doist is an unofficial command line app for interacting with the Todoist API"
     license: MIT
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/doist"]
+          end
 
 release:
   github:

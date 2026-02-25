@@ -11,9 +11,6 @@ builds:
       - x86_64-apple-darwin
       - aarch64-apple-darwin
       - x86_64-pc-windows-msvc
-    flags:
-      - --profile
-      - dist
 
 archives:
   - name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"

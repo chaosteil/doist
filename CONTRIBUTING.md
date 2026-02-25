@@ -17,7 +17,7 @@ that the linter should pass before any serious attempt to review it is done.
 
 ## Releasing
 
-The project is set up with cargo-dist and expects cargo-release to manage
+The project is set up with goreleaser and expects cargo-release to manage
 releases:
 
 1. Figure out what the next version is according to semver

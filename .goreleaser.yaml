@@ -1,0 +1,41 @@
+# .goreleaser.yaml
+version: 2
+project_name: doist
+
+builds:
+  - id: doist
+    builder: rust
+    binary: doist
+    targets:
+      - x86_64-unknown-linux-gnu
+      - x86_64-apple-darwin
+      - aarch64-apple-darwin
+      - x86_64-pc-windows-msvc
+    flags:
+      - --profile
+      - dist
+
+archives:
+  - name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+
+checksum:
+  name_template: "checksums.txt"
+
+homebrew_casks:
+  - repository:
+      owner: chaosteil
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Casks
+    homepage: "https://github.com/chaosteil/doist"
+    description: "doist is an unofficial command line app for interacting with the Todoist API"
+    license: MIT
+
+release:
+  github:
+    owner: chaosteil
+    name: doist

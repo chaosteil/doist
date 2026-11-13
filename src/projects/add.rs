@@ -14,6 +14,6 @@ pub async fn add(params: Params, gw: &Gateway) -> Result<()> {
             ..Default::default()
         })
         .await?;
-    println!("created project: {}", &project);
+    println!("created project: {}", project);
     Ok(())
 }

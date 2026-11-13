@@ -14,6 +14,6 @@ pub async fn add(params: Params, gw: &Gateway) -> Result<()> {
             ..Default::default()
         })
         .await?;
-    println!("created label: {}", &label);
+    println!("created label: {}", label);
     Ok(())
 }

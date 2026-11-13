@@ -16,16 +16,16 @@ pub async fn list(params: Params, gw: &Gateway) -> Result<()> {
     if let Some(filter) = params.filter {
         let tasks = gw.tasks(Some(&filter)).await?;
         if tasks.is_empty() {
-            return Err(eyre!("no tasks match the given filter"))?;
+            return Err(eyre!("no tasks match the given filter"));
         }
         let projects = filtered_projects(&projects, &tasks)?;
         for (project, tasks) in projects.iter() {
-            println!("{} (Tasks: {})", &project, tasks);
+            println!("{} (Tasks: {})", project, tasks);
         }
         return Ok(());
     }
     for project in projects.iter() {
-        println!("{}", &project);
+        println!("{}", project);
     }
     Ok(())
 }

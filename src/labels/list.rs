@@ -7,7 +7,7 @@ pub struct Params {}
 pub async fn list(_params: Params, gw: &Gateway) -> Result<()> {
     let labels = gw.labels().await?;
     for label in labels {
-        println!("{}", &FullLabel(&label));
+        println!("{}", FullLabel(&label));
     }
     Ok(())
 }

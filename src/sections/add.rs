@@ -22,6 +22,6 @@ pub async fn add(params: Params, gw: &Gateway) -> Result<()> {
             ..Default::default()
         })
         .await?;
-    println!("created section: {}", &section);
+    println!("created section: {}", section);
     Ok(())
 }

@@ -19,7 +19,7 @@ pub async fn view(params: Params, gw: &Gateway) -> Result<()> {
     let tree = state
         .project(&project.id)
         .ok_or_else(|| eyre!("full project list contained invalid data"))?;
-    println!("Project: {}", &tree.item);
+    println!("Project: {}", tree.item);
     if !tree.subitems.is_empty() {
         println!("Subprojects:");
         for project in &tree.subitems {

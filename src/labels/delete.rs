@@ -18,7 +18,7 @@ pub async fn delete(params: Params, gw: &Gateway) -> Result<()> {
     }
     for label in labels {
         gw.delete_label(&label.id).await?;
-        println!("deleted label: {}", &label);
+        println!("deleted label: {}", label);
     }
     Ok(())
 }

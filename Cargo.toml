@@ -21,6 +21,8 @@ exclude = [
   "/.goreleaser.yaml",
   "/CODE_OF_CONDUCT.md",
   "/CONTRIBUTING.md",
+  "/flake.nix",
+  "/flake.lock",
 ]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

@@ -21,6 +21,7 @@ exclude = [
   "/.goreleaser.yaml",
   "/CODE_OF_CONDUCT.md",
   "/CONTRIBUTING.md",
+  "/RELEASING.md",
   "/flake.nix",
   "/flake.lock",
 ]

@@ -17,38 +17,143 @@ more as we go along.
 
 ## Installation
 
-Check out the [latest releases](https://github.com/chaosteil/doist/releases) for
-various pre-built binaries or follow the following steps:
-
-### Install from crates.io
-
-You can install via cargo install:
-
-```bash
-# Install Rust first: https://www.rust-lang.org/tools/install
-cargo install doist
-# Binary now available in $HOME/.cargo/bin/doist
-```
+doist runs on macOS, Linux and Windows. Each method below installs the
+`doist` binary. The releases are on the
+[release page](https://github.com/chaosteil/doist/releases).
+[RELEASING.md](RELEASING.md) tells how a release is made.
 
 ### Homebrew
 
-For OSX users, a homebrew tap is available:
+On macOS and Linux, install the cask from the tap:
 
 ```bash
-brew install chaosteil/tap/doist
+brew install --cask chaosteil/tap/doist
 ```
+
+The cask is in
+[chaosteil/homebrew-tap](https://github.com/chaosteil/homebrew-tap). The
+macOS binary is not signed. The cask removes the quarantine flag of macOS
+after the install, so that macOS starts the binary
+([GoReleaser](https://goreleaser.com/customization/homebrew_casks/#signing-and-notarizing)).
+
+The tap had a formula `doist` before. If you installed the formula, run
+`brew update`. Homebrew then moves you to the cask
+(`tap_migrations.json` of the tap, see
+[Homebrew](https://docs.brew.sh/Migrating-A-Formula-To-A-Tap)). You can
+also do it yourself:
+
+```bash
+brew uninstall --formula doist
+brew install --cask chaosteil/tap/doist
+```
+
+### Install from crates.io
+
+```bash
+# Install Rust first: https://www.rust-lang.org/tools/install
+cargo install --locked doist
+# Binary now available in $HOME/.cargo/bin/doist
+```
+
+Cargo compiles doist. You need Rust 1.88 or later. `--locked` uses the
+dependency versions of `Cargo.lock`
+([cargo install](https://doc.rust-lang.org/cargo/commands/cargo-install.html)).
+
+### cargo-binstall
+
+```bash
+cargo binstall doist
+```
+
+[cargo-binstall](https://github.com/cargo-bins/cargo-binstall) downloads
+the prebuilt archive of the GitHub release, and does not compile.
+
+### Nix
+
+Run doist without an install:
+
+```bash
+nix run github:chaosteil/doist
+```
+
+Install it in your profile:
+
+```bash
+nix profile install github:chaosteil/doist
+```
+
+You can also add the flake as an input of your own flake, and use
+`doist.packages.<system>.default`. The flake has packages for
+`x86_64-linux`, `aarch64-linux` and `aarch64-darwin`.
+
+### Debian, Ubuntu and Fedora
+
+Download the `.deb` or `.rpm` file for your CPU from the
+[release page](https://github.com/chaosteil/doist/releases/latest).
+Then install it with your package manager:
+
+```bash
+sudo apt install ./doist_X.Y.Z_amd64.deb         # Debian, Ubuntu
+sudo dnf install ./doist-X.Y.Z-1.x86_64.rpm      # Fedora
+```
+
+### Prebuilt archives
+
+The [release page](https://github.com/chaosteil/doist/releases/latest)
+has an archive `doist_X.Y.Z_<target>.tar.gz` for each target, and a
+`.zip` file for Windows:
+
+| Target | System |
+|---|---|
+| `aarch64-apple-darwin` | macOS on Apple silicon |
+| `x86_64-apple-darwin` | macOS on Intel |
+| `x86_64-unknown-linux-musl` | Linux on x86_64 (static binary) |
+| `aarch64-unknown-linux-musl` | Linux on ARM64 (static binary) |
+| `x86_64-pc-windows-gnu` | Windows on x86_64 (`.zip`) |
+
+Each archive has the binary, the README and the license. `checksums.txt`
+has the SHA-256 sum of each file.
+
+1. Download the archive and `checksums.txt`.
+2. Make sure that the sum is correct:
+
+   ```bash
+   sha256sum --check --ignore-missing checksums.txt         # Linux
+   shasum -a 256 --check --ignore-missing checksums.txt     # macOS
+   ```
+
+   On Windows, compare the output of
+   `Get-FileHash doist_X.Y.Z_x86_64-pc-windows-gnu.zip` in PowerShell
+   with the line in `checksums.txt`.
+
+3. Extract the binary to a directory on your `PATH`:
+
+   ```bash
+   tar -xzf doist_X.Y.Z_aarch64-apple-darwin.tar.gz -C ~/.local/bin doist
+   ```
+
+   On Windows, extract `doist.exe` from the `.zip` file.
+
+4. If you downloaded the archive with a browser on macOS, remove the
+   quarantine flag:
+
+   ```bash
+   xattr -d com.apple.quarantine ~/.local/bin/doist
+   ```
 
 ### Build from source
 
 ```bash
 # Install Rust first: https://www.rust-lang.org/tools/install
-git clone git@github.com:chaosteil/doist
+git clone https://github.com/chaosteil/doist
 cd doist
 cargo build --release
 ./target/release/doist
 ```
 
-More options coming eventually.
+To install the binary in `~/.cargo/bin`, run
+`cargo install --locked --path .`. The minimum Rust version is 1.88
+(`rust-version` in `Cargo.toml`).
 
 ## How to use
 

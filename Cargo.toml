@@ -5,16 +5,39 @@ repository = "https://github.com/chaosteil/doist"
 authors = ["Dominykas Djacenko <chaosteil@gmail.com>"]
 version = "0.4.1"
 edition = "2024"
+rust-version = "1.88"
 description = "doist is an unofficial command line app for interacting with the Todoist API"
 license = "MIT"
 readme = "README.md"
 keywords = ["todoist", "todo", "cli"]
 categories = ["command-line-utilities"]
+# The crate holds only what the build needs. The tests, the demo files and
+# the files of the repo tools stay in the repo.
+exclude = [
+  "/.github/",
+  "/tests/",
+  "/vhs/",
+  "/.gitignore",
+  "/.goreleaser.yaml",
+  "/CODE_OF_CONDUCT.md",
+  "/CONTRIBUTING.md",
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
 name = "doist"
+
+# cargo-binstall downloads the archive of the GitHub release (see
+# .goreleaser.yaml for the archive names).
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/v{ version }/{ name }_{ version }_{ target }{ archive-suffix }"
+pkg-fmt = "tgz"
+bin-dir = "{ bin }{ binary-ext }"
+
+# The Windows archive is a zip file.
+[package.metadata.binstall.overrides.x86_64-pc-windows-gnu]
+pkg-fmt = "zip"
 
 [dependencies]
 chrono = { version = "0.4.41", features = ["serde"] }
@@ -64,3 +87,5 @@ wiremock = "0.6.4"
 # The profile that 'goreleaser' will build with
 [profile.release]
 lto = "thin"
+codegen-units = 1
+strip = true

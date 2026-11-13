@@ -1,4 +1,5 @@
-# .goreleaser.yaml
+# GoReleaser builds the release of a tag v*. See RELEASING.md and
+# .github/workflows/release.yml.
 version: 2
 project_name: doist
 
@@ -6,39 +7,92 @@ builds:
   - id: doist
     builder: rust
     binary: doist
+    # The Linux targets use musl, thus the binaries are static.
     targets:
-      - x86_64-unknown-linux-gnu
+      - x86_64-unknown-linux-musl
+      - aarch64-unknown-linux-musl
       - x86_64-apple-darwin
       - aarch64-apple-darwin
       - x86_64-pc-windows-gnu
 
 archives:
-  - name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+  - id: doist
+    formats: [tar.gz]
+    # The name has the Rust target, so cargo-binstall finds the archive
+    # ([package.metadata.binstall] in Cargo.toml).
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Target }}"
     format_overrides:
       - goos: windows
-        formats:
-          - zip
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE
 
 checksum:
-  name_template: "checksums.txt"
+  name_template: checksums.txt
 
-homebrew_casks:
-  - repository:
-      owner: chaosteil
-      name: homebrew-tap
-      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    directory: Casks
-    homepage: "https://github.com/chaosteil/doist"
-    description: "doist is an unofficial command line app for interacting with the Todoist API"
-    license: MIT
-    hooks:
-      post:
-        install: |
-          if OS.mac?
-            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/doist"]
-          end
+changelog:
+  use: git
+  sort: asc
+  groups:
+    - title: Features
+      regexp: '^feat(\([^)]+\))?!?:'
+      order: 0
+    - title: Bug fixes
+      regexp: '^fix(\([^)]+\))?!?:'
+      order: 1
+    - title: Performance
+      regexp: '^perf(\([^)]+\))?!?:'
+      order: 2
+    - title: Others
+      order: 999
+  filters:
+    exclude:
+      - '^(chore|docs|ci|test)(\([^)]+\))?!?:'
 
 release:
   github:
     owner: chaosteil
     name: doist
+  prerelease: auto
+
+homebrew_casks:
+  - name: doist
+    repository:
+      owner: chaosteil
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Casks
+    homepage: https://github.com/chaosteil/doist
+    description: doist is an unofficial command line app for interacting with the Todoist API
+    license: MIT
+    # A prerelease tag (for example v0.5.0-rc1) does not change the tap.
+    skip_upload: auto
+    # The binary is not signed. Without this step, macOS stops the binary
+    # because of the quarantine flag of the download.
+    hooks:
+      post:
+        install_steps: |
+          on_macos do
+            run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}/doist"]
+          end
+
+nfpms:
+  - id: doist
+    package_name: doist
+    file_name_template: "{{ .ConventionalFileName }}"
+    vendor: Dominykas Djacenko
+    homepage: https://github.com/chaosteil/doist
+    maintainer: Dominykas Djacenko <chaosteil@gmail.com>
+    description: doist is an unofficial command line app for interacting with the Todoist API
+    license: MIT
+    formats: [deb, rpm]
+    contents:
+      - src: LICENSE
+        dst: /usr/share/doc/doist/LICENSE
+        packager: deb
+      - src: LICENSE
+        dst: /usr/share/licenses/doist/LICENSE
+        packager: rpm
+      - src: README.md
+        dst: /usr/share/doc/doist/README.md

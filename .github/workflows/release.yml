@@ -1,33 +1,83 @@
+# A tag v* starts a release. See RELEASING.md.
 name: Release
 
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 permissions:
-  contents: write
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
+  checks:
+    uses: ./.github/workflows/ci.yml
+
   goreleaser:
+    needs: checks
     runs-on: ubuntu-latest
+    # The image has rustup, cargo-zigbuild, zig and the macOS SDK.
     container:
-      image: ghcr.io/goreleaser/goreleaser-rust-cross:latest
+      image: ghcr.io/goreleaser/goreleaser-rust-cross:v2.13.3
+    permissions:
+      contents: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - name: Fix git safe.directory
+      - name: Mark the checkout as safe for git
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-      - name: Install mingw-w64 for dlltool
+      # The Windows build needs dlltool and the MinGW libraries.
+      - name: Install mingw-w64
         run: apt-get update && apt-get install -y mingw-w64
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
+      # The repo has no rust-toolchain.toml. The release uses the latest
+      # stable toolchain. GoReleaser adds the targets.
+      - name: Install the Rust toolchain
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+      - uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
-          version: latest
+          version: v2.20.2
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+  crates-io:
+    needs: checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install the Rust toolchain
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+      # If crates.io has the version of Cargo.toml, this job does nothing.
+      - name: Look for the version on crates.io
+        id: version
+        run: |
+          version=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
+          status=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --user-agent 'doist release workflow (https://github.com/chaosteil/doist)' \
+            "https://crates.io/api/v1/crates/doist/$version")
+          case "$status" in
+            200) echo "doist $version is on crates.io: no publish."; echo "publish=false" >> "$GITHUB_OUTPUT" ;;
+            404) echo "doist $version is not on crates.io: publish."; echo "publish=true" >> "$GITHUB_OUTPUT" ;;
+            *) echo "crates.io sent HTTP $status."; exit 1 ;;
+          esac
+      - uses: rust-lang/crates-io-auth-action@v1
+        if: steps.version.outputs.publish == 'true'
+        id: auth
+      - name: Publish to crates.io
+        if: steps.version.outputs.publish == 'true'
+        run: cargo publish --locked
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
